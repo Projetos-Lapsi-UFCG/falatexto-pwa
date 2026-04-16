@@ -51,6 +51,29 @@ O modelo de IA roda localmente no servidor do projeto, garantindo privacidade to
 
 ---
 
+## Fluxograma do Sistema
+
+```mermaid
+flowchart TD
+    A[Usuário envia documento] --> B[Detecção de formato]
+    B --> C{Qual formato?}
+    C --> D[CSV / JSON\nParser]
+    C --> E[PDF\nExtrator de PDF]
+    C --> F[PNG / Foto\nOCR · Vision LLM]
+    D --> G[Texto bruto]
+    E --> G
+    F --> G
+    G --> H[Texto normalizado]
+    H --> I[LLM · Gemma 4 via Ollama]
+    I --> J[Campos identificados em JSON]
+    J --> K[Formulário gerado dinamicamente]
+    K --> L{Como o usuário responde?}
+    L --> M[Por voz\nSTT]
+    L --> N[Digitando]
+    M --> O[Respostas coletadas e salvas]
+    N --> O
+```
+
 ## Como rodar o projeto
 
 ### Pré-requisitos
