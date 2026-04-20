@@ -1,0 +1,151 @@
+.dashboard-wrapper {
+  background: var(--color-neutral-50);
+}
+
+.dashboard-header {
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-neutral-200);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner, .fixed-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.header-inner {
+  margin-right: 150px;
+}
+
+.fixed-actions {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dashboard-title {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-neutral-600);
+  background: var(--color-neutral-100);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-lg);
+  text-transform: capitalize;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-sans) !important;
+}
+
+.search-bar-wrapper {
+  padding: 1.5rem 2rem 0;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.search-inner {
+  max-width: 32rem;
+}
+
+.search-field {
+  width: 100%;
+}
+
+.forms-main {
+  padding: 1.5rem 2rem 3rem;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.forms-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .forms-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .forms-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header-inner {
+    padding: 1rem;
+    flex-flow: wrap;
+  }
+
+  .search-bar-wrapper,
+  .forms-main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .header-actions {
+    margin-top: 2rem;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.empty-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  color: var(--color-neutral-800);
+}
+
+.empty-subtitle {
+  color: var(--color-neutral-600);
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+span.mdc-button__label {
+  border: 2px solid #dd0031;
+  text-transform: uppercase;
+  margin-top: 5px;
+  color: red !important;
+}

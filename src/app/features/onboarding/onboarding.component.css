@@ -1,0 +1,130 @@
+.onboarding-wrapper {
+  background: var(--color-white);
+  position: relative;
+}
+
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+}
+
+.brand-icon {
+  display: flex;
+  align-items: center;
+  color: var(--color-neutral-800);
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.exit-btn {
+  color: var(--color-neutral-500) !important;
+  transition: color 0.15s ease;
+}
+
+.exit-btn:hover {
+  color: var(--color-neutral-900) !important;
+}
+
+.onboarding-title {
+  font-family: var(--font-serif);
+  font-size: 3.5rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+  margin-bottom: 1rem;
+}
+
+.onboarding-subtitle {
+  font-size: 1.125rem;
+  color: var(--color-neutral-600);
+  max-width: 36rem;
+  margin: 5rem auto;
+  line-height: 1.6;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+@media (max-width: 768px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-title {
+    font-size: 2.5rem;
+  }
+}
+
+.feature-card {
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  background: var(--color-white);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: default;
+}
+
+.feature-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.feature-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.feature-icon {
+  color: var(--color-neutral-800);
+}
+
+.feature-title {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+}
+
+.feature-description {
+  font-size: 0.9rem;
+  color: var(--color-neutral-600);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.continue-btn {
+  padding: 0 3rem !important;
+  height: 3rem !important;
+  font-size: 1rem !important;
+  font-family: var(--font-sans) !important;
+}
+
+.skip-wrapper {
+  color: var(--color-neutral-600);
+}

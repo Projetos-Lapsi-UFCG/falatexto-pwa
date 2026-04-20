@@ -1,0 +1,29 @@
+<div class="login-wrapper min-h-screen bg-neutral-50 flex items-center justify-center p-6">
+  <div [@scaleIn] class="login-card">
+    <div class="login-header">
+      <h1 class="login-title">{{ 'LOGIN.TITLE' | translate }}</h1>
+      <p class="login-subtitle">{{ 'LOGIN.SUBTITLE' | translate }}</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="handleLogin()" class="login-form">
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'LOGIN.USER_TYPE_LABEL' | translate }}</mat-label>
+        <mat-select formControlName="userType">
+          <mat-option value="admin">{{ 'LOGIN.USER_TYPE_ADMIN' | translate }}</mat-option>
+          <mat-option value="guest">{{ 'LOGIN.USER_TYPE_GUEST' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="pin-section">
+        <p class="pin-label">{{ 'LOGIN.PIN_LABEL' | translate }}</p>
+        <app-pin-input (pinChange)="onPinChange($event)" />
+      </div>
+
+      <button mat-raised-button color="primary" type="submit" class="login-btn">
+        {{ 'LOGIN.SIGN_IN' | translate }}
+      </button>
+
+    </form>
+  </div>
+</div>

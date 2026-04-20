@@ -78,36 +78,51 @@ flowchart TD
 
 ### Pré-requisitos
 
-- Node.js v22+ (LTS)
+- Node.js v24+ (LTS)
 - Angular CLI v21+
 - Ollama instalado
-- Modelo Gemma 4 baixado
 
-### Instalação
+### Instalação e desenvolvimento
 
 ```bash
 # Clone o repositório
 git clone https://github.com/seu-usuario/falatexto-pwa.git
-
-# Entre na pasta
 cd falatexto-pwa
 
 # Instale as dependências
 npm install
 
-# Rode o projeto
-ng serve
+# Inicie o servidor de desenvolvimento
+npm start
 ```
 
 Acesse `http://localhost:4200` no navegador.
 
+### Build de produção
+
+```bash
+npm run build
+```
+
+Os arquivos gerados ficam em `dist/falatexto-pwa/browser/`. O service worker (PWA) só é registrado no build de produção. Para testá-lo localmente:
+
+```bash
+npx http-server dist/falatexto-pwa/browser -p 8080 -c-1
+```
+
+### Testes
+
+```bash
+npm test
+```
+
 ### Subindo o modelo de IA
 
 ```bash
-# Baixar o modelo
+# Baixar o modelo (necessário apenas uma vez)
 ollama pull gemma4
 
-# Rodar o Ollama
+# Iniciar o Ollama
 ollama serve
 ```
 
@@ -119,9 +134,19 @@ ollama serve
 falatexto-pwa/
 ├── src/
 │   ├── app/
-│   │   ├── components/       ← componentes da interface
-│   │   ├── services/         ← comunicação com backend e modelo
-│   │   └── app.routes.ts     ← rotas do app
+│   │   ├── core/
+│   │   │   ├── guards/       ← authGuard (proteção de rotas)
+│   │   │   ├── models/       ← interfaces Form, User
+│   │   │   └── services/     ← AuthService, FormService, StorageService
+│   │   ├── features/
+│   │   │   ├── onboarding/   ← tela inicial
+│   │   │   ├── login/        ← autenticação por PIN
+│   │   │   ├── dashboard/    ← listagem e busca de formulários
+│   │   │   └── create-form/  ← criação de novo formulário
+│   │   ├── shared/
+│   │   │   ├── animations/   ← animações Angular (fadeIn, staggerFade…)
+│   │   │   └── components/   ← pin-input, button, card, input
+│   │   └── app.routes.ts     ← rotas com lazy loading
 │   ├── index.html
 │   └── main.ts
 ├── public/

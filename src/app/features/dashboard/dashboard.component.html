@@ -1,0 +1,66 @@
+<div class="dashboard-wrapper min-h-screen bg-neutral-50">
+
+  <!-- Header -->
+  <header [@fadeIn] class="dashboard-header">
+
+    <div class="fixed-actions">
+      <app-language-selector />
+      <button mat-icon-button (click)="logout()" [title]="'DASHBOARD.LOGOUT_TITLE' | translate">
+        <ng-icon name="lucideLogOut" size="24"/>
+      </button>
+    </div>
+
+    <div class="header-inner">
+      <div class="header-left">
+        <h1 class="dashboard-title">{{ 'DASHBOARD.TITLE' | translate }}</h1>
+        <div class="user-badge">
+          <ng-icon name="lucideUser" size="14" />
+          <span>{{ userType }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="createForm()" class="create-btn">
+          <ng-icon name="lucidePlus" size="16" />
+          {{ 'DASHBOARD.NEW_FORM' | translate }}
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Search -->
+  <div [@fadeIn] class="search-bar-wrapper">
+    <div class="search-inner">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>
+          <ng-icon name="lucideSearch" size="16" />
+          {{ 'DASHBOARD.SEARCH_LABEL' | translate }}
+        </mat-label>
+        <input
+          matInput
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearch()"
+          [placeholder]="'DASHBOARD.SEARCH_PLACEHOLDER' | translate"
+        />
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Forms grid -->
+  <main class="forms-main">
+    @if (filteredForms.length > 0) {
+      <div [@staggerFade]="filteredForms.length" class="forms-grid">
+        @for (form of filteredForms; track form.id) {
+          <app-form-card [form]="form" />
+        }
+      </div>
+    } @else {
+      <div [@fadeIn] class="empty-state">
+        <p class="empty-title">{{ 'DASHBOARD.EMPTY_TITLE' | translate }}</p>
+        <p class="empty-subtitle">{{ 'DASHBOARD.EMPTY_SUBTITLE' | translate }}</p>
+        <button mat-stroked-button (click)="createForm()">{{ 'DASHBOARD.CREATE_FORM' | translate }}</button>
+      </div>
+    }
+  </main>
+
+</div>

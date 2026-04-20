@@ -1,0 +1,32 @@
+<mat-card
+  class="form-card"
+  [@hoverScale]="hovered"
+  (mouseenter)="hovered = true"
+  (mouseleave)="hovered = false"
+  (click)="navigate()"
+>
+  <mat-card-content class="form-card-content">
+    <div class="form-card-icon">
+      <ng-icon name="lucideFileText" size="24" />
+    </div>
+
+    <div class="form-card-body">
+      <div class="form-card-header">
+        <h3 class="form-card-title">{{ form.name }}</h3>
+        @if (form.type) {
+          <span class="form-badge" [class.badge-template]="form.type === 'template'">
+            {{ form.type }}
+          </span>
+        }
+      </div>
+
+      <p class="form-card-entity">{{ form.entity }}</p>
+
+      <div class="form-card-meta">
+        <span>{{ form.questions }} {{ 'FORM_CARD.QUESTIONS_SUFFIX' | translate }}</span>
+        <span class="meta-sep">·</span>
+        <span>{{ formatDate(form.createdAt) }}</span>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>

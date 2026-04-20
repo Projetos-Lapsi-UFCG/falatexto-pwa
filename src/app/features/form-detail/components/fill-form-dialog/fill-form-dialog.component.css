@@ -1,0 +1,27 @@
+.dialog-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+  padding-bottom: 0.25rem;
+}
+
+.dialog-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-neutral-600);
+  margin-bottom: 1.25rem;
+}
+
+.dialog-content {
+  padding-top: 0.5rem !important;
+  min-width: 300px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.dialog-actions {
+  padding: 0.5rem 1.5rem 1rem;
+  gap: 0.5rem;
+}

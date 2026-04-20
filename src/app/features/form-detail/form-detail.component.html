@@ -1,0 +1,105 @@
+<div class="detail-wrapper min-h-screen bg-neutral-50">
+
+  <!-- Header -->
+  <header [@fadeIn] class="detail-header">
+    <div class="header-inner">
+      <button mat-button (click)="goBack()" class="back-btn">
+        <ng-icon name="lucideArrowLeft" size="16" />
+        {{ 'FORM_DETAIL.BACK' | translate }}
+      </button>
+
+      <div class="header-right">
+        <app-language-selector />
+        @if (form) {
+          <button mat-raised-button color="primary" (click)="openFillDialog()" class="fill-btn">
+            {{ 'FORM_DETAIL.FILL_BTN' | translate }}
+          </button>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="detail-main">
+
+    @if (notFound) {
+      <div [@fadeIn] class="not-found">
+        <ng-icon name="lucideFileText" size="48" class="not-found-icon" />
+        <p class="not-found-title">{{ 'FORM_DETAIL.NOT_FOUND_TITLE' | translate }}</p>
+        <button mat-stroked-button (click)="goBack()">{{ 'FORM_DETAIL.NOT_FOUND_BACK' | translate }}</button>
+      </div>
+    }
+
+    @if (form) {
+      <div [@scaleIn] class="detail-card">
+
+        <!-- Card header -->
+        <div class="card-header">
+          <div class="card-icon">
+            <ng-icon name="lucideClipboardList" size="28" />
+          </div>
+          <div class="card-title-group">
+            <div class="card-title-row">
+              <h1 class="card-title">{{ form.name }}</h1>
+              @if (form.type) {
+                <span class="form-badge" [class.badge-template]="form.type === 'template'">
+                  {{ form.type }}
+                </span>
+              }
+            </div>
+            <p class="card-entity">{{ form.entity }}</p>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Details -->
+        <div class="detail-grid">
+          <div class="detail-item">
+            <ng-icon name="lucideHash" size="16" class="detail-icon" />
+            <div>
+              <p class="detail-label">{{ 'FORM_DETAIL.LABEL_QUESTIONS' | translate }}</p>
+              <p class="detail-value">{{ form.questions }}</p>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <ng-icon name="lucideBuilding2" size="16" class="detail-icon" />
+            <div>
+              <p class="detail-label">{{ 'FORM_DETAIL.LABEL_DEPARTMENT' | translate }}</p>
+              <p class="detail-value">{{ form.entity }}</p>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <ng-icon name="lucideCalendar" size="16" class="detail-icon" />
+            <div>
+              <p class="detail-label">{{ 'FORM_DETAIL.LABEL_CREATED_AT' | translate }}</p>
+              <p class="detail-value">{{ formatDate(form.createdAt) }}</p>
+            </div>
+          </div>
+
+          @if (form.inputMethod) {
+            <div class="detail-item">
+              <ng-icon [name]="inputMethodInfo[form.inputMethod].icon" size="16" class="detail-icon" />
+              <div>
+                <p class="detail-label">{{ 'FORM_DETAIL.LABEL_INPUT_METHOD' | translate }}</p>
+                <p class="detail-value">{{ inputMethodInfo[form.inputMethod].labelKey | translate }}</p>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Fill CTA -->
+        <div class="fill-cta">
+          <button mat-raised-button color="primary" (click)="openFillDialog()" class="fill-cta-btn">
+            {{ 'FORM_DETAIL.FILL_CTA' | translate }}
+          </button>
+          <p class="fill-cta-hint">{{ 'FORM_DETAIL.FILL_CTA_HINT' | translate }}</p>
+        </div>
+
+      </div>
+    }
+
+  </main>
+</div>

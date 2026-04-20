@@ -1,0 +1,122 @@
+{
+  "ONBOARDING": {
+    "TITLE": "FalaTexto",
+    "SUBTITLE": "Uma plataforma inteligente para criar, gerenciar e organizar formulários de qualquer fonte — imagem, voz ou modelo.",
+    "GET_STARTED": "Começar",
+    "SKIP_NEXT_TIME": "Pular na próxima vez",
+    "EXIT": "Sair",
+    "FEATURES": {
+      "IMAGE_TO_FORM": {
+        "TITLE": "Imagem para Formulário",
+        "DESCRIPTION": "Capture ou envie formulários instantaneamente a partir de fotos"
+      },
+      "VOICE_DICTATION": {
+        "TITLE": "Ditado por Voz",
+        "DESCRIPTION": "Crie formulários com as mãos livres usando reconhecimento de voz"
+      },
+      "SMART_ORGANIZATION": {
+        "TITLE": "Organização Inteligente",
+        "DESCRIPTION": "Gerencie múltiplos formulários com facilidade"
+      },
+      "QUICK_ACCESS": {
+        "TITLE": "Acesso Rápido",
+        "DESCRIPTION": "Criação e recuperação rápida de formulários"
+      },
+      "SECURE_STORAGE": {
+        "TITLE": "Armazenamento Seguro",
+        "DESCRIPTION": "Seus dados permanecem privados e protegidos"
+      },
+      "MULTI_FORMAT": {
+        "TITLE": "Suporte a Múltiplos Formatos",
+        "DESCRIPTION": "PDF, CSV, imagens e muito mais"
+      }
+    }
+  },
+  "LOGIN": {
+    "TITLE": "FalaTexto",
+    "SUBTITLE": "Entre para continuar",
+    "USER_TYPE_LABEL": "Tipo de usuário",
+    "USER_TYPE_ADMIN": "Administrador",
+    "USER_TYPE_GUEST": "Visitante",
+    "PIN_LABEL": "Digite seu PIN de 4 dígitos",
+    "SIGN_IN": "Entrar",
+    "ERRORS": {
+      "SELECT_USER_TYPE": "Por favor, selecione um tipo de usuário",
+      "ENTER_PIN": "Por favor, insira um PIN de 4 dígitos",
+      "INVALID_CREDENTIALS": "Credenciais inválidas"
+    },
+    "SUCCESS": {
+      "LOGIN": "Login realizado com sucesso"
+    }
+  },
+  "DASHBOARD": {
+    "TITLE": "FalaTexto",
+    "NEW_FORM": "Novo Formulário",
+    "SEARCH_LABEL": "Buscar formulários...",
+    "SEARCH_PLACEHOLDER": "Buscar por nome ou departamento",
+    "EMPTY_TITLE": "Nenhum formulário encontrado",
+    "EMPTY_SUBTITLE": "Tente uma busca diferente ou crie um novo formulário.",
+    "CREATE_FORM": "Criar Formulário",
+    "LOGOUT_TITLE": "Sair"
+  },
+  "FORM_CARD": {
+    "QUESTIONS_SUFFIX": "perguntas"
+  },
+  "CREATE_FORM": {
+    "BACK": "Voltar ao Dashboard",
+    "TITLE": "Criar Novo Formulário",
+    "SUBTITLE": "Preencha os detalhes para adicionar um novo formulário à sua biblioteca.",
+    "NAME_LABEL": "Nome do formulário",
+    "NAME_PLACEHOLDER": "ex.: Triagem de Paciente",
+    "NAME_ERROR": "Nome é obrigatório (mín. 3 caracteres)",
+    "ENTITY_LABEL": "Departamento / Entidade",
+    "ENTITY_PLACEHOLDER": "ex.: Cardiologia",
+    "ENTITY_ERROR": "Departamento é obrigatório",
+    "QUESTIONS_LABEL": "Número de perguntas",
+    "QUESTIONS_PLACEHOLDER": "ex.: 12",
+    "QUESTIONS_ERROR": "Insira pelo menos 1 pergunta",
+    "TYPE_LABEL": "Tipo de formulário",
+    "TYPE_MANUAL": "Manual",
+    "TYPE_TEMPLATE": "Modelo",
+    "INPUT_METHOD_LABEL": "Método de entrada",
+    "INPUT_DICTATE": "Ditar",
+    "INPUT_UPLOAD": "Enviar Imagem",
+    "INPUT_CAMERA": "Abrir Câmera",
+    "CANCEL": "Cancelar",
+    "SUBMIT": "Criar Formulário",
+    "ERRORS": {
+      "FILL_REQUIRED": "Por favor, preencha todos os campos obrigatórios"
+    },
+    "SUCCESS": {
+      "CREATED": "Formulário criado com sucesso"
+    }
+  },
+  "FORM_DETAIL": {
+    "BACK": "Dashboard",
+    "FILL_BTN": "Preencher",
+    "NOT_FOUND_TITLE": "Formulário não encontrado",
+    "NOT_FOUND_BACK": "Voltar ao Dashboard",
+    "LABEL_QUESTIONS": "Perguntas",
+    "LABEL_DEPARTMENT": "Departamento",
+    "LABEL_CREATED_AT": "Criado em",
+    "LABEL_INPUT_METHOD": "Método de entrada",
+    "FILL_CTA": "Preencher este formulário",
+    "FILL_CTA_HINT": "Será solicitado o nome do paciente.",
+    "INPUT_METHODS": {
+      "DICTATE": "Ditado por voz",
+      "UPLOAD": "Upload de imagem",
+      "CAMERA": "Câmera"
+    }
+  },
+  "FILL_DIALOG": {
+    "TITLE": "Preencher Formulário",
+    "PATIENT_NAME_LABEL": "Nome do paciente / cliente",
+    "PATIENT_NAME_PLACEHOLDER": "Ex.: João da Silva",
+    "PATIENT_NAME_ERROR": "Nome é obrigatório (mín. 2 caracteres)",
+    "CANCEL": "Cancelar",
+    "CONFIRM": "Confirmar",
+    "SUCCESS": {
+      "STARTED": "Formulário iniciado com sucesso"
+    }
+  }
+}

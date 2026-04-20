@@ -1,0 +1,18 @@
+<button mat-button [matMenuTriggerFor]="langMenu" class="lang-trigger">
+  <span class="lang-flag">{{ currentLangObj()?.flag }}</span>
+  <span class="lang-code">{{ currentLang() }}</span>
+  <span class="lang-chevron">▾</span>
+</button>
+
+<mat-menu #langMenu="matMenu" class="lang-menu-panel">
+  @for (lang of languages; track lang.code) {
+    <button
+      mat-menu-item
+      (click)="onLanguageChange(lang.code)"
+      [class.lang-active]="lang.code === currentLang()"
+    >
+      <span class="lang-flag">{{ lang.flag }}</span>
+      <span class="lang-menu-label">{{ lang.label }}</span>
+    </button>
+  }
+</mat-menu>

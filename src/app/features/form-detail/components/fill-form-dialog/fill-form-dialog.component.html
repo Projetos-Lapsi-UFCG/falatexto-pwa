@@ -1,0 +1,27 @@
+<h2 mat-dialog-title class="dialog-title">{{ 'FILL_DIALOG.TITLE' | translate }}</h2>
+
+<mat-dialog-content class="dialog-content">
+  <p class="dialog-subtitle">{{ data.form.name }}</p>
+
+  <form [formGroup]="fillForm" (ngSubmit)="submit()" id="fill-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'FILL_DIALOG.PATIENT_NAME_LABEL' | translate }}</mat-label>
+      <input
+        matInput
+        formControlName="patientName"
+        [placeholder]="'FILL_DIALOG.PATIENT_NAME_PLACEHOLDER' | translate"
+        autocomplete="off"
+      />
+      @if (fillForm.get('patientName')?.invalid && fillForm.get('patientName')?.touched) {
+        <mat-error>{{ 'FILL_DIALOG.PATIENT_NAME_ERROR' | translate }}</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-button type="button" (click)="cancel()">{{ 'FILL_DIALOG.CANCEL' | translate }}</button>
+  <button mat-raised-button color="primary" type="submit" form="fill-form">
+    {{ 'FILL_DIALOG.CONFIRM' | translate }}
+  </button>
+</mat-dialog-actions>

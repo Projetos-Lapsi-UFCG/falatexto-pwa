@@ -1,0 +1,46 @@
+<div class="onboarding-wrapper min-h-screen bg-white flex items-center justify-center p-6">
+
+  <div class="top-bar">
+    <div class="brand-icon">
+      <!-- <ng-icon name="lucideHeadphones" size="28" /> -->
+    </div>
+    <div class="top-bar-actions">
+      <app-language-selector />
+      <button mat-icon-button class="exit-btn" (click)="handleExit()" [title]="'ONBOARDING.EXIT' | translate">
+        <ng-icon name="lucideX" size="20" />
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-5xl w-full">
+
+    <div [@fadeIn] class="text-center mb-16">
+      <p class="onboarding-subtitle">{{ 'ONBOARDING.SUBTITLE' | translate }}</p>
+    </div>
+
+    <div [@staggerFade]="features.length" class="features-grid">
+      @for (feature of features; track feature.icon) {
+        <div class="feature-card">
+          <div class="feature-card-content">
+            <ng-icon [name]="feature.icon" size="32" class="feature-icon" />
+            <h3 class="feature-title">{{ feature.titleKey | translate }}</h3>
+            <p class="feature-description">{{ feature.descKey | translate }}</p>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div [@fadeIn] class="actions">
+      <button mat-raised-button color="primary" (click)="handleContinue()" class="continue-btn">
+        {{ 'ONBOARDING.GET_STARTED' | translate }}
+      </button>
+
+      <div class="skip-wrapper">
+        <mat-checkbox [(ngModel)]="skipNextTime">
+          {{ 'ONBOARDING.SKIP_NEXT_TIME' | translate }}
+        </mat-checkbox>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,91 @@
+<div class="create-wrapper min-h-screen bg-neutral-50 p-6">
+  <div [@fadeIn] class="create-inner">
+
+    <!-- Back button -->
+    <button mat-button (click)="goBack()" class="back-btn">
+      <ng-icon name="lucideArrowLeft" size="16" />
+      {{ 'CREATE_FORM.BACK' | translate }}
+    </button>
+
+    <!-- Form card -->
+    <div [@scaleIn] class="create-card">
+      <div class="create-header">
+        <h2 class="create-title">{{ 'CREATE_FORM.TITLE' | translate }}</h2>
+        <p class="create-subtitle">{{ 'CREATE_FORM.SUBTITLE' | translate }}</p>
+      </div>
+
+      <form [formGroup]="createForm" (ngSubmit)="handleSubmit()" class="create-form">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'CREATE_FORM.NAME_LABEL' | translate }}</mat-label>
+          <input matInput formControlName="name" [placeholder]="'CREATE_FORM.NAME_PLACEHOLDER' | translate" />
+          @if (createForm.get('name')?.invalid && createForm.get('name')?.touched) {
+            <mat-error>{{ 'CREATE_FORM.NAME_ERROR' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'CREATE_FORM.ENTITY_LABEL' | translate }}</mat-label>
+          <input matInput formControlName="entity" [placeholder]="'CREATE_FORM.ENTITY_PLACEHOLDER' | translate" />
+          @if (createForm.get('entity')?.invalid && createForm.get('entity')?.touched) {
+            <mat-error>{{ 'CREATE_FORM.ENTITY_ERROR' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'CREATE_FORM.QUESTIONS_LABEL' | translate }}</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="questions"
+            [placeholder]="'CREATE_FORM.QUESTIONS_PLACEHOLDER' | translate"
+            min="1"
+          />
+          @if (createForm.get('questions')?.invalid && createForm.get('questions')?.touched) {
+            <mat-error>{{ 'CREATE_FORM.QUESTIONS_ERROR' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'CREATE_FORM.TYPE_LABEL' | translate }}</mat-label>
+          <mat-select formControlName="type">
+            <mat-option value="manual">{{ 'CREATE_FORM.TYPE_MANUAL' | translate }}</mat-option>
+            <mat-option value="template">{{ 'CREATE_FORM.TYPE_TEMPLATE' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        @if (createForm.get('type')?.value === 'manual') {
+          <div class="input-method-section">
+            <label class="input-method-label">{{ 'CREATE_FORM.INPUT_METHOD_LABEL' | translate }}</label>
+            <mat-button-toggle-group formControlName="inputMethod" class="input-method-group">
+              <mat-button-toggle value="dictate" class="method-toggle">
+                <ng-icon name="lucideMic" size="18" />
+                <span>{{ 'CREATE_FORM.INPUT_DICTATE' | translate }}</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="upload" class="method-toggle">
+                <ng-icon name="lucideImage" size="18" />
+                <span>{{ 'CREATE_FORM.INPUT_UPLOAD' | translate }}</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="camera" class="method-toggle">
+                <ng-icon name="lucideCamera" size="18" />
+                <span>{{ 'CREATE_FORM.INPUT_CAMERA' | translate }}</span>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+        }
+
+        <div class="form-actions">
+          <button mat-stroked-button type="button" (click)="goBack()" class="cancel-btn">
+            {{ 'CREATE_FORM.CANCEL' | translate }}
+          </button>
+          <button mat-raised-button color="primary" type="submit" class="submit-btn">
+            <ng-icon name="lucidePlus" size="16" />
+            {{ 'CREATE_FORM.SUBMIT' | translate }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+</div>

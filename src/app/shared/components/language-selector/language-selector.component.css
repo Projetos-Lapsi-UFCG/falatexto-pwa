@@ -1,0 +1,53 @@
+.lang-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-neutral-700, #374151);
+  padding: 0 0.5rem !important;
+  min-width: unset !important;
+  height: 36px;
+  border: 1px solid var(--color-neutral-200, #e5e7eb);
+  border-radius: var(--radius-lg, 8px);
+  background: var(--color-white, #fff);
+  transition: background 0.15s;
+}
+
+.lang-trigger:hover {
+  background: var(--color-neutral-100, #f3f4f6);
+}
+
+.lang-flag {
+  font-size: 1.1rem;
+  /* line-height: 1; */
+}
+
+.lang-code {
+  /* font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em; */
+  display: none;
+}
+
+.lang-chevron {
+  /* font-size: 0.65rem;
+  color: var(--color-neutral-500, #6b7280);
+  margin-left: 0.1rem; */
+  display: none;
+}
+
+.lang-menu-label {
+  margin-left: 0.5rem;
+}
+
+:host ::ng-deep .lang-active {
+  background: var(--color-neutral-100, #f3f4f6);
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .lang-code {
+    display: none;
+  }
+}

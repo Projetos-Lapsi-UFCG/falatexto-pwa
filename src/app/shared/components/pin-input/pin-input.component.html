@@ -1,0 +1,14 @@
+<div class="pin-container" (paste)="onPaste($event)">
+  @for (ctrl of pinControls; track $index; let i = $index) {
+    <input
+      #pinField
+      class="pin-field"
+      type="text"
+      inputmode="numeric"
+      maxlength="1"
+      [formControl]="ctrl"
+      (input)="onInput(i)"
+      (keydown)="onKeydown($event, i)"
+    />
+  }
+</div>
