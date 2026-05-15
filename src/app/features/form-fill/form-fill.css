@@ -1,0 +1,88 @@
+.fill-wrapper {
+  min-height: 100vh;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+}
+
+.fill-header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.75rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  position: relative; /* garante que o título centralize em relação ao header */
+}
+
+.fill-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #111827;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.fill-header .fill-step {
+  justify-self: end;
+}
+
+.header-inner .fill-step {
+  justify-self: end;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #6b7280 !important;
+}
+
+.fill-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.fill-step {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.fill-content {
+  max-width: 40rem;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fill-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.fill-footer {
+  max-width: 40rem;
+  margin: 0.5rem auto 2rem;
+  padding: 0 1.5rem;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.next-btn {
+  font-weight: 500 !important;
+  padding: 0 2rem !important;
+}

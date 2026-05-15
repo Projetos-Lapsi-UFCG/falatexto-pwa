@@ -38,5 +38,15 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard],
   },
+  // Rota para preenchimento do formulário — criada por Gabriela
+  // Acessada após clicar em "Preencher" na tela de detalhes do formulário
+  {
+    path: 'forms/:id/fill',
+    loadComponent: () =>
+      import('./features/form-fill/form-fill').then(
+        m => m.FormFillComponent
+      ),
+    canActivate: [authGuard],
+  },
   { path: '**', redirectTo: '' },
 ];

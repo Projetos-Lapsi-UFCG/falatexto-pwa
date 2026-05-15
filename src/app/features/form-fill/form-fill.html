@@ -1,0 +1,46 @@
+<div class="fill-wrapper">
+
+  <!-- Header -->
+<header class="fill-header">
+  <button mat-button (click)="goBack()" class="back-btn">
+    <ng-icon name="lucideArrowLeft" size="16" />
+    Voltar
+  </button>
+  <span class="fill-title">{{ form?.name }}</span>
+  <span class="fill-step">{{ currentStep + 1 }} / {{ totalSteps }}</span>
+</header>
+
+  <!-- Etapa 0 — Dados do paciente -->
+  @if (currentStep === 0) {
+    <div class="fill-content">
+      <h2>Dados do Paciente</h2>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Nome do paciente</mat-label>
+        <input matInput [(ngModel)]="patientData.name" placeholder="Ex.: João da Silva" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Data de nascimento</mat-label>
+        <input matInput type="date" [(ngModel)]="patientData.birthDate" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Prontuário</mat-label>
+        <input matInput [(ngModel)]="patientData.record" placeholder="Número do prontuário" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Sala</mat-label>
+        <input matInput [(ngModel)]="patientData.room" placeholder="Ex.: Sala 3" />
+      </mat-form-field>
+    </div>
+
+    <div class="fill-footer">
+      <button mat-raised-button color="primary" (click)="nextStep()" class="next-btn">
+        Próximo
+      </button>
+    </div>
+  }
+
+</div>

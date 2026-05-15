@@ -71,14 +71,11 @@ export class FormDetailComponent implements OnInit {
     this.router.navigate(['/dashboard']);
   }
 
-  openFillDialog(): void {
-    if (!this.form) return;
-    this.dialog.open(FillFormDialogComponent, {
-      data: { form: this.form },
-      width: '420px',
-      maxWidth: '95vw',
-    });
-  }
+ openFillDialog(): void {
+  if (!this.form) return;
+  // Navega direto para a tela de preenchimento sem abrir o modal
+  this.router.navigate(['/forms', this.form.id, 'fill']);
+}
 
   formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString(this.languageService.getCurrentLanguage(), {
