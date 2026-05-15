@@ -1,24 +1,34 @@
 /**
+ * Representa uma opção dentro de um campo de múltipla escolha ou checkbox.
+ */
+export interface FieldOption {
+  id: string;
+  label: string;
+  hasComplement?: boolean; // se true, exibe campo de texto ao marcar
+  complementLabel?: string;
+}
+
+/**
  * Representa um campo/pergunta individual dentro de uma seção do formulário.
- * Cada pergunta tem um tipo que define como ela será renderizada na tela.
  *
  * Tipos disponíveis:
  * - boolean: resposta Sim / Não
  * - boolean_na: resposta Sim / Não / Não se Aplica
  * - text: campo de texto livre
  * - date: campo de data
+ * - checkbox_group: múltiplos checkboxes independentes
+ * - radio_group: opções onde só uma pode ser selecionada
  */
 export interface QuestionField {
   id: string;
   label: string;
-  type: 'boolean' | 'boolean_na' | 'text' | 'date';
-  complement?: string; // campo complementar opcional (ex: "Qual?", "Entregues/Conferidas")
+  type: 'boolean' | 'boolean_na' | 'text' | 'date' | 'checkbox_group' | 'radio_group';
+  options?: FieldOption[]; // opções para checkbox_group e radio_group
+  complement?: string;
 }
 
 /**
  * Representa uma seção do formulário.
- * Um formulário pode ser dividido em múltiplas seções,
- * cada uma contendo suas próprias perguntas.
  */
 export interface Section {
   id: string;
@@ -28,9 +38,6 @@ export interface Section {
 
 /**
  * Representa um formulário na biblioteca do app.
- * Formulários podem ser templates pré-instalados ou criados manualmente pelo usuário.
- * O campo sections é opcional — formulários sem seções definidas
- * foram criados manualmente e ainda não têm perguntas mapeadas.
  */
 export interface Form {
   id: string;
@@ -40,12 +47,11 @@ export interface Form {
   createdAt: string;
   type?: 'template' | 'manual';
   inputMethod?: 'dictate' | 'upload' | 'camera';
-  sections?: Section[]; // seções com perguntas — presentes apenas em templates mapeados
+  sections?: Section[];
 }
 
 /**
  * Representa uma instância de preenchimento de um formulário.
- * Criada quando o usuário inicia o preenchimento de um formulário.
  */
 export interface FormInstance {
   id: string;

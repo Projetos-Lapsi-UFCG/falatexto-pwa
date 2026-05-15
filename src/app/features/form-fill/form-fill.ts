@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatRadioModule } from '@angular/material/radio';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft } from '@ng-icons/lucide';
 import { FormService } from '../../core/services/form.service';
@@ -16,6 +18,8 @@ import { Form } from '../../core/models/form.model';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatCheckboxModule,
+    MatRadioModule,
     NgIcon,
   ],
   providers: [
@@ -32,10 +36,13 @@ export class FormFillComponent implements OnInit {
   form: Form | null = null;
   currentStep = 0;
 
-  get totalSteps(): number {
-    return 1 + (this.form?.sections?.length ?? 0);
-  }
+  // Respostas para campos de texto, boolean e radio
+  answers: Record<string, string> = {};
 
+  // Respostas para checkboxes — valor booleano por opção
+  checkboxAnswers: Record<string, boolean> = {};
+
+  // Dados do paciente preenchidos na etapa 0
   patientData = {
     name: '',
     birthDate: '',
@@ -43,11 +50,23 @@ export class FormFillComponent implements OnInit {
     room: '',
   };
 
+  get totalSteps(): number {
+    return 1 + (this.form?.sections?.length ?? 0);
+  }
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.form = this.formService.getFormById(id) ?? null;
     }
+  }
+
+  setAnswer(questionId: string, value: string): void {
+    this.answers[questionId] = value;
+  }
+
+  onCheckboxChange(optionId: string, checked: boolean): void {
+    this.checkboxAnswers[optionId] = checked;
   }
 
   nextStep(): void {
@@ -62,5 +81,9 @@ export class FormFillComponent implements OnInit {
     } else {
       this.currentStep--;
     }
+  }
+
+  finalizar(): void {
+    this.router.navigate(['/dashboard']);
   }
 }

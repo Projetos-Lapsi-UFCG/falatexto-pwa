@@ -1,14 +1,14 @@
 <div class="fill-wrapper">
 
   <!-- Header -->
-<header class="fill-header">
-  <button mat-button (click)="goBack()" class="back-btn">
-    <ng-icon name="lucideArrowLeft" size="16" />
-    Voltar
-  </button>
-  <span class="fill-title">{{ form?.name }}</span>
-  <span class="fill-step">{{ currentStep + 1 }} / {{ totalSteps }}</span>
-</header>
+  <header class="fill-header">
+    <button mat-button (click)="goBack()" class="back-btn">
+      <ng-icon name="lucideArrowLeft" size="16" />
+      Voltar
+    </button>
+    <span class="fill-title">{{ form?.name }}</span>
+    <span class="fill-step">{{ currentStep + 1 }} / {{ totalSteps }}</span>
+  </header>
 
   <!-- Etapa 0 — Dados do paciente -->
   @if (currentStep === 0) {
@@ -40,6 +40,98 @@
       <button mat-raised-button color="primary" (click)="nextStep()" class="next-btn">
         Próximo
       </button>
+    </div>
+  }
+
+  <!-- Etapas das seções -->
+  @if (currentStep > 0 && currentStep <= (form?.sections?.length ?? 0)) {
+    <div class="fill-content">
+      <h2>{{ form?.sections?.[currentStep - 1]?.name }}</h2>
+
+      @for (question of form?.sections?.[currentStep - 1]?.questions ?? []; track question.id) {
+        <div class="question-card">
+          <p class="question-label">{{ question.label }}</p>
+
+          <!-- checkbox_group: múltiplos checkboxes independentes -->
+          @if (question.type === 'checkbox_group') {
+            <div class="checkbox-list">
+              @for (option of question.options ?? []; track option.id) {
+                <div class="checkbox-item">
+                  <mat-checkbox
+                    [(ngModel)]="checkboxAnswers[option.id]"
+                    (ngModelChange)="onCheckboxChange(option.id, $event)">
+                    {{ option.label }}
+                  </mat-checkbox>
+                  @if (option.hasComplement && checkboxAnswers[option.id]) {
+                    <mat-form-field appearance="outline" class="full-width complement-field">
+                      <mat-label>{{ option.complementLabel }}</mat-label>
+                      <input matInput [(ngModel)]="answers[option.id + '_complement']" />
+                    </mat-form-field>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- radio_group: apenas uma opção pode ser selecionada -->
+          @if (question.type === 'radio_group') {
+            <mat-radio-group [(ngModel)]="answers[question.id]" class="radio-list">
+              @for (option of question.options ?? []; track option.id) {
+                <mat-radio-button [value]="option.id">
+                  {{ option.label }}
+                </mat-radio-button>
+              }
+            </mat-radio-group>
+          }
+
+          <!-- boolean: Sim / Não -->
+          @if (question.type === 'boolean') {
+            <div class="bool-options">
+              <button mat-stroked-button
+                [class.selected]="answers[question.id] === 'sim'"
+                (click)="setAnswer(question.id, 'sim')">Sim</button>
+              <button mat-stroked-button
+                [class.selected]="answers[question.id] === 'nao'"
+                (click)="setAnswer(question.id, 'nao')">Não</button>
+            </div>
+          }
+
+          <!-- boolean_na: Sim / Não / Não se Aplica -->
+          @if (question.type === 'boolean_na') {
+            <div class="bool-options">
+              <button mat-stroked-button
+                [class.selected]="answers[question.id] === 'sim'"
+                (click)="setAnswer(question.id, 'sim')">Sim</button>
+              <button mat-stroked-button
+                [class.selected]="answers[question.id] === 'nao'"
+                (click)="setAnswer(question.id, 'nao')">Não</button>
+              <button mat-stroked-button
+                [class.selected]="answers[question.id] === 'na'"
+                (click)="setAnswer(question.id, 'na')">Não se Aplica</button>
+            </div>
+          }
+
+          <!-- text: campo de texto livre -->
+          @if (question.type === 'text') {
+            <mat-form-field appearance="outline" class="full-width">
+              <input matInput [(ngModel)]="answers[question.id]" placeholder="Digite sua resposta" />
+            </mat-form-field>
+          }
+
+        </div>
+      }
+    </div>
+
+    <div class="fill-footer">
+      @if (currentStep < totalSteps - 1) {
+        <button mat-raised-button color="primary" (click)="nextStep()" class="next-btn">
+          Próximo
+        </button>
+      } @else {
+        <button mat-raised-button color="primary" (click)="finalizar()" class="next-btn">
+          Finalizar
+        </button>
+      }
     </div>
   }
 

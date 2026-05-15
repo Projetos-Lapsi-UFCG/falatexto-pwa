@@ -22,23 +22,82 @@ private readonly preInstalled: Form[] = [
     type: 'template',
     // Seções baseadas na Lista de Verificação da Cirurgia Segura (HUAC/EBSERH)
     sections: [
-      {
-        id: 's1',
-        name: 'Antes da Indução Anestésica',
-        questions: [
-          { id: 'q1',  label: 'Paciente confirmou identidade e sítio cirúrgico correto', type: 'boolean' },
-          { id: 'q2',  label: 'Paciente confirmou procedimento e consentimento', type: 'boolean' },
-          { id: 'q3',  label: 'Sítio demarcado (Lateralidade)', type: 'boolean_na' },
-          { id: 'q4',  label: 'Montagem da SO de acordo com o procedimento', type: 'boolean' },
-          { id: 'q5',  label: 'Material anestésico disponível, revisados e funcionantes', type: 'boolean' },
-          { id: 'q6',  label: 'Outro', type: 'text' },
-          { id: 'q7',  label: 'Via aérea difícil / broncoaspiração', type: 'boolean_na' },
-          { id: 'q8',  label: 'Risco de grande perda sanguínea superior a 500ml (ou 7ml/kg em crianças)', type: 'boolean' },
-          { id: 'q9',  label: 'Reserva de sangue disponível', type: 'boolean' },
-          { id: 'q10', label: 'Acesso venoso adequado e pérvio', type: 'boolean' },
-          { id: 'q11', label: 'Histórico de reação alérgica', type: 'boolean', complement: 'Qual?' },
-        ],
-      },
+{
+  id: 's1',
+  name: 'Antes da Indução Anestésica',
+  questions: [
+    {
+      id: 'q1',
+      label: 'Paciente confirmou:',
+      type: 'checkbox_group',
+      options: [
+        { id: 'q1_a', label: 'Identidade' },
+        { id: 'q1_b', label: 'Sítio cirúrgico correto' },
+        { id: 'q1_c', label: 'Procedimento' },
+        { id: 'q1_d', label: 'Consentimento' },
+      ],
+    },
+    {
+      id: 'q2',
+      label: 'Sítio demarcado (Lateralidade)',
+      type: 'radio_group',
+      options: [
+        { id: 'q2_a', label: 'Sim' },
+        { id: 'q2_b', label: 'Não' },
+        { id: 'q2_c', label: 'Não se Aplica' },
+      ],
+    },
+    {
+      id: 'q3',
+      label: 'Verificação da segurança anestésica:',
+      type: 'checkbox_group',
+      options: [
+        { id: 'q3_a', label: 'Montagem da SO de acordo com o procedimento' },
+        { id: 'q3_b', label: 'Material anestésico disponível, revisados e funcionantes' },
+        { id: 'q3_c', label: 'Outro', hasComplement: true, complementLabel: 'Descreva' },
+      ],
+    },
+    {
+      id: 'q4',
+      label: 'Via aérea difícil / broncoaspiração:',
+      type: 'checkbox_group',
+      options: [
+        { id: 'q4_a', label: 'Não' },
+        { id: 'q4_b', label: 'Sim e equipamento/assistência disponíveis' },
+      ],
+    },
+    {
+      id: 'q5',
+      label: 'Risco de grande perda sanguínea superior a 500ml (ou 7ml/kg em crianças):',
+      type: 'checkbox_group',
+      options: [
+        { id: 'q5_a', label: 'Sim' },
+        { id: 'q5_b', label: 'Não' },
+        { id: 'q5_c', label: 'Reserva de sangue disponível' },
+      ],
+    },
+    {
+      id: 'q6',
+      label: 'Acesso venoso adequado e pérvio:',
+      type: 'checkbox_group',
+      options: [
+        { id: 'q6_a', label: 'Sim' },
+        { id: 'q6_b', label: 'Não' },
+        { id: 'q6_c', label: 'Providenciado na SO' },
+      ],
+    },
+    {
+      id: 'q7',
+      label: 'Histórico de reação alérgica:',
+      type: 'checkbox_group',
+      options: [
+        { id: 'q7_a', label: 'Não' },
+        { id: 'q7_b', label: 'Sim' },
+        { id: 'q7_c', label: 'Qual?', hasComplement: true, complementLabel: 'Descreva a alergia' },
+      ],
+    },
+  ],
+},
       {
         id: 's2',
         name: 'Antes da Incisão Anestésica',

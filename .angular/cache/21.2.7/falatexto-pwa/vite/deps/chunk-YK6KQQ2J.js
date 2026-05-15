@@ -1,6 +1,6 @@
 import {
   DomSanitizer
-} from "./chunk-MLNL7UM5.js";
+} from "./chunk-APLWPLAF.js";
 import {
   _CdkPrivateStyleLoader
 } from "./chunk-VZXHQ2DV.js";
@@ -8,7 +8,7 @@ import {
   Platform,
   coerceElement,
   coerceNumberProperty
-} from "./chunk-BPBDMVXJ.js";
+} from "./chunk-IEWODESV.js";
 import {
   ANIMATION_MODULE_TYPE,
   APP_ID,
@@ -2755,9 +2755,9 @@ export {
   _IdGenerator,
   addAriaReferencedId,
   removeAriaReferencedId,
-  _isTestEnvironment,
   _animationsDisabled,
+  _isTestEnvironment,
   coerceCssPixelValue,
   coerceBooleanProperty
 };
-//# sourceMappingURL=chunk-AUK6TDA3.js.map
+//# sourceMappingURL=chunk-YK6KQQ2J.js.map
