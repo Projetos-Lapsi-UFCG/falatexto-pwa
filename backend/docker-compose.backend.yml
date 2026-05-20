@@ -1,5 +1,5 @@
 services:
-  mongo:
+  database:
     image: mongo:latest
     container_name: assis_mongo
     ports:
@@ -9,6 +9,8 @@ services:
     volumes:
       - ./scripts/init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
       - mongo_data:/data/db
+    networks:
+      - falatexto-network
 
   api:
     build: .
@@ -16,10 +18,16 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - mongo
+      - database
     environment:
       MONGO_URI: mongodb://mongo:27017
       MONGO_DB_NAME: assis_db
+    networks:
+      - falatexto-network
 
 volumes:
   mongo_data:
+
+networks:
+  falatexto-network:
+    driver: bridge
