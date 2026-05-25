@@ -30,7 +30,7 @@ source venv/bin/activate
 ``` 
 4. Inicie apenas o banco de dados com Docker:
 ```bash
-sudo docker compose up -d mongo
+sudo docker compose -f docker-compose.backend.yml up -d mongo
 ```
 
 5. Execute a API localmente:
@@ -42,7 +42,7 @@ python -m uvicorn app.main:app --reload
 
 Para iniciar a API junto com o banco de dados configurado no projeto:
 ```bash
-sudo docker compose up -d
+sudo docker compose -f docker-compose.backend.yml up -d
 ```
 Documentação : 
 Swagger UI: http://127.0.0.1:8000/docs
