@@ -21,18 +21,28 @@ docker run -d -p 8000:8000 --name pwa-backend-api assis-pwa-api
 ## Executando localmente
 1. Abra o diretório do backend no VS Code.
 2. No terminal, acesse a pasta do projeto:
+``` bash 
 cd backend_api
+``` 
 3. Ative o ambiente virtual:
+``` bash
 source venv/bin/activate
+``` 
 4. Inicie apenas o banco de dados com Docker:
+```bash
 sudo docker compose up -d mongo
+```
+
 5. Execute a API localmente:
+```bash
 python -m uvicorn app.main:app --reload
+```
 
 ## Executando todo o backend com Docker (API + banco de dados de amostra)
 
 Para iniciar a API junto com o banco de dados configurado no projeto:
+```bash
 sudo docker compose up -d
-
+```
 Documentação : 
 Swagger UI: http://127.0.0.1:8000/docs
