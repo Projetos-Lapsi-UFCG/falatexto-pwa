@@ -10,33 +10,49 @@ Backend FastAPI + Frontend Angular PWA para o sistema de documentação clínica
 
 ---
 
-## Executando o projeto completo (Frontend + Backend)
+## Executando o projeto completo (recomendado)
 
-Para subir os dois serviços juntos, execute os comandos abaixo a partir da **raiz do repositório** (`falatexto-pwa/`):
+A partir da **raiz do repositório** (`falatexto-pwa/`), um único `docker-compose.yml` sobe os três serviços em uma rede compartilhada:
 
 ```bash
-docker compose -f backend/docker-compose.backend.yml up -d
-docker compose -f frontend/docker-compose.frontend.yml up -d
+docker compose up --build -d
 ```
 
-| Serviço   | URL                          |
-|-----------|------------------------------|
-| Frontend  | http://localhost:4200        |
-| Backend   | http://localhost:8000        |
-| API Docs  | http://localhost:8000/docs   |
+| Serviço   | URL                        |
+|-----------|----------------------------|
+| Frontend  | http://localhost:4200      |
+| Backend   | http://localhost:8000      |
+| API Docs  | http://localhost:8000/docs |
 
-Para acompanhar os logs:
+> Na primeira execução o `--build` é necessário para construir as imagens. Nas seguintes, pode omiti-lo se o código não mudou.
+
+### Acompanhar logs
 
 ```bash
-docker compose -f backend/docker-compose.backend.yml logs -f
-docker compose -f frontend/docker-compose.frontend.yml logs -f frontend
+# Todos os serviços
+docker compose logs -f
+
+# Serviço específico
+docker compose logs -f api
+docker compose logs -f frontend
+docker compose logs -f database
 ```
 
-Para derrubar tudo:
+### Reconstruir apenas um serviço
 
 ```bash
-docker compose -f backend/docker-compose.backend.yml down
-docker compose -f frontend/docker-compose.frontend.yml down
+docker compose up --build -d frontend
+docker compose up --build -d api
+```
+
+### Derrubar tudo
+
+```bash
+# Para os containers (preserva o volume do banco)
+docker compose down
+
+# Para os containers e remove o volume do banco
+docker compose down -v
 ```
 
 ---
@@ -86,8 +102,8 @@ npm start
 
 ## Portas
 
-| Container         | Porta host | Porta interna |
-|-------------------|------------|---------------|
-| `assis_frontend`  | 4200       | 80            |
-| `assis_api`       | 8000       | 8000          |
-| `assis_mongo`     | 27017      | 27017         |
+| Container        | Porta host | Porta interna |
+|------------------|------------|---------------|
+| `assis_frontend` | 4200       | 80            |
+| `assis_api`      | 8000       | 8000          |
+| `assis_mongo`    | 27017      | 27017         |
