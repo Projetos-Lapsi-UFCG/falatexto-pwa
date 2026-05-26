@@ -20,7 +20,7 @@ services:
     depends_on:
       - database
     environment:
-      MONGO_URI: mongodb://mongo:27017
+      MONGO_URI: mongodb://database:27017
       MONGO_DB_NAME: assis_db
     networks:
       - falatexto-network
