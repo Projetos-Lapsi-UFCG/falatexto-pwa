@@ -76,23 +76,44 @@ flowchart TD
 
 ## Como rodar o projeto
 
-### Pré-requisitos
+### Via Docker (recomendado)
 
-- Node.js v24+ (LTS)
-- Angular CLI v21+
-- Ollama instalado
+> **Pré-requisito:** Docker instalado.
 
-### Instalação e desenvolvimento
+```bash
+# Na pasta frontend/
+docker compose -f docker-compose.frontend.yml up -d
+```
+
+Acesse `http://localhost:4200` no navegador.
+
+O comando faz o build de produção internamente (etapa Node.js) e sobe um servidor nginx para servir os arquivos estáticos. Para acompanhar o progresso do build:
+
+```bash
+docker compose -f docker-compose.frontend.yml logs -f frontend
+```
+
+Para derrubar o container:
+
+```bash
+docker compose -f docker-compose.frontend.yml down
+```
+
+---
+
+### Desenvolvimento local
+
+> **Pré-requisitos:** Node.js v24+ (LTS) e Angular CLI v21+.
 
 ```bash
 # Clone o repositório
 git clone https://github.com/seu-usuario/falatexto-pwa.git
-cd falatexto-pwa
+cd falatexto-pwa/frontend
 
 # Instale as dependências
 npm install
 
-# Inicie o servidor de desenvolvimento
+# Inicie o servidor de desenvolvimento (hot-reload)
 npm start
 ```
 
