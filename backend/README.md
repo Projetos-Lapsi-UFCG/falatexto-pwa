@@ -1,48 +1,41 @@
-# PWA Backend
+# Backend — Fala-Texto PWA
 
-Backend da aplicação PWA responsável por disponibilizar a API e, opcionalmente, um banco de dados de amostra para testes.
+FastAPI + MongoDB backend for the Fala-Texto clinical documentation system.
 
-## Requisitos
+API docs available at: `http://localhost:8000/docs`
 
-Para executar o projeto, é necessário ter instalado:
+---
 
-- Docker
-- Docker Compose
-- Python 3
-
-## Executando somente a API com Docker (sem banco de dados)
-
-Para construir a imagem da API e executá-la isoladamente:
+## Subir com Docker Compose
 
 ```bash
-docker build -t assis-pwa-api .
-docker run -d -p 8000:8000 --name pwa-backend-api assis-pwa-api
-``` 
-## Executando localmente
-1. Abra o diretório do backend no VS Code.
-2. No terminal, acesse a pasta do projeto:
-``` bash 
-cd backend_api
-``` 
-3. Ative o ambiente virtual:
-``` bash
-source venv/bin/activate
-``` 
-4. Inicie apenas o banco de dados com Docker:
-```bash
-sudo docker compose -f docker-compose.backend.yml up -d mongo
+# A partir da raiz do repositório (falatexto-pwa/)
+docker compose -f backend/docker-compose.backend.yml up -d
 ```
 
-5. Execute a API localmente:
+| Serviço         | Porta  |
+|-----------------|--------|
+| API (FastAPI)   | 8000   |
+| MongoDB         | 27017  |
+
+### Logs e encerramento
+
 ```bash
+docker compose -f backend/docker-compose.backend.yml logs -f
+docker compose -f backend/docker-compose.backend.yml down
+```
+
+---
+
+## Desenvolvimento local (hot-reload)
+
+```bash
+cd backend/
+
+# Sobe apenas o MongoDB
+docker compose -f docker-compose.backend.yml up -d database
+
+# Instala dependências e inicia a API com hot-reload
+pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
 ```
-
-## Executando todo o backend com Docker (API + banco de dados de amostra)
-
-Para iniciar a API junto com o banco de dados configurado no projeto:
-```bash
-sudo docker compose -f docker-compose.backend.yml up -d
-```
-## Documentação : 
-Swagger UI: http://127.0.0.1:8000/docs
