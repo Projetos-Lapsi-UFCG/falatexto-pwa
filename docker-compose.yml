@@ -1,0 +1,54 @@
+services:
+  database:
+    image: mongo:latest
+    container_name: assis_mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: assis_db
+    volumes:
+      - ./backend/scripts/init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
+      - mongo_data:/data/db
+    networks:
+      - falatexto-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: assis_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      MONGO_URI: mongodb://database:27017
+      MONGO_DB_NAME: assis_db
+    networks:
+      - falatexto-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: assis_frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - api
+    networks:
+      - falatexto-network
+
+volumes:
+  mongo_data:
+
+networks:
+  falatexto-network:
+    driver: bridge
