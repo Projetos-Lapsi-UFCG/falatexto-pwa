@@ -127,3 +127,39 @@
   flex-direction: column;
   gap: 0.5rem;
 }
+
+.section-divider {
+  margin: 1rem 0 0.5rem;
+  text-align: center;
+}
+
+.section-divider-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.radio-with-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fields-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.field-inline {
+  flex: 1;
+  min-width: 120px;
+}
+
+.text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

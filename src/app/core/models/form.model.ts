@@ -4,8 +4,9 @@
 export interface FieldOption {
   id: string;
   label: string;
-  hasComplement?: boolean; // se true, exibe campo de texto ao marcar
+  hasComplement?: boolean;
   complementLabel?: string;
+  complementType?: 'text' | 'number'; // tipo do campo complementar
 }
 
 /**
@@ -22,7 +23,7 @@ export interface FieldOption {
 export interface QuestionField {
   id: string;
   label: string;
-  type: 'boolean' | 'boolean_na' | 'text' | 'date' | 'checkbox_group' | 'radio_group';
+  type: 'boolean' | 'boolean_na' | 'text' | 'date' | 'checkbox_group' | 'radio_group' | 'divider' | 'radio_with_fields' | 'text_group';
   options?: FieldOption[]; // opções para checkbox_group e radio_group
   complement?: string;
 }
