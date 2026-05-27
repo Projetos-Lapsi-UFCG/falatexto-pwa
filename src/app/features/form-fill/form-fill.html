@@ -187,5 +187,26 @@
       }
     </div>
   }
+  <!-- Etapa final — Data e Responsável -->
+  @if (currentStep === totalSteps - 1) {
+    <div class="fill-content">
+      <h2>Conclusão</h2>
 
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Data</mat-label>
+        <input matInput type="date" [(ngModel)]="closingData.date" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Responsável</mat-label>
+        <input matInput [(ngModel)]="closingData.responsible" placeholder="Nome do responsável" />
+      </mat-form-field>
+    </div>
+
+    <div class="fill-footer">
+      <button mat-raised-button color="primary" (click)="finalizar()" class="next-btn">
+        Finalizar
+      </button>
+    </div>
+  }
 </div>

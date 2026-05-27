@@ -49,9 +49,14 @@ export class FormFillComponent implements OnInit {
     record: '',
     room: '',
   };
-
+  // Dados finais — data e responsável
+  closingData = {
+    date: '',
+    responsible: '',
+  };
+  
   get totalSteps(): number {
-    return 1 + (this.form?.sections?.length ?? 0);
+    return 2 + (this.form?.sections?.length ?? 0);
   }
 
   ngOnInit(): void {
