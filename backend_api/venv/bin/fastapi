@@ -1,4 +1,4 @@
-#!/home/emily-dev/Documents/backend_api/venv/bin/python3
+#!/home/emily-dev/Documents/falatexto-pwa/backend_api/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

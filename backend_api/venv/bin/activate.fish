@@ -29,7 +29,7 @@ end
 # unset irrelevant variables
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/emily-dev/Documents/backend_api/venv
+set -gx VIRTUAL_ENV /home/emily-dev/Documents/falatexto-pwa/backend_api/venv
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH
