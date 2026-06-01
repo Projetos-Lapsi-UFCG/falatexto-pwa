@@ -9,6 +9,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft } from '@ng-icons/lucide';
 import { FormService } from '../../core/services/form.service';
+import { SubmissionService } from '../../core/services/submission';
 import { Form } from '../../core/models/form.model';
 
 @Component({
@@ -33,8 +34,14 @@ export class FormFillComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly formService = inject(FormService);
 
+  // Injeta o service de submissão para enviar respostas ao backend
+  private readonly submissionService = inject(SubmissionService);
+
   form: Form | null = null;
   currentStep = 0;
+
+  // Controla se o app está aguardando resposta do backend
+  enviando = false;
 
   // Respostas para campos de texto, boolean e radio
   answers: Record<string, string> = {};
@@ -49,12 +56,13 @@ export class FormFillComponent implements OnInit {
     record: '',
     room: '',
   };
+
   // Dados finais — data e responsável
   closingData = {
     date: '',
     responsible: '',
   };
-  
+
   get totalSteps(): number {
     return 2 + (this.form?.sections?.length ?? 0);
   }
@@ -88,7 +96,37 @@ export class FormFillComponent implements OnInit {
     }
   }
 
+  /**
+   * Coleta todos os dados preenchidos e envia para o backend.
+   * Enquanto aguarda a resposta, bloqueia o botão para evitar envio duplo.
+   * Quando o backend confirmar, navega para o dashboard.
+   */
   finalizar(): void {
-    this.router.navigate(['/dashboard']);
+    if (!this.form || this.enviando) return;
+
+    // Monta o objeto com todos os dados do preenchimento
+    const dados = {
+      formId: this.form.id,
+      patientData: this.patientData,
+      answers: this.answers,
+      checkboxAnswers: this.checkboxAnswers,
+      closingData: this.closingData,
+    };
+
+    // Marca que está enviando para bloquear o botão
+    this.enviando = true;
+
+    // Chama o service que faz o POST para o backend
+    this.submissionService.salvarRespostas(dados).subscribe({
+      next: () => {
+        // Backend respondeu com sucesso — navega para o dashboard
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        // Algo deu errado — desbloqueia o botão e exibe no console
+        console.error('Erro ao salvar respostas:', err);
+        this.enviando = false;
+      },
+    });
   }
 }
