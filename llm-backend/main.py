@@ -1,170 +1,235 @@
 import os
-from typing import Any, List, Literal, Optional
+import uuid
+from typing import Any, Dict, List, Literal, Optional
 from pypdf import PdfReader
 import ollama
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, ValidationError
 import uvicorn
+import json
 
-# --- INICIALIZAÇÃO DA API ---
-# Inicializa o framework FastAPI definindo o título da documentação automática (Swagger/OpenAPI).
-app = FastAPI(title="FalaTexto LLM Gateway API")
+# --- INICIALIZAÇÃO DA API E "BANCO DE DADOS" EM MEMÓRIA ---
+app = FastAPI(title="FalaTexto LLM Gateway API (Assíncrona)")
+
+# Fila em memória para armazenar o status das requisições e os dados processados.
+fila_de_sessoes: Dict[str, Any] = {}
 
 # --- CONFIGURAÇÃO DE SEGURANÇA (CORS) ---
-# Permite que o Front-end consiga fazer requisições para este Backend sem bloqueios de segurança do navegador.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permite requisições de qualquer origem
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Permite todos os métodos HTTP (GET, POST, etc.)
-    allow_headers=["*"],  # Permite todos os cabeçalhos de metadados
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# --- CONFIGURAÇÃO DO CLIENTE DE INTEGRAÇÃO COM A IA (OLLAMA) ---
-# Tenta ler a URL do Ollama de uma variável de ambiente (Docker). Se não achar, usa o localhost como padrão.
+# --- CONFIGURAÇÃO DO OLLAMA ---
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 client = ollama.Client(host=OLLAMA_HOST)
-MODELO = os.getenv("OLLAMA_MODEL", "gemma4")  # Define o modelo LLM específico que será utilizado no projeto
+MODELO = os.getenv("OLLAMA_MODEL", "gemma4")
 
-# --- SCHEMAS DE VALIDAÇÃO DE DADOS (PYDANTIC V2) ---
-# Estas classes garantem que a saída da IA siga rigorosamente uma estrutura de dados conhecida,
-# evitando que o Front-end receba dados nulos, corrompidos ou em formatos inesperados.
-
+# --- SCHEMAS DE VALIDAÇÃO (PYDANTIC V2) ---
 class CampoDinamico(BaseModel):
-    """Define a estrutura de cada campo de um formulário clínico médico."""
     campo_id: str = Field(description="ID único em snake_case")
     label: str = Field(description="Nome amigável do campo")
-    valor: Any = Field(None, description="Valor dinâmico extraído (texto, número, bool ou nulo)")
+    valor: Any = Field(None, description="Valor dinâmico extraído")
     tipo_componente: Literal["checkbox", "texto", "numero"] = Field(description="Tipo de input do Front")
 
 class SecaoDinamica(BaseModel):
-    """Agrupa os campos clínicos em seções lógicas (ex: Sinais Vitais, Sintomas)."""
     titulo_secao: str = Field(description="Título do bloco de dados")
     campos: List[CampoDinamico] = Field(description="Lista de campos dentro da seção")
 
 class ProntuarioUniversal(BaseModel):
-    """Contrato final e completo do documento que será devolvido estruturado para o Front-end."""
     tipo_documento: str = Field(description="Tipo do prontuário ou consulta")
     secoes: List[SecaoDinamica] = Field(description="Seções do documento")
     resumo_narrativo: str = Field(description="Resumo descritivo da consulta")
 
-
-# --- ROTA PRINCIPAL DE PROCESSAMENTO (ENDPOINT) ---
-@app.post("/api/processar-clinica")
-async def processar_clinica(
-    arquivo: UploadFile = File(None),  # Recebe um arquivo opcional enviado pelo usuário via formulário
-    texto_clinico: str = Form(...),             # Recebe o relato em texto enviado pelo usuário via formulário
+# LÓGICA DE BACKGROUND (A TAREFA QUE RODA EM SEGUNDO PLANO)
+async def processar_llm_em_segundo_plano(
+    id_sessao: str, 
+    texto_clinico: str, 
+    conteudo_arquivo: bytes = None, 
+    nome_arquivo: str = None
 ):
-    # Prompt do Sistema: Define a persona da IA, as regras de negócio médicas e o esquema estrito do JSON.
-    prompt_sistema = """Você é um motor de IA médico universal. Transforme dados clínicos brutos em um JSON estruturado.
-    
-    Você DEVE retornar OBRIGATORIAMENTE um objeto JSON que siga exatamente esta estrutura:
+    """
+    Esta função roda nos bastidores. Ela não trava o usuário.
+    Ela faz todo o trabalho pesado e, no final, atualiza o status na `fila_de_sessoes`.
+    """
+    prompt_sistema = """Você é um motor de IA médico universal. Sua ÚNICA tarefa é transformar dados clínicos brutos no esquema JSON exato fornecido abaixo.
+
+    Você está PROIBIDO de criar chaves como 'paciente', 'consulta', 'diagnostico' ou qualquer outra que não esteja no esquema abaixo. Toda e qualquer informação clínica (como nome do paciente, idade, queixas, conduta, receitas) DEVE ser encaixada obrigatoriamente dentro da lista de 'campos' divididos por 'secoes'.
+
+    Você DEVE retornar OBRIGATORIAMENTE um objeto JSON com esta estrutura exata:
     {
-      "tipo_documento": "string descrevendo o tipo de atendimento",
+      "tipo_documento": "Ex: Atendimento de Emergência, Prontuário Ambulatorial",
       "secoes": [
         {
-          "titulo_secao": "string",
+          "titulo_secao": "Nome da Seção (Ex: Identificação do Paciente, Histórico Clínico, Prescrição Médica)",
           "campos": [
             {
-              "campo_id": "string_em_snake_case",
-              "label": "Nome legível do campo",
-              "valor": "qualquer valor correspondente, booleano ou null se não mencionado",
-              "tipo_componente": "checkbox", "texto" ou "numero"
+              "campo_id": "nome_do_campo_em_snake_case (Ex: nome_paciente, queixa_principal, medicamento_receitado)",
+              "label": "Nome legível para exibição na tela do usuário",
+              "valor": "O dado extraído (Pode ser texto, número ou booleano true/false para checagens. Use null se não mencionado)",
+              "tipo_componente": "Defina estritamente como 'texto', 'numero' ou 'checkbox'"
             }
           ]
         }
       ],
-      "resumo_narrativo": "Resumo clínico profissional do atendimento"
+      "resumo_narrativo": "Um resumo clínico formal, contínuo e corrido do atendimento médico feito."
     }
-    
-    Diretrizes cruciais:
-    1. Defina o 'tipo_componente' de forma inteligente para o Front-end (checkbox, texto, numero).
-    2. Respeite as regras de tipagem: se foi um checkbox de Sim/Não, o valor deve ser booleano (true ou false).
-    3. Não invente dados. Se não existir informação sobre o campo, retorne null.
-    """
 
-    # Inicia a pilha de mensagens que será enviada para o Ollama
+    REGRAS DE OURO:
+    - Nunca mude os nomes das chaves principais ('tipo_documento', 'secoes', 'titulo_secao', 'campos', 'campo_id', 'label', 'valor', 'tipo_componente', 'resumo_narrativo').
+    - Se o paciente tem uma alergia, crie uma seção chamada 'Alergias' ou coloque como um campo de texto dentro de uma seção pertinente.
+    - Responda APENAS o JSON puro, sem textos explicativos antes ou depois.
+    """
     mensagens = [{"role": "system", "content": prompt_sistema}]
     caminho_temporario = None
     usar_visao = False
 
     try:
-        # --- TRATAMENTO E PROCESSAMENTO DE ARQUIVOS ANEXOS ---
-        if arquivo and arquivo.filename:
-            extensao = arquivo.filename.lower().split('.')[-1]
-            conteudo_arquivo = await arquivo.read()
+        # 1. PROCESSAMENTO DE ARQUIVOS
+        if conteudo_arquivo and nome_arquivo:
+            extensao = nome_arquivo.lower().split('.')[-1]
+            caminho_temporario = f"temp_{id_sessao}_{nome_arquivo}" # Adiciona ID para evitar conflito de nomes
+            
+            with open(caminho_temporario, "wb") as f:
+                f.write(conteudo_arquivo)
 
-            # Cenário A: O arquivo é uma imagem (A IA usará visão multimodal para analisar o documento)
             if extensao in ["png", "jpg", "jpeg", "webp"]:
-                caminho_temporario = f"temp_{arquivo.filename}"
-                with open(caminho_temporario, "wb") as f:
-                    f.write(conteudo_arquivo)
                 usar_visao = True
 
-            # Cenário B: O arquivo é um PDF (O código extrai o texto nativamente antes de enviar à IA)
             elif extensao == "pdf":
-                caminho_temporario = f"temp_{arquivo.filename}"
-                with open(caminho_temporario, "wb") as f:
-                    f.write(conteudo_arquivo)
-
                 reader = PdfReader(caminho_temporario)
-                texto_extraido_pdf = ""
-                for pagina in reader.pages:
-                    texto_extraido_pdf += pagina.extract_text() or ""
+                texto_extraido_pdf = "".join([p.extract_text() or "" for p in reader.pages])
+                texto_clinico += f"\n\n[CONTEÚDO EXTRAÍDO DO PDF]:\n{texto_extraido_pdf}"
 
-                # Injeta o texto extraído do PDF dentro do texto clínico principal
-                texto_clinico += f"\n\n[CONTEÚDO EXTRAÍDO DO PDF ANEXO]:\n{texto_extraido_pdf}"
-
-            # Cenário C: O arquivo é uma planilha CSV (O texto é decodificado nativamente)
             elif extensao == "csv":
-                texto_extraido_csv = conteudo_arquivo.decode("utf-8", errors="ignore")
-                texto_clinico += f"\n\n[CONTEÚDO EXTRAÍDO DA PLANILHA CSV ANEXA]:\n{texto_extraido_csv}"
+                texto_clinico += f"\n\n[CONTEÚDO EXTRAÍDO DO CSV]:\n{conteudo_arquivo.decode('utf-8', errors='ignore')}"
 
-            # Cenário D: Formato não aceito (Gera uma exceção HTTP 400 - Bad Request)
-            else:
-                raise HTTPException(status_code=400, detail=f"Extensão .{extensao} não é suportada pelo FalaTexto.")
-
-        # --- MONTAGEM DO PROMPT DO USUÁRIO ---
+        # 2. MONTAGEM DO PROMPT
         if usar_visao and caminho_temporario:
-            # Se for imagem, injeta a imagem na lista estruturada para o modelo multimodal processar visualmente
-            mensagens.append({
-                "role": "user",
-                "content": f"Processe as seguintes informações médicas: {texto_clinico}",
-                "images": [caminho_temporario]
-            })
+            mensagens.append({"role": "user", "content": f"Processe as seguintes informações médicas: {texto_clinico}", "images": [caminho_temporario]})
         else:
-            # Se for apenas texto ou arquivos de texto extraídos, faz uma chamada de chat comum
-            mensagens.append({
-                "role": "user",
-                "content": f"Processe as seguintes informações médicas: {texto_clinico}"
-            })
+            mensagens.append({"role": "user", "content": f"Processe as seguintes informações médicas: {texto_clinico}"})
 
-        # --- CHAMADA DO MODELO DE INTELIGÊNCIA ARTIFICIAL ---
-        response = client.chat(
-            model=MODELO,
-            format='json',               # Força o Ollama a garantir uma saída estritamente em formato JSON válido
-            options={'temperature': 0.0}, # Temperatura 0 força respostas determinísticas (sem "alucinações" ou criatividade)
-            messages=mensagens
-        )
+        # 3. CHAMADA AO OLLAMA
+        response = client.chat(model=MODELO, format='json', options={'temperature': 0.0}, messages=mensagens)
 
-        # Limpeza física pós-processamento: Deleta do servidor o arquivo temporário gerado para a requisição
         if caminho_temporario and os.path.exists(caminho_temporario):
             os.remove(caminho_temporario)
 
-        # --- VALIDAÇÃO E ENTREGA DOS DADOS ---
-        # Pega a string JSON retornada pela IA e valida contra a classe ProntuarioUniversal (Pydantic). 
-        # Se os dados forem válidos, retorna o JSON perfeitamente estruturado e tipado ao solicitante.
-        return ProntuarioUniversal.model_validate_json(response['message']['content'])
+        # 4. VALIDAÇÃO DO SCHEMA: Tenta converter o texto da IA para o nosso Schema. Se a IA errou, isso vai lançar um ValidationError.
+        resposta_pura_llm = response['message']['content']
+        dados_validados = ProntuarioUniversal.model_validate_json(resposta_pura_llm)
 
+        # 5. SUCESSO: Atualiza o status da sessão para EXECUTED e salva os dados
+        fila_de_sessoes[id_sessao] = {
+            "status": "executed",
+            "dados": dados_validados.model_dump()
+        }
+
+    except ValidationError as erro_schema:
+        # FALHA DE SCHEMA: Atualiza o status para FAILED
+        if caminho_temporario and os.path.exists(caminho_temporario): os.remove(caminho_temporario)
+        fila_de_sessoes[id_sessao] = {
+            "status": "failed",
+            "erro": "Erro de Validação: A IA não seguiu o Schema do banco de dados.",
+            "detalhes": erro_schema.errors()
+        }
     except Exception as e:
-        # Garante a limpeza do arquivo temporário mesmo em caso de erro no meio do processo
-        if caminho_temporario and os.path.exists(caminho_temporario):
-            os.remove(caminho_temporario)
-        # Retorna um erro HTTP 500 (Internal Server Error) com os detalhes do problema para facilitar o debug
-        raise HTTPException(status_code=500, detail=str(e))
+        # FALHA CRÍTICA (Ex: Ollama caiu): Atualiza o status para FAILED
+        if caminho_temporario and os.path.exists(caminho_temporario): os.remove(caminho_temporario)
+        fila_de_sessoes[id_sessao] = {
+            "status": "failed",
+            "erro": str(e)
+        }
+
+# ENDPOINT 1: RECEBE OS DADOS E GERA A SESSÃO (Rápido e Assíncrono)
+@app.post("/api/processar-clinica")
+async def empilhar_processamento_clinico(
+    background_tasks: BackgroundTasks, # Injeta o gerenciador de tarefas do FastAPI
+    arquivo: UploadFile = File(None),
+    texto_clinico: str = Form(...),
+):
+    """Recebe a requisição, cria um ID, coloca na fila e responde na hora para não travar o PWA."""
+    # Gera um ID de sessão único (UUID)
+    id_sessao = str(uuid.uuid4())
+    
+    # Registra o status inicial como "pending" na fila
+    fila_de_sessoes[id_sessao] = {"status": "pending"}
+
+    # Lê o conteúdo do arquivo para a memória para poder passar para a função de background
+    conteudo_arquivo = None
+    nome_arquivo = None
+    if arquivo and arquivo.filename:
+        conteudo_arquivo = await arquivo.read()
+        nome_arquivo = arquivo.filename
+
+    # Manda a função pesada rodar em segundo plano e libera o servidor na mesma hora
+    background_tasks.add_task(
+        processar_llm_em_segundo_plano, 
+        id_sessao, 
+        texto_clinico, 
+        conteudo_arquivo, 
+        nome_arquivo
+    )
+
+    # Retorna o ID para o Front-end saber quem ele é
+    return {
+        "mensagem": "Requisição empilhada com sucesso.",
+        "id_sessao": id_sessao,
+        "status": "pending",
+        "link_consulta": f"/api/status/{id_sessao}"
+    }
+
+# ENDPOINT 2: CONSULTA DE STATUS (Polling)
+@app.get("/api/status/{id_sessao}")
+async def consultar_status_sessao(id_sessao: str):
+    """O Front-end chama esse endpoint a cada X segundos para ver se o JSON já está pronto."""
+    # Busca a sessão no nosso "banco de dados" em memória
+    sessao = fila_de_sessoes.get(id_sessao)
+
+    # Se o ID não existir, retorna erro
+    if not sessao:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada ou expirada.")
+
+    # Retorna o status atual ("pending", "executed" ou "failed") e os dados (se já terminou)
+    return sessao
+
+# ENDPOINT 3: LISTAGEM DE TODAS AS SESSÕES (Histórico/Recuperação de ID)
+@app.get("/api/sessoes")
+async def listar_sessoes_disponiveis():
+    """
+    Percorre o dicionário global e retorna todos os IDs que estão ativos no servidor
+    junto com seus respectivos status, caso o usuário tenha perdido o seu protocolo.
+    """
+    # Se o dicionário estiver vazio, avisa o usuário de forma amigável
+    if not fila_de_sessoes:
+        return {
+            "total_sessoes": 0,
+            "mensagem": "Nenhuma sessão ativa ou registrada no momento.",
+            "sessoes": []
+        }
+    
+    # Criamos uma lista vazia para estruturar a resposta
+    historico_sessoes = []
+    
+    # .items() do Python nos dá o par: chave (id_sessao) e valor (dados da sessao)
+    for id_sessao, dados_da_sessao in fila_de_sessoes.items():
+        historico_sessoes.append({
+            "id_sessao": id_sessao,
+            "status": dados_da_sessao["status"]
+        })
+        
+    # Retorna o total de sessões encontradas e a lista para o Front-end
+    return {
+        "total_sessoes": len(historico_sessoes),
+        "sessoes": historico_sessoes
+    }
 
 # --- INICIALIZAÇÃO DO SERVIDOR LOCAL ---
-# Se o arquivo for executado diretamente, levanta o servidor Uvicorn na porta 8000 com Auto-Reload ativado (reinicia ao salvar).
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
