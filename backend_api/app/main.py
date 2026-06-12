@@ -16,6 +16,11 @@ class FormCreate(BaseModel) :
     sections: List[str] = []
     metadata: FormMetadata
 
+class FormUpdate(BaseModel):
+    name: str = Field(..., min_length=1)
+    sections: List[str] = []
+    metadata: FormMetadata
+
     
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "assis_db")
@@ -73,3 +78,25 @@ def deletar_form(form_id: str):
         "mensagem": "Formulário removido com sucesso",
         "id": form_id
     }
+@app.put("/forms/{form_id}")
+def atualizar_form(form_id: str, form: FormUpdate):
+    form_existente = db.forms.find_one({"_id": form_id})
+
+    if form_existente is None:
+        raise HTTPException(status_code=404, detail="Formulário não encontrado")
+
+    dados_atualizados = {
+        "name": form.name,
+        "sections": form.sections,
+        "metadata": form.metadata.model_dump()
+    }
+
+    db.forms.update_one(
+        {"_id": form_id},
+        {"$set": dados_atualizados}
+    )
+
+    form_atualizado = db.forms.find_one({"_id": form_id})
+    form_atualizado["_id"] = str(form_atualizado["_id"])
+
+    return form_atualizado
