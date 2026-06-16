@@ -60,10 +60,40 @@ services:
       - api
     networks:
       - falatexto-network
+  
+  llm-backend:
+    build:
+      context: ./backend/vision-engine
+      dockerfile: Dockerfile
+    container_name: falatexto_backend_api
+    ports:
+      - "8001:8000"
+    environment:
+      - OLLAMA_HOST=http://ollama_service:11434
+      - OLLAMA_MODEL=gemma:7b
+      - MONGO_HOST=mongodb://database:27017/assis_db
+    depends_on:
+       ollama_service:
+        condition: service_started
+       database:
+        condition: service_healthy
+    networks:
+      - falatexto-network
+
+  ollama_service:
+    image: ollama/ollama:0.1.47
+    container_name: falatexto_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks: 
+      - falatexto-network
 
 volumes:
   mongo_data:
   proxy_logs:
+  ollama_data:
 
 networks:
   falatexto-network:
