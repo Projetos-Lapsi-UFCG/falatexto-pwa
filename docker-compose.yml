@@ -19,11 +19,13 @@ services:
 
   api:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     container_name: assis_api
+    restart: unless-stopped
     ports:
       - "8000:8000"
+    command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
     depends_on:
       database:
         condition: service_healthy
@@ -61,21 +63,23 @@ services:
     networks:
       - falatexto-network
   
-  llm-backend:
+  vision-engine:
     build:
       context: ./backend/vision-engine
       dockerfile: Dockerfile
-    container_name: falatexto_backend_api
+    container_name: assis_vision_engine
     ports:
-      - "8001:8000"
+      - "8001:8001" 
     environment:
       - OLLAMA_HOST=http://ollama_service:11434
       - OLLAMA_MODEL=gemma:7b
       - MONGO_HOST=mongodb://database:27017/assis_db
+    volumes:
+      - ./backend/vision-engine:/app
     depends_on:
-       ollama_service:
+      ollama_service:
         condition: service_started
-       database:
+      database:
         condition: service_healthy
     networks:
       - falatexto-network

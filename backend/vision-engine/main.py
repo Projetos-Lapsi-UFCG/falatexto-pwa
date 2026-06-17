@@ -182,7 +182,7 @@ async def processar_llm_em_segundo_plano(
             model=MODELO, 
             format='json', 
             options={
-                'temperature': 0.0,
+                'temperature': 0.0,   # Mantém o modelo mais focado e determinístico para tarefas de extração de dados
                 'num_predict': 2048,  # Aumenta o limite máximo de tokens gerados na resposta
                 'num_ctx': 8192       # Aumenta a janela de contexto para ler todo o seu prompt grande
             }, 
