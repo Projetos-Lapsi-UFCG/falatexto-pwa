@@ -60,41 +60,62 @@ class ProntuarioUniversal(BaseModel):
 
 
 def extrair_texto_de_imagem_local(caminho_imagem: str) -> str:
+    """
+    Executa o OCR (Reconhecimento Óptico de Caracteres) em uma imagem local.
+    Retorna todo o texto detectado unificado em uma única string.
+    """
+    # Evita quebra do sistema se o motor de OCR não tiver sido inicializado
     if leitor_ocr is None:
         return ""
     try:
+        # Lê o texto da imagem. 'detail=0' extrai apenas o texto puro,
+        # ignorando as coordenadas espaciais dos blocos na imagem.
         resultado = leitor_ocr.readtext(caminho_imagem, detail=0)
         return "\n".join(resultado)
     except Exception:
+        # Captura falhas na leitura ou imagens corrompidas, retornando vazio sem travar a API
         return ""
 
 
 def carregar_exemplos_da_pasta(pasta: str) -> str:
+    """
+    Varre um diretório buscando pares de Imagem + JSON para criar um gabarito de referência.
+    Esse gabarito aplica a técnica de Few-Shot Prompting, ensinando a LLM a estruturar a saída.
+    """
     blocos_exemplo = ""
     extensoes_imagem = ["*.png", "*.jpg", "*.jpeg", "*.webp"]
     arquivos_imagem = []
     
+    # Mapeia todas as imagens presentes na pasta de exemplos com base nas extensões válidas
     for ext in extensoes_imagem:
         arquivos_imagem.extend(glob.glob(os.path.join(pasta, ext)))
     
     for caminho_img in arquivos_imagem:
         try:
+            # Obtém o caminho base (sem extensão) para deduzir o arquivo .json correspondente
             caminho_base = os.path.splitext(caminho_img)[0]
             caminho_json = caminho_base + ".json"
             
+            # O exemplo só é considerado válido se possuir a imagem E a resposta JSON esperada
             if os.path.exists(caminho_json):
+                # Extrai o texto da imagem simulando o comportamento que o usuário final terá
                 texto_extraido_da_imagem = extrair_texto_de_imagem_local(caminho_img)
                 
+                # Lê o conteúdo do JSON com a estruturação perfeita desejada para o banco de dados
                 with open(caminho_json, "r", encoding="utf-8") as f_json:
                     conteudo_json_esperado = f_json.read()
                 
+                # Extrai o nome amigável do arquivo para identificação no prompt
                 nome_exemplo = os.path.basename(caminho_base)
+
+                # Monta a estrutura textual que servirá de exemplo prático para a IA (LLM)
                 blocos_exemplo += f"\n### EXEMPLO DE REFERÊNCIA DE DOCUMENTO ({nome_exemplo}):\n"
                 blocos_exemplo += f"Texto extraído visualmente da imagem pelo OCR:\n\"{texto_extraido_da_imagem}\"\n\n"
                 blocos_exemplo += f"SAÍDA JSON ESPERADA CORRESPONDENTE:\n{conteudo_json_esperado}\n"
                 blocos_exemplo += "-" * 50 + "\n"
                 
         except Exception as e:
+            # Caso um exemplo específico falhe, loga o erro e continua processando os demais
             print(f"Erro ao carregar par de exemplos ({caminho_img}): {str(e)}")
             continue
             
