@@ -169,8 +169,26 @@ async def processar_llm_em_segundo_plano(
     - Responda APENAS o JSON puro, sem textos explicativos antes ou depois.
     - O campo 'tipo_componente' DEVE ser escrito OBRIGATORIAMENTE em letras totalmente minúsculas: 'texto', 'numero' ou 'checkbox'. Nunca use 'Texto', 'Numero' ou 'Texto/Numero'.
 
-    VEJA ABAIXO OS EXEMPLOS DE DOCUMENTOS E AS RESPECTIVAS SAÍDAS QUE VOCÊ DEVE SEGUIR COMO PADRÃO:
+    Se você não encontrar o valor exato de um campo no texto extraído, ou se o texto estiver ilegível, preencha o campo 'valor' como null ou string vazia. NUNCA invente datas, 
+    anos ou palavras que não estejam explicitamente no texto.
+
+    Para campos de seleção (caixas de seleção ou checkboxes), identifique qual opção possui uma marcação (como 'X', 'X marcado' ou preenchimento). 
+    Exemplo: se o texto contiver um quadrado com X ao lado de 'azul', o valor do campo deve ser 'azul'.
+
+    NUNCA utilize termos das instruções ou exemplos fornecidos (como 'Few-Shot', 'Exemplo', 'Fewo') 
+    nos títulos das seções ou IDs dos campos. Os títulos das seções devem ser estritamente baseados no contexto do documento médico encontrado (ex: 'Identificação do Paciente', 'Dados Clínicos').
+
+    Preste atenção a listas com caixas de seleção [ ] ou [X]. Se houver uma opção marcada com um 'X' ou rasurada, você DEVE extrair essa opção e colocá-la no JSON. 
+    No caso da imagem, o campo 'Cor' com a opção 'azul' marcada deve gerar um campo com valor 'azul'.
+
+    VEJA ABAIXO OS EXEMPLOS DE DOCUMENTOS E AS RESPECTIVAS SAÍDAS QUE VOCÊ DEVE SEGUIR APENAS COMO GUIA DE ESTRUTURA:
     {EXEMPLOS_FEW_SHOT_CACHE}
+
+    ⚠️ ATENÇÃO EXTREMA - REGRAS DE ISOLAMENTO:
+    1. Você NUNCA deve copiar palavras, termos técnicos ou erros contidos nos exemplos acima para o resultado atual. Os exemplos servem APENAS para você entender o formato do JSON.
+    2. É terminantemente PROIBIDO gerar termos como 'Fewo', 'Few-Shot', 'data_fewo', ou 'Labela' nos títulos de seções, labels ou valores.
+    3. Se um campo ou informação não puder ser lido com clareza na imagem atual, ignore-o ou use null. Não tente adivinhar palavras com base nos exemplos fornecidos.
+    4. Baseie-se unicamente nas informações reais encontradas no texto extraído da imagem do usuário.
     """
     mensagens = [{"role": "system", "content": prompt_sistema}]
     caminho_temporario = None
@@ -296,4 +314,4 @@ async def listar_sessoes_disponiveis():
     }
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
