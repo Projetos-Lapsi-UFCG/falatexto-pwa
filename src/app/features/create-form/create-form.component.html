@@ -19,7 +19,7 @@
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'CREATE_FORM.NAME_LABEL' | translate }}</mat-label>
           <input matInput formControlName="name" [placeholder]="'CREATE_FORM.NAME_PLACEHOLDER' | translate" />
-          @if (createForm.get('name')?.invalid && createForm.get('name')?.touched) {
+          @if (createForm.get('name')?.invalid && createForm.get('name')?.dirty) {
             <mat-error>{{ 'CREATE_FORM.NAME_ERROR' | translate }}</mat-error>
           }
         </mat-form-field>
@@ -27,7 +27,7 @@
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'CREATE_FORM.ENTITY_LABEL' | translate }}</mat-label>
           <input matInput formControlName="entity" [placeholder]="'CREATE_FORM.ENTITY_PLACEHOLDER' | translate" />
-          @if (createForm.get('entity')?.invalid && createForm.get('entity')?.touched) {
+          @if (createForm.get('entity')?.invalid && createForm.get('entity')?.dirty) {
             <mat-error>{{ 'CREATE_FORM.ENTITY_ERROR' | translate }}</mat-error>
           }
         </mat-form-field>
@@ -41,7 +41,7 @@
             [placeholder]="'CREATE_FORM.QUESTIONS_PLACEHOLDER' | translate"
             min="1"
           />
-          @if (createForm.get('questions')?.invalid && createForm.get('questions')?.touched) {
+          @if (createForm.get('questions')?.invalid && createForm.get('questions')?.dirty) {
             <mat-error>{{ 'CREATE_FORM.QUESTIONS_ERROR' | translate }}</mat-error>
           }
         </mat-form-field>
