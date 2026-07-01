@@ -1,5 +1,5 @@
 .onboarding-wrapper {
-  background: var(--color-white);
+  background: var(--color-primary-50);
   position: relative;
 }
 
@@ -17,7 +17,7 @@
 .brand-icon {
   display: flex;
   align-items: center;
-  color: var(--color-neutral-800);
+  color: var(--color-primary-900);
 }
 
 .top-bar-actions {
@@ -39,7 +39,7 @@
   font-family: var(--font-serif);
   font-size: 3.5rem;
   font-weight: 600;
-  color: var(--color-neutral-900);
+  color: var(--color-primary-900);
   margin-bottom: 1rem;
 }
 
@@ -95,7 +95,7 @@
 }
 
 .feature-icon {
-  color: var(--color-neutral-800);
+  color: var(--color-primary-500);
 }
 
 .feature-title {
