@@ -1,12 +1,9 @@
-<div class="onboarding-wrapper min-h-screen bg-white flex items-center justify-center p-6">
-
+<div class="onboarding-wrapper min-h-screen flex items-center justify-center p-6">
   <div class="top-bar">
-    <div class="brand-icon">
-      <!-- <ng-icon name="lucideHeadphones" size="28" /> -->
-    </div>
+    <div class="brand-icon"></div>
     <div class="top-bar-actions">
       <app-language-selector />
-      <button mat-icon-button class="exit-btn" (click)="handleExit()" [title]="'ONBOARDING.EXIT' | translate">
+      <button mat-icon-button class="exit-btn" (click)="handleExit()">
         <ng-icon name="lucideX" size="20" />
       </button>
     </div>
@@ -14,30 +11,51 @@
 
   <div class="max-w-5xl w-full">
 
-    <div [@fadeIn] class="text-center mb-16">
-      <img src="icons/logo-falatexto.svg" alt="Fala-Texto" class="onboarding-logo" />
-    </div>
+    <!-- Carrossel -->
+    <div class="carousel-container">
 
-    <div [@staggerFade]="features.length" class="features-grid">
-      @for (feature of features; track feature.icon) {
-        <div class="feature-card">
-          <div class="feature-card-content">
-            <ng-icon [name]="feature.icon" size="32" class="feature-icon" />
-            <h3 class="feature-title">{{ feature.titleKey | translate }}</h3>
-            <p class="feature-description">{{ feature.descKey | translate }}</p>
-          </div>
+      <!-- Slide 0 — Logo -->
+      @if (currentSlide === 0) {
+        <div [@fadeIn] class="carousel-slide logo-slide">
+          <img src="icons/logo-falatexto.svg" alt="Fala-Texto" class="carousel-logo" />
+          <p class="carousel-subtitle">{{ 'ONBOARDING.SUBTITLE' | translate }}</p>
         </div>
       }
+
+      <!-- Slides das features -->
+      @for (feature of features; track feature.icon; let i = $index) {
+        @if (currentSlide === i + 1) {
+          <div [@fadeIn] class="carousel-slide feature-slide">
+            <div class="carousel-icon">
+              <ng-icon [name]="feature.icon" size="40" />
+            </div>
+            <h2 class="carousel-title">{{ feature.titleKey | translate }}</h2>
+            <p class="carousel-desc">{{ feature.descKey | translate }}</p>
+          </div>
+        }
+      }
+
+      <!-- Bolinhas de navegação -->
+      <div class="carousel-dots">
+        @for (item of [].constructor(totalSlides); track $index) {
+          <button
+            class="dot"
+            [class.active]="currentSlide === $index"
+            (click)="goToSlide($index)">
+          </button>
+        }
+      </div>
+
     </div>
 
+    <!-- Botões de ação -->
     <div [@fadeIn] class="actions">
       <button mat-raised-button color="primary" (click)="handleContinue()" class="continue-btn">
-        {{ 'ONBOARDING.GET_STARTED' | translate }} 
+        {{ 'ONBOARDING.GET_STARTED' | translate }}
       </button>
-
       <div class="skip-wrapper">
         <mat-checkbox [(ngModel)]="skipNextTime">
-          {{ 'ONBOARDING.SKIP_NEXT_TIME' | translate }} 
+          {{ 'ONBOARDING.SKIP_NEXT_TIME' | translate }}
         </mat-checkbox>
       </div>
     </div>

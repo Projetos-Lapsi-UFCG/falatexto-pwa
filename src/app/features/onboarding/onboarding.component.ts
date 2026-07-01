@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,11 +11,10 @@ import {
   lucideZap,
   lucideShield,
   lucideFileText,
-  lucideHeadphones,
   lucideX,
 } from '@ng-icons/lucide';
 import { TranslateModule } from '@ngx-translate/core';
-import { fadeIn, staggerFade } from '../../shared/animations/fade.animation';
+import { fadeIn } from '../../shared/animations/fade.animation';
 import { StorageService } from '../../core/services/storage.service';
 import { LanguageSelectorComponent } from '../../shared/components/language-selector/language-selector.component';
 
@@ -37,19 +36,24 @@ interface Feature {
       lucideZap,
       lucideShield,
       lucideFileText,
-      lucideHeadphones,
       lucideX,
     }),
   ],
   templateUrl: './onboarding.component.html',
   styleUrl: './onboarding.component.css',
-  animations: [fadeIn, staggerFade],
+  animations: [fadeIn],
 })
-export class OnboardingComponent implements OnInit {
+export class OnboardingComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly storage = inject(StorageService);
 
   skipNextTime = false;
+
+  // Índice do slide atual
+  currentSlide = 0;
+
+  // Referência do intervalo para poder cancelar quando sair da tela
+  private autoplayInterval: ReturnType<typeof setInterval> | null = null;
 
   readonly features: Feature[] = [
     { icon: 'lucideCamera',   titleKey: 'ONBOARDING.FEATURES.IMAGE_TO_FORM.TITLE',      descKey: 'ONBOARDING.FEATURES.IMAGE_TO_FORM.DESCRIPTION' },
@@ -60,10 +64,47 @@ export class OnboardingComponent implements OnInit {
     { icon: 'lucideFileText', titleKey: 'ONBOARDING.FEATURES.MULTI_FORMAT.TITLE',       descKey: 'ONBOARDING.FEATURES.MULTI_FORMAT.DESCRIPTION' },
   ];
 
+  // Total de slides: 1 (logo) + features
+  get totalSlides(): number {
+    return 1 + this.features.length;
+  }
+
   ngOnInit(): void {
     if (this.storage.getItem<boolean>('skipOnboarding')) {
       this.router.navigate(['/login']);
     }
+    this.startAutoplay();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoplay();
+  }
+
+  startAutoplay(): void {
+    this.stopAutoplay();
+    this.autoplayInterval = setInterval(() => {
+      this.currentSlide = (this.currentSlide + 1) % this.totalSlides;
+    }, 6000);
+  }
+
+  stopAutoplay(): void {
+    if (this.autoplayInterval) {
+      clearInterval(this.autoplayInterval);
+    }
+  }
+
+  goToSlide(index: number): void {
+    this.currentSlide = index;
+    this.stopAutoplay();
+    this.startAutoplay();
+  }
+
+  nextSlide(): void {
+    this.currentSlide = (this.currentSlide + 1) % this.totalSlides;
+  }
+
+  prevSlide(): void {
+    this.currentSlide = (this.currentSlide - 1 + this.totalSlides) % this.totalSlides;
   }
 
   handleContinue(): void {
