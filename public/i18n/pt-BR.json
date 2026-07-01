@@ -1,26 +1,26 @@
 {
   "ONBOARDING": {
     "TITLE": "FalaTexto",
-    "SUBTITLE": "Uma plataforma inteligente para criar, gerenciar e organizar formulários de qualquer fonte — imagem, voz ou modelo.",
-    "GET_STARTED": "Começar",
+    "SUBTITLE": "Formulários inteligentes.",
+    "GET_STARTED": "Explorar o app",
     "SKIP_NEXT_TIME": "Pular na próxima vez",
     "EXIT": "Sair",
     "FEATURES": {
-      "IMAGE_TO_FORM": {
-        "TITLE": "Imagem para Formulário",
-        "DESCRIPTION": "Capture ou envie formulários instantaneamente a partir de fotos"
+    "IMAGE_TO_FORM": {
+      "TITLE": "Imagem para Formulário",
+      "DESCRIPTION": "Fotografe um formulário físico e preencha digitalmente"
       },
-      "VOICE_DICTATION": {
-        "TITLE": "Ditado por Voz",
-        "DESCRIPTION": "Crie formulários com as mãos livres usando reconhecimento de voz"
+    "VOICE_DICTATION": {
+      "TITLE": "Ditado por Voz",
+      "DESCRIPTION": "Responda às perguntas do formulário apenas com sua voz"
       },
-      "SMART_ORGANIZATION": {
-        "TITLE": "Organização Inteligente",
-        "DESCRIPTION": "Gerencie múltiplos formulários com facilidade"
+    "SMART_ORGANIZATION": {
+      "TITLE": "Organização Inteligente",
+      "DESCRIPTION": "Organize seus formulários por tipo, data ou área"
       },
-      "QUICK_ACCESS": {
-        "TITLE": "Acesso Rápido",
-        "DESCRIPTION": "Criação e recuperação rápida de formulários"
+    "QUICK_ACCESS": {
+      "TITLE": "Acesso Rápido",
+      "DESCRIPTION": "Acesse seus formulários salvos a qualquer momento"
       },
       "SECURE_STORAGE": {
         "TITLE": "Armazenamento Seguro",
