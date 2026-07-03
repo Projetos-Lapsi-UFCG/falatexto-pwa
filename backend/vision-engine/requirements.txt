@@ -5,6 +5,7 @@ ollama==0.1.6
 easyocr==1.7.1
 
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.3.1
-torchvision==0.18.1
+torch
+torchvision
 pypdf
+pydantic
