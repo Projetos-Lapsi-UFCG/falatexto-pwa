@@ -9,3 +9,7 @@ torch
 torchvision
 pypdf
 pydantic
+torch==2.3.1
+torchvision==0.18.1
+pypdf
+pymongo==4.8.0

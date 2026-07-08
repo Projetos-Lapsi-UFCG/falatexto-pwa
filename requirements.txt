@@ -17,3 +17,5 @@ starlette==0.36.3
 typing_extensions==4.15.0
 uvicorn==0.28.0
 pymongo==4.17.0
+pymongo==4.8.0
+httpx

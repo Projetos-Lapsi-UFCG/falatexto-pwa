@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ValidationError
 import uvicorn
 import json
+from pymongo import MongoClient
 
 try:
     import easyocr
@@ -17,15 +18,15 @@ try:
 except ImportError:
     leitor_ocr = None
 
-# --- INICIALIZAÇÃO DA API E "BANCO DE DADOS" EM MEMÓRIA ---
+# --- INICIALIZAÇÃO DA API E ARMAZENAMENTO EM MEMÓRIA ---
 app = FastAPI(title="FalaTexto LLM Gateway API (Assíncrona)")
 
 PASTA_PROMPTS = "prompts"
 
-# Memória cache global para os exemplos do prompt de sistema
+# Cache global para armazenar os exemplos do prompt de sistema (Few-Shot)
 EXEMPLOS_FEW_SHOT_CACHE = ""
 
-# Fila em memória para armazenar o status das requisições e os dados processados.
+# Fila em memória para gerenciar o status das sessões de processamento
 fila_de_sessoes: Dict[str, Any] = {}
 
 # --- CONFIGURAÇÃO DE SEGURANÇA (CORS) ---
@@ -41,6 +42,12 @@ app.add_middleware(
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 client = ollama.Client(host=OLLAMA_HOST)
 MODELO = os.getenv("OLLAMA_MODEL", "gemma:7b")
+
+# --- CONFIGURAÇÃO DO MONGODB ---
+# Conexão utilizando a rede interna do Docker (host 'database')
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://database:27017")
+mongo_client = MongoClient(MONGO_URI)
+db = mongo_client["assis_db"]
 
 # --- SCHEMAS DE VALIDAÇÃO (PYDANTIC V2) ---
 class CampoDinamico(BaseModel):
@@ -61,68 +68,55 @@ class ProntuarioUniversal(BaseModel):
 
 def extrair_texto_de_imagem_local(caminho_imagem: str) -> str:
     """
-    Executa o OCR (Reconhecimento Óptico de Caracteres) em uma imagem local.
-    Retorna todo o texto detectado unificado em uma única string.
+    Executa o OCR em uma imagem local utilizando a biblioteca EasyOCR.
+    Retorna o texto detectado unificado em uma única string.
     """
-    # Evita quebra do sistema se o motor de OCR não tiver sido inicializado
     if leitor_ocr is None:
         return ""
     try:
-        # Lê o texto da imagem. 'detail=0' extrai apenas o texto puro,
-        # ignorando as coordenadas espaciais dos blocos na imagem.
         resultado = leitor_ocr.readtext(caminho_imagem, detail=0)
         return "\n".join(resultado)
     except Exception:
-        # Captura falhas na leitura ou imagens corrompidas, retornando vazio sem travar a API
         return ""
 
 
 def carregar_exemplos_da_pasta(pasta: str) -> str:
     """
-    Varre um diretório buscando pares de Imagem + JSON para criar um gabarito de referência.
-    Esse gabarito aplica a técnica de Few-Shot Prompting, ensinando a LLM a estruturar a saída.
+    Varre o diretório de prompts mapeando pares de imagem e JSON.
+    Gera a estrutura de suporte para a técnica de Few-Shot Prompting na LLM.
     """
     blocos_exemplo = ""
     extensoes_imagem = ["*.png", "*.jpg", "*.jpeg", "*.webp"]
     arquivos_imagem = []
     
-    # Mapeia todas as imagens presentes na pasta de exemplos com base nas extensões válidas
     for ext in extensoes_imagem:
         arquivos_imagem.extend(glob.glob(os.path.join(pasta, ext)))
     
     for caminho_img in arquivos_imagem:
         try:
-            # Obtém o caminho base (sem extensão) para deduzir o arquivo .json correspondente
             caminho_base = os.path.splitext(caminho_img)[0]
             caminho_json = caminho_base + ".json"
             
-            # O exemplo só é considerado válido se possuir a imagem E a resposta JSON esperada
             if os.path.exists(caminho_json):
-                # Extrai o texto da imagem simulando o comportamento que o usuário final terá
                 texto_extraido_da_imagem = extrair_texto_de_imagem_local(caminho_img)
                 
-                # Lê o conteúdo do JSON com a estruturação perfeita desejada para o banco de dados
                 with open(caminho_json, "r", encoding="utf-8") as f_json:
                     conteudo_json_esperado = f_json.read()
                 
-                # Extrai o nome amigável do arquivo para identificação no prompt
                 nome_exemplo = os.path.basename(caminho_base)
 
-                # Monta a estrutura textual que servirá de exemplo prático para a IA (LLM)
                 blocos_exemplo += f"\n### EXEMPLO DE REFERÊNCIA DE DOCUMENTO ({nome_exemplo}):\n"
                 blocos_exemplo += f"Texto extraído visualmente da imagem pelo OCR:\n\"{texto_extraido_da_imagem}\"\n\n"
                 blocos_exemplo += f"SAÍDA JSON ESPERADA CORRESPONDENTE:\n{conteudo_json_esperado}\n"
                 blocos_exemplo += "-" * 50 + "\n"
                 
         except Exception as e:
-            # Caso um exemplo específico falhe, loga o erro e continua processando os demais
             print(f"Erro ao carregar par de exemplos ({caminho_img}): {str(e)}")
             continue
             
     return blocos_exemplo
 
 
-# GATILHO DE INICIALIZAÇÃO DO FASTAPI
 @app.on_event("startup")
 def inicializar_prompts_sistema():
     global EXEMPLOS_FEW_SHOT_CACHE
@@ -131,8 +125,10 @@ def inicializar_prompts_sistema():
     print("Exemplos pré-carregados na memória com sucesso.")
 
 
-# LÓGICA DE BACKGROUND (A TAREFA QUE RODA EM SEGUNDO PLANO)
-async def processar_llm_em_segundo_plano(
+# --- PROCESSAMENTO ASSÍNCRONO EM SEGUNDO PLANO ---
+# Função definida como síncrona comum (def) para delegação em thread pool separada,
+# impedindo o bloqueio do loop de eventos principal do FastAPI durante a execução da LLM e OCR.
+def processar_llm_em_segundo_plano(
     id_sessao: str, 
     texto_clinico: str, 
     conteudo_arquivo: bytes = None, 
@@ -169,10 +165,10 @@ async def processar_llm_em_segundo_plano(
     - Responda APENAS o JSON puro, sem textos explicativos antes ou depois.
     - O campo 'tipo_componente' DEVE ser escrito OBRIGATORIAMENTE em letras totalmente minúsculas: 'texto', 'numero' ou 'checkbox'. Nunca use 'Texto', 'Numero' ou 'Texto/Numero'.
 
-    Se você não encontrar o valor exato de um campo no texto extraído, ou se o texto estiver ilegível, preencha o campo 'valor' como null ou string vazia. NUNCA invente datas, 
+    Se você não encontrar o valor exato de um campo no texto extraído, ou se o texto estiver ilegível, preencha o campo 'valor' as null ou string vazia. NUNCA invente datas, 
     anos ou palavras que não estejam explicitamente no texto.
 
-    Para campos de seleção (caixas de seleção ou checkboxes), identifique qual opção possui uma marcação (como 'X', 'X marcado' ou preenchimento). 
+    Para campos de seleção (caixas de seleção ou checkboxes), identifique qual option possui uma marcação (como 'X', 'X marcado' ou preenchimento). 
     Exemplo: se o texto contiver um quadrado com X ao lado de 'azul', o valor do campo deve ser 'azul'.
 
     NUNCA utilize termos das instruções ou exemplos fornecidos (como 'Few-Shot', 'Exemplo', 'Fewo') 
@@ -184,7 +180,7 @@ async def processar_llm_em_segundo_plano(
     VEJA ABAIXO OS EXEMPLOS DE DOCUMENTOS E AS RESPECTIVAS SAÍDAS QUE VOCÊ DEVE SEGUIR APENAS COMO GUIA DE ESTRUTURA:
     {EXEMPLOS_FEW_SHOT_CACHE}
 
-    ⚠️ ATENÇÃO EXTREMA - REGRAS DE ISOLAMENTO:
+     ATENÇÃO EXTREMA - REGRAS DE ISOLAMENTO:
     1. Você NUNCA deve copiar palavras, termos técnicos ou erros contidos nos exemplos acima para o resultado atual. Os exemplos servem APENAS para você entender o formato do JSON.
     2. É terminantemente PROIBIDO gerar termos como 'Fewo', 'Few-Shot', 'data_fewo', ou 'Labela' nos títulos de seções, labels ou valores.
     3. Se um campo ou informação não puder ser lido com clareza na imagem atual, ignore-o ou use null. Não tente adivinhar palavras com base nos exemplos fornecidos.
@@ -194,7 +190,7 @@ async def processar_llm_em_segundo_plano(
     caminho_temporario = None
 
     try:
-        # 1. PROCESSAMENTO DE ARQUIVOS
+        # 1. PROCESSAMENTO DE ENTRADAS DE ARQUIVOS
         if conteudo_arquivo and nome_arquivo:
             extensao = nome_arquivo.lower().split('.')[-1]
             caminho_temporario = f"temp_{id_sessao}_{nome_arquivo}"
@@ -216,14 +212,14 @@ async def processar_llm_em_segundo_plano(
 
         mensagens.append({"role": "user", "content": f"Processe as seguintes informações médicas seguindo o padrão estabelecido: {texto_clinico}"})
 
-        # 3. CHAMADA AO OLLAMA
+        # 2. EXECUÇÃO DO MODELO NO OLLAMA
         response = client.chat(
             model=MODELO, 
             format='json', 
             options={
-                'temperature': 0.0,   # Mantém o modelo mais focado e determinístico para tarefas de extração de dados
-                'num_predict': 2048,  # Aumenta o limite máximo de tokens gerados na resposta
-                'num_ctx': 8192       # Aumenta a janela de contexto para ler todo o seu prompt grande
+                'temperature': 0.0,   
+                'num_predict': 2048,  
+                'num_ctx': 8192       
             }, 
             messages=mensagens
         )
@@ -231,14 +227,33 @@ async def processar_llm_em_segundo_plano(
         if caminho_temporario and os.path.exists(caminho_temporario):
             os.remove(caminho_temporario)
 
-        # 4. VALIDAÇÃO DO SCHEMA
+        # 3. VALIDAÇÃO E PARSING DO RETORNO VIA PYDANTIC
         resposta_pura_llm = response['message']['content']
         dados_validados = ProntuarioUniversal.model_validate_json(resposta_pura_llm)
 
-        # 5. SUCESSO
+        # 4. PERSISTÊNCIA DOS DADOS NO MONGODB
+        dados_prontuario = dados_validados.model_dump()
+        
+        # Estruturação do payload mapeando o esquema esperado pela rota GET /forms do Core
+        documento_mongo = {
+            "_id": id_sessao,  
+            "name": f"Prontuário Automático - {dados_prontuario.get('tipo_documento', 'Documento Clínico')}",
+            "metadata": {
+                "version": "1.0",
+                "active": True,
+                "origem": "Vision Engine AI"
+            },
+            "sections": dados_prontuario.get("secoes", []),
+            "resumo_narrativo": dados_prontuario.get("resumo_narrativo", "")
+        }
+        
+        # Persistência na coleção 'forms'
+        db.forms.insert_one(documento_mongo)
+
+        # Atualização de estado na fila em memória para consulta via GET /status
         fila_de_sessoes[id_sessao] = {
             "status": "executed",
-            "dados": dados_validados.model_dump()
+            "dados": dados_prontuario
         }
 
     except ValidationError as erro_schema:
@@ -270,6 +285,7 @@ async def empilhar_processamento_clinico(
         conteudo_arquivo = await arquivo.read()
         nome_arquivo = arquivo.filename
 
+    # Adição da tarefa ao BackgroundTasks para execução assíncrona
     background_tasks.add_task(
         processar_llm_em_segundo_plano, 
         id_sessao, 
