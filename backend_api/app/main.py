@@ -557,4 +557,6 @@ def deletar_question(question_id: str):
     return {
         "mensagem": "Pergunta removida com sucesso",
         "id": question_id
+
     }
+
