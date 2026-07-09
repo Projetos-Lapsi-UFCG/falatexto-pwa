@@ -6,4 +6,4 @@ __pycache__/
 *.pyd
 venv/
 .venv/
-backend_api/venv/
+backend/venv/
