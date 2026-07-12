@@ -30,6 +30,23 @@ services:
     environment:
       MONGO_URI: mongodb://database:27017
       MONGO_DB_NAME: assis_db
+      VISION_ENGINE_URL: http://vision-engine:8001
+    networks:
+      - falatexto-network
+
+  vision-engine:
+    build:
+      context: ./backend/vision-engine
+      dockerfile: Dockerfile
+    container_name: assis_vision_engine
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      MONGO_URI: mongodb://database:27017
+      OLLAMA_HOST: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - falatexto-network
 
