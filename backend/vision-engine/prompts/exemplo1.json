@@ -1,0 +1,41 @@
+{
+  "tipo_documento": "Lista de Verificação de Cirurgia Segura",
+  "secoes": [
+    {
+      "titulo_secao": "Identificação Básica",
+      "campos": [
+        { "campo_id": "nome_paciente", "label": "Paciente", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "num_prontuario", "label": "Prontuário", "valor": null, "tipo_componente": "numero" },
+        { "campo_id": "sala_cirurgia", "label": "Sala", "valor": null, "tipo_componente": "texto" }
+      ]
+    },
+    {
+      "titulo_secao": "1. Antes da Indução Anestésica",
+      "campos": [
+        { "campo_id": "paciente_confirmou_identidade", "label": "Paciente Confirmou Identidade", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "sitio_cirurgico_correto", "label": "Sítio Cirúrgico Correto", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "procedimento_confirmado", "label": "Procedimento Confirmado", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "consentimento_informado", "label": "Consentimento Informado", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "sitio_demarcado", "label": "Sítio Demarcado", "valor": "Não se aplica", "tipo_componente": "texto" },
+        { "campo_id": "historico_reacao_alergica", "label": "Histórico de Reação Alérgica", "valor": "Não", "tipo_componente": "texto" }
+      ]
+    },
+    {
+      "titulo_secao": "2. Antes da Incisão Anestésica",
+      "campos": [
+        { "campo_id": "apresentacao_oral_equipe", "label": "Apresentação Oral da Equipe", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "confirmacao_verbal_dados_essenciais", "label": "Confirmação Verbal de Dados Essenciais", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "antibiotico_profilatico", "label": "Antibiótico Profilático", "valor": "Não se aplica", "tipo_componente": "texto" }
+      ]
+    },
+    {
+      "titulo_secao": "3. Antes da Saída do Paciente da Sala de Cirurgia",
+      "campos": [
+        { "campo_id": "confirmacao_procedimento_realizado", "label": "Confirmação do Procedimento Realizado", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "contagem_compressas", "label": "Contagem de Compressas", "valor": "Não se aplica", "tipo_componente": "texto" },
+        { "campo_id": "amostra_cirurgica_identificada", "label": "Amostra Cirúrgica Identificada Adequadamente", "valor": "Não se aplica", "tipo_componente": "texto" }
+      ]
+    }
+  ],
+  "resumo_narrativo": "Formulário de Cirurgia Segura gerado para análise. Nenhum dado do paciente foi preenchido na folha de exemplo."
+}
