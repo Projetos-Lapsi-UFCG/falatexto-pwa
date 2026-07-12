@@ -1,32 +1,63 @@
-from fastapi import FastAPI, HTTPException
-import os
-from pymongo import MongoClient
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+from .config import CORS_ORIGINS
+from .routers import forms, sections, questions
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "assis_db")
+DESCRIPTION = """
+API do **Fala-Texto**, sistema de documentação clínica.
 
-client = MongoClient(MONGO_URI)
-db = client[MONGO_DB_NAME]
+A API organiza os dados em uma hierarquia:
 
-@app.get("/")
-def raiz():
+- **Formulários** (`forms`) contêm uma ou mais **seções**.
+- **Seções** (`sections`) contêm perguntas e podem ter **subseções** aninhadas.
+- **Perguntas** (`questions`) pertencem a uma seção e podem ser dos tipos
+  `ABERTA`, `ESTIMULADA`, `MULTIPLA` ou `COMPOSTA`.
+"""
+
+tags_metadata = [
+    {
+        "name": "health",
+        "description": "Verificação de disponibilidade da API.",
+    },
+    {
+        "name": "forms",
+        "description": "Formulários clínicos e sua estrutura de seções.",
+    },
+    {
+        "name": "sections",
+        "description": "Seções e subseções que organizam perguntas dentro de um formulário.",
+    },
+    {
+        "name": "questions",
+        "description": (
+            "Perguntas associadas a uma seção (abertas, estimuladas, "
+            "múltiplas ou compostas)."
+        ),
+    },
+]
+
+app = FastAPI(
+    title="Fala-Texto API",
+    description=DESCRIPTION,
+    version="1.0.0",
+    openapi_tags=tags_metadata,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(forms.router)
+app.include_router(sections.router)
+app.include_router(questions.router)
+
+
+@app.get("/", tags=["health"], summary="Verifica se a API está no ar")
+def health():
+    """Endpoint simples de *health check*, sem dependência do banco de dados."""
     return {"mensagem": "API funcionando com FastAPI"}
-
-@app.get("/forms")
-def listar_forms():
-    forms = list(db.forms.find({}, {"_id": 1, "name": 1, "metadata": 1}))
-    for form in forms:
-        form["_id"] = str(form["_id"])
-    return {"forms": forms}
-
-@app.get("/forms/{form_id}")
-def buscar_form_por_id(form_id: str):
-    form = db.forms.find_one({"_id": form_id})
-
-    if form is None:
-        raise HTTPException(status_code=404, detail="Formulário não encontrado")
-
-    form["_id"] = str(form["_id"])
-    return form
