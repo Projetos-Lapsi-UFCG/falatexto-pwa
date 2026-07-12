@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import CORS_ORIGINS
-from .routers import forms, sections, questions
+from .routers import forms, sections, questions, vision
 
 DESCRIPTION = """
 API do **Fala-Texto**, sistema de documentação clínica.
@@ -35,6 +35,10 @@ tags_metadata = [
             "múltiplas ou compostas)."
         ),
     },
+    {
+        "name": "vision",
+        "description": "Integração com o Vision Engine para extração de dados clínicos via LLM.",
+    },
 ]
 
 app = FastAPI(
@@ -55,6 +59,7 @@ app.add_middleware(
 app.include_router(forms.router)
 app.include_router(sections.router)
 app.include_router(questions.router)
+app.include_router(vision.router)
 
 
 @app.get("/", tags=["health"], summary="Verifica se a API está no ar")
