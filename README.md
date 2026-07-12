@@ -1,6 +1,6 @@
 # Fala-Texto PWA
 
-Backend FastAPI + Frontend Angular PWA para o sistema de documentação clínica do UFCG/HUAC.
+Backend FastAPI + Frontend Angular PWA para o sistema de documentação clínica.
 
 ---
 
@@ -76,7 +76,7 @@ docker compose -f docker-compose.backend.yml up -d database
 
 # Instala dependências e inicia a API localmente
 pip install -r requirements.txt
-python -m uvicorn app.main:app --reload
+python -m uvicorn api.main:app --reload
 ```
 
 ---
