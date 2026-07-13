@@ -11,6 +11,12 @@
   --color-neutral-700: #404040;
   --color-neutral-800: #262626;
   --color-neutral-900: #171717;
+  /* Paleta de azul institucional */
+  --color-primary-900: #1e3a5f;
+  --color-primary-700: #2d5a8e;
+  --color-primary-500: #4a7fbf;
+  --color-primary-200: #a8c8e8;
+  --color-primary-50:  #e8f2fa;
 
   --font-serif: 'Crimson Pro', serif;
   --font-sans: 'Inter', sans-serif;

@@ -1,0 +1,122 @@
+{
+  "ONBOARDING": {
+    "TITLE": "FalaTexto",
+    "SUBTITLE": "A minimal, intelligent platform for creating, managing, and organizing forms from any source — image, voice, or template.",
+    "GET_STARTED": "Get Started",
+    "SKIP_NEXT_TIME": "Skip this next time",
+    "EXIT": "Exit",
+    "FEATURES": {
+      "IMAGE_TO_FORM": {
+        "TITLE": "Image to Form",
+        "DESCRIPTION": "Capture or upload forms instantly from photos"
+      },
+      "VOICE_DICTATION": {
+        "TITLE": "Voice Dictation",
+        "DESCRIPTION": "Create forms hands-free with speech-to-text"
+      },
+      "SMART_ORGANIZATION": {
+        "TITLE": "Smart Organization",
+        "DESCRIPTION": "Manage multiple forms with ease"
+      },
+      "QUICK_ACCESS": {
+        "TITLE": "Quick Access",
+        "DESCRIPTION": "Fast form creation and retrieval"
+      },
+      "SECURE_STORAGE": {
+        "TITLE": "Secure Storage",
+        "DESCRIPTION": "Your data stays private and protected"
+      },
+      "MULTI_FORMAT": {
+        "TITLE": "Multi-format Support",
+        "DESCRIPTION": "PDF, CSV, images and more"
+      }
+    }
+  },
+  "LOGIN": {
+    "TITLE": "FalaTexto",
+    "SUBTITLE": "Sign in to continue",
+    "USER_TYPE_LABEL": "User type",
+    "USER_TYPE_ADMIN": "Administrator",
+    "USER_TYPE_GUEST": "Guest",
+    "PIN_LABEL": "Enter your 4-digit PIN",
+    "SIGN_IN": "Sign In",
+    "ERRORS": {
+      "SELECT_USER_TYPE": "Please select a user type",
+      "ENTER_PIN": "Please enter a 4-digit PIN",
+      "INVALID_CREDENTIALS": "Invalid credentials"
+    },
+    "SUCCESS": {
+      "LOGIN": "Login successful"
+    }
+  },
+  "DASHBOARD": {
+    "TITLE": "FalaTexto",
+    "NEW_FORM": "New Form",
+    "SEARCH_LABEL": "Search forms...",
+    "SEARCH_PLACEHOLDER": "Search by name or department",
+    "EMPTY_TITLE": "No forms found",
+    "EMPTY_SUBTITLE": "Try a different search or create a new form.",
+    "CREATE_FORM": "Create Form",
+    "LOGOUT_TITLE": "Logout"
+  },
+  "FORM_CARD": {
+    "QUESTIONS_SUFFIX": "questions"
+  },
+  "CREATE_FORM": {
+    "BACK": "Back to Dashboard",
+    "TITLE": "Create New Form",
+    "SUBTITLE": "Fill in the details to add a new form to your library.",
+    "NAME_LABEL": "Form name",
+    "NAME_PLACEHOLDER": "e.g. Patient Intake",
+    "NAME_ERROR": "Name is required (min 3 characters)",
+    "ENTITY_LABEL": "Department / Entity",
+    "ENTITY_PLACEHOLDER": "e.g. Cardiology",
+    "ENTITY_ERROR": "Department is required",
+    "QUESTIONS_LABEL": "Number of questions",
+    "QUESTIONS_PLACEHOLDER": "e.g. 12",
+    "QUESTIONS_ERROR": "Enter at least 1 question",
+    "TYPE_LABEL": "Form type",
+    "TYPE_MANUAL": "Manual",
+    "TYPE_TEMPLATE": "Template",
+    "INPUT_METHOD_LABEL": "Input method",
+    "INPUT_DICTATE": "Dictate",
+    "INPUT_UPLOAD": "Upload Image",
+    "INPUT_CAMERA": "Open Camera",
+    "CANCEL": "Cancel",
+    "SUBMIT": "Create Form",
+    "ERRORS": {
+      "FILL_REQUIRED": "Please fill in all required fields"
+    },
+    "SUCCESS": {
+      "CREATED": "Form created successfully"
+    }
+  },
+  "FORM_DETAIL": {
+    "BACK": "Dashboard",
+    "FILL_BTN": "Fill",
+    "NOT_FOUND_TITLE": "Form not found",
+    "NOT_FOUND_BACK": "Back to Dashboard",
+    "LABEL_QUESTIONS": "Questions",
+    "LABEL_DEPARTMENT": "Department",
+    "LABEL_CREATED_AT": "Created on",
+    "LABEL_INPUT_METHOD": "Input Method",
+    "FILL_CTA": "Fill this form",
+    "FILL_CTA_HINT": "You will be asked for the patient / client name.",
+    "INPUT_METHODS": {
+      "DICTATE": "Voice Dictation",
+      "UPLOAD": "Image Upload",
+      "CAMERA": "Camera"
+    }
+  },
+  "FILL_DIALOG": {
+    "TITLE": "Fill Form",
+    "PATIENT_NAME_LABEL": "Patient / Client name",
+    "PATIENT_NAME_PLACEHOLDER": "e.g. John Smith",
+    "PATIENT_NAME_ERROR": "Name is required (min. 2 characters)",
+    "CANCEL": "Cancel",
+    "CONFIRM": "Confirm",
+    "SUCCESS": {
+      "STARTED": "Form started successfully"
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "ONBOARDING": {
+    "TITLE": "FalaTexto",
+    "SUBTITLE": "Una plataforma mínima e inteligente para crear, gestionar y organizar formularios desde cualquier fuente — imagen, voz o plantilla.",
+    "GET_STARTED": "Comenzar",
+    "SKIP_NEXT_TIME": "Omitir la próxima vez",
+    "EXIT": "Salir",
+    "FEATURES": {
+      "IMAGE_TO_FORM": {
+        "TITLE": "Imagen a Formulario",
+        "DESCRIPTION": "Captura o sube formularios al instante desde fotos"
+      },
+      "VOICE_DICTATION": {
+        "TITLE": "Dictado por Voz",
+        "DESCRIPTION": "Crea formularios con las manos libres usando reconocimiento de voz"
+      },
+      "SMART_ORGANIZATION": {
+        "TITLE": "Organización Inteligente",
+        "DESCRIPTION": "Gestiona múltiples formularios con facilidad"
+      },
+      "QUICK_ACCESS": {
+        "TITLE": "Acceso Rápido",
+        "DESCRIPTION": "Creación y recuperación rápida de formularios"
+      },
+      "SECURE_STORAGE": {
+        "TITLE": "Almacenamiento Seguro",
+        "DESCRIPTION": "Tus datos permanecen privados y protegidos"
+      },
+      "MULTI_FORMAT": {
+        "TITLE": "Soporte Multiformato",
+        "DESCRIPTION": "PDF, CSV, imágenes y más"
+      }
+    }
+  },
+  "LOGIN": {
+    "TITLE": "FalaTexto",
+    "SUBTITLE": "Inicia sesión para continuar",
+    "USER_TYPE_LABEL": "Tipo de usuario",
+    "USER_TYPE_ADMIN": "Administrador",
+    "USER_TYPE_GUEST": "Invitado",
+    "PIN_LABEL": "Ingresa tu PIN de 4 dígitos",
+    "SIGN_IN": "Iniciar sesión",
+    "ERRORS": {
+      "SELECT_USER_TYPE": "Por favor, selecciona un tipo de usuario",
+      "ENTER_PIN": "Por favor, ingresa un PIN de 4 dígitos",
+      "INVALID_CREDENTIALS": "Credenciales inválidas"
+    },
+    "SUCCESS": {
+      "LOGIN": "Sesión iniciada con éxito"
+    }
+  },
+  "DASHBOARD": {
+    "TITLE": "FalaTexto",
+    "NEW_FORM": "Nuevo Formulario",
+    "SEARCH_LABEL": "Buscar formularios...",
+    "SEARCH_PLACEHOLDER": "Buscar por nombre o departamento",
+    "EMPTY_TITLE": "No se encontraron formularios",
+    "EMPTY_SUBTITLE": "Intenta con una búsqueda diferente o crea un nuevo formulario.",
+    "CREATE_FORM": "Crear Formulario",
+    "LOGOUT_TITLE": "Cerrar sesión"
+  },
+  "FORM_CARD": {
+    "QUESTIONS_SUFFIX": "preguntas"
+  },
+  "CREATE_FORM": {
+    "BACK": "Volver al Dashboard",
+    "TITLE": "Crear Nuevo Formulario",
+    "SUBTITLE": "Completa los detalles para agregar un nuevo formulario a tu biblioteca.",
+    "NAME_LABEL": "Nombre del formulario",
+    "NAME_PLACEHOLDER": "ej.: Registro de Paciente",
+    "NAME_ERROR": "El nombre es obligatorio (mín. 3 caracteres)",
+    "ENTITY_LABEL": "Departamento / Entidad",
+    "ENTITY_PLACEHOLDER": "ej.: Cardiología",
+    "ENTITY_ERROR": "El departamento es obligatorio",
+    "QUESTIONS_LABEL": "Número de preguntas",
+    "QUESTIONS_PLACEHOLDER": "ej.: 12",
+    "QUESTIONS_ERROR": "Ingresa al menos 1 pregunta",
+    "TYPE_LABEL": "Tipo de formulario",
+    "TYPE_MANUAL": "Manual",
+    "TYPE_TEMPLATE": "Plantilla",
+    "INPUT_METHOD_LABEL": "Método de entrada",
+    "INPUT_DICTATE": "Dictar",
+    "INPUT_UPLOAD": "Subir Imagen",
+    "INPUT_CAMERA": "Abrir Cámara",
+    "CANCEL": "Cancelar",
+    "SUBMIT": "Crear Formulario",
+    "ERRORS": {
+      "FILL_REQUIRED": "Por favor, completa todos los campos obligatorios"
+    },
+    "SUCCESS": {
+      "CREATED": "Formulario creado con éxito"
+    }
+  },
+  "FORM_DETAIL": {
+    "BACK": "Dashboard",
+    "FILL_BTN": "Llenar",
+    "NOT_FOUND_TITLE": "Formulario no encontrado",
+    "NOT_FOUND_BACK": "Volver al Dashboard",
+    "LABEL_QUESTIONS": "Preguntas",
+    "LABEL_DEPARTMENT": "Departamento",
+    "LABEL_CREATED_AT": "Creado el",
+    "LABEL_INPUT_METHOD": "Método de entrada",
+    "FILL_CTA": "Llenar este formulario",
+    "FILL_CTA_HINT": "Se solicitará el nombre del paciente.",
+    "INPUT_METHODS": {
+      "DICTATE": "Dictado por voz",
+      "UPLOAD": "Carga de imagen",
+      "CAMERA": "Cámara"
+    }
+  },
+  "FILL_DIALOG": {
+    "TITLE": "Llenar Formulario",
+    "PATIENT_NAME_LABEL": "Nombre del paciente",
+    "PATIENT_NAME_PLACEHOLDER": "Ej.: Juan García",
+    "PATIENT_NAME_ERROR": "El nombre es obligatorio (mín. 2 caracteres)",
+    "CANCEL": "Cancelar",
+    "CONFIRM": "Confirmar",
+    "SUCCESS": {
+      "STARTED": "Formulario iniciado con éxito"
+    }
+  }
+}
