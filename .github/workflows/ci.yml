@@ -27,7 +27,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Validate app import
-        run: python -c "from app.main import app; print('Backend import OK')"
+        run: python -c "from api.main import app; print('Backend import OK')"
 
       - name: Run tests
         run: |
