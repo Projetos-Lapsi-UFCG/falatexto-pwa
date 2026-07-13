@@ -1,6 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -19,7 +18,6 @@ import { FormService } from '../../core/services/form.service';
 import { Form } from '../../core/models/form.model';
 import { LanguageService } from '../../core/services/language.service';
 import { LanguageSelectorComponent } from '../../shared/components/language-selector/language-selector.component';
-import { FillFormDialogComponent } from './components/fill-form-dialog/fill-form-dialog.component';
 import { fadeIn, scaleIn } from '../../shared/animations/fade.animation';
 
 @Component({
@@ -47,7 +45,6 @@ export class FormDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly formService = inject(FormService);
-  private readonly dialog = inject(MatDialog);
   private readonly languageService = inject(LanguageService);
 
   form: Form | null = null;
@@ -73,11 +70,7 @@ export class FormDetailComponent implements OnInit {
 
   openFillDialog(): void {
     if (!this.form) return;
-    this.dialog.open(FillFormDialogComponent, {
-      data: { form: this.form },
-      width: '420px',
-      maxWidth: '95vw',
-    });
+    this.router.navigate(['/forms', this.form.id, 'fill']);
   }
 
   formatDate(dateStr: string): string {

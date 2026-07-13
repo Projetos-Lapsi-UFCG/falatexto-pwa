@@ -1,5 +1,5 @@
 .create-wrapper {
-  background: var(--color-neutral-50);
+  background: var(--color-primary-50);
 }
 
 .create-inner {
@@ -32,7 +32,7 @@
   font-family: var(--font-serif);
   font-size: 1.875rem;
   font-weight: 600;
-  color: var(--color-neutral-900);
+  color: var(--color-primary-900);
   margin-bottom: 0.5rem;
 }
 
@@ -80,7 +80,7 @@
 .input-method-label {
   font-size: 0.85rem;
   font-weight: 500;
-  color: var(--color-neutral-700);
+  color: var(--color-primary-700);
 }
 
 .input-method-group {
