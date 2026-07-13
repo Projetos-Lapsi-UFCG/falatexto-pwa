@@ -7,6 +7,11 @@ Backend FastAPI + Frontend Angular PWA para o sistema de documentação clínica
 ## Pré-requisitos
 
 - Docker e Docker Compose
+- [Ollama](https://ollama.com) rodando localmente na porta padrão (`11434`), com o modelo usado pelo `vision-engine` já baixado:
+  ```bash
+  ollama pull gemma:7b
+  ```
+  O `vision-engine` roda em container e acessa o Ollama do host via `host.docker.internal`; sem ele, o endpoint `/api/processar-clinica` falha.
 
 ---
 
@@ -23,6 +28,7 @@ docker compose up --build -d
 | Frontend  | http://localhost:4200      |
 | Backend   | http://localhost:8000      |
 | API Docs  | http://localhost:8000/docs |
+| Vision Engine | http://localhost:8001  |
 
 > Na primeira execução o `--build` é necessário para construir as imagens. Nas seguintes, pode omiti-lo se o código não mudou.
 
@@ -102,8 +108,9 @@ npm start
 
 ## Portas
 
-| Container        | Porta host | Porta interna |
-|------------------|------------|---------------|
-| `assis_frontend` | 4200       | 80            |
-| `assis_api`      | 8000       | 8000          |
-| `assis_mongo`    | 27017      | 27017         |
+| Container            | Porta host | Porta interna |
+|----------------------|------------|---------------|
+| `assis_frontend`     | 4200       | 80            |
+| `assis_api`          | 8000       | 8000          |
+| `assis_vision_engine`| 8001       | 8001          |
+| `assis_mongo`        | 27017      | 27017         |
