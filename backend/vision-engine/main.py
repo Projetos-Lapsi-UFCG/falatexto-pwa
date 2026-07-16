@@ -1,6 +1,6 @@
 import os
 import uuid
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 import glob
 from pypdf import PdfReader
 import ollama
@@ -53,7 +53,7 @@ class CampoDinamico(BaseModel):
     campo_id: str = Field(description="ID único em snake_case")
     label: str = Field(description="Nome amigável do campo")
     valor: Any = Field(None, description="Valor dinâmico extraído")
-    tipo_componente: Literal["checkbox", "texto", "numero", "Texto", "Numero", "Checkbox"] = Field(description="Tipo de input do Front")
+    tipo_componente: Literal["checkbox", "texto", "numero", "Texto", "Numero", "Checkbox", "data", "Data"] = Field(description="Tipo de input do Front")
 
 class SecaoDinamica(BaseModel):
     titulo_secao: str = Field(description="Título do bloco de dados")
@@ -62,7 +62,7 @@ class SecaoDinamica(BaseModel):
 class ProntuarioUniversal(BaseModel):
     tipo_documento: str = Field(description="Tipo do prontuário ou consulta")
     secoes: List[SecaoDinamica] = Field(description="Seções do documento")
-    resumo_narrativo: str = Field(description="Resumo descritivo da consulta")
+    resumo_narrativo: Optional[str] = Field(default="", description="Resumo descritivo da consulta")
 
 
 def extrair_texto_de_imagem_local(caminho_imagem: str) -> str:
@@ -135,6 +135,7 @@ def processar_llm_em_segundo_plano(
 ):
     global EXEMPLOS_FEW_SHOT_CACHE
 
+    
     prompt_sistema = f"""Você é um motor de IA médico universal. Sua ÚNICA tarefa é transformar dados clínicos brutos no esquema JSON exato fornecido abaixo.
 
     Você está PROIBIDO de criar chaves como 'paciente', 'consulta', 'diagnostico' ou qualquer outra que não esteja no esquema abaixo. Toda e qualquer informação clínica (como nome do paciente, idade, queixas, conduta, receitas) DEVE ser encaixada obrigatoriamente dentro da lista de 'campos' divididos por 'secoes'.
@@ -184,6 +185,7 @@ def processar_llm_em_segundo_plano(
     2. É terminantemente PROIBIDO gerar termos como 'Fewo', 'Few-Shot', 'data_fewo', ou 'Labela' nos títulos de seções, labels ou valores.
     3. Se um campo ou informação não puder ser lido com clareza na imagem atual, ignore-o ou use null. Não tente adivinhar palavras com base nos exemplos fornecidos.
     4. Baseie-se unicamente nas informações reais encontradas no texto extraído da imagem do usuário.
+    5. Para campos que contenham datas (como data de nascimento ou data de consulta), defina o 'tipo_componente' estritamente como 'texto'. Nunca use 'data' ou 'date'.
     """
     mensagens = [{"role": "system", "content": prompt_sistema}]
     caminho_temporario = None
