@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -45,6 +45,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly formService = inject(FormService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   userType: UserType | null = null;
   forms: Form[] = [];
@@ -55,9 +56,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.userType = this.authService.getCurrentUserType();
+    this.formService.loadFormsFromApi();
     this.subscription = this.formService.forms$.subscribe(forms => {
       this.forms = forms;
       this.filteredForms = forms;
+      this.cdr.detectChanges(); // força o Angular a atualizar a tela
     });
   }
 

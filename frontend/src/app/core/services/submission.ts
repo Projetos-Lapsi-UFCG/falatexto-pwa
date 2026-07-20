@@ -13,31 +13,31 @@ import { Observable } from 'rxjs';
 export class SubmissionService {
   private readonly http = inject(HttpClient);
 
-  // URL base do backend — porta 8000 conforme definido no README do projeto
+  // URL base do backend — porta 8000
   private readonly apiUrl = 'http://localhost:8000';
 
   /**
    * Busca a lista de todos os formulários disponíveis no backend.
    * Método: GET
-   * Endpoint: /api/forms
+   * Rota: /forms
    */
   getForms(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/api/forms`);
+    return this.http.get<any[]>(`${this.apiUrl}/forms`);
   }
 
   /**
    * Busca um formulário específico pelo id.
    * Método: GET
-   * Endpoint: /api/forms/:id
+   * Rota: /forms/{form_id}
    */
   getFormById(id: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/api/forms/${id}`);
+    return this.http.get<any>(`${this.apiUrl}/forms/${id}`);
   }
 
   /**
    * Envia as respostas preenchidas pelo usuário para o backend salvar.
    * Método: POST
-   * Endpoint: /api/submissions
+   * Rota: /submissions — ainda não implementada no backend
    */
   salvarRespostas(dados: {
     formId: string;
@@ -54,6 +54,6 @@ export class SubmissionService {
       responsible: string;
     };
   }): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/api/submissions`, dados);
+    return this.http.post<any>(`${this.apiUrl}/submissions`, dados);
   }
 }
