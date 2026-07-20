@@ -51,16 +51,33 @@ export class FormService {
     return this.formsSubject.value;
   }
 
+  /**
+   * Cria um novo formulário no backend.
+   * Método: POST
+   * Rota: /forms
+   */
   addForm(form: Omit<Form, 'id' | 'createdAt'>): void {
-    const newForm: Form = {
-      ...form,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
+    // Monta o objeto no formato que o backend espera
+    const payload = {
+      id: `form_${String(Date.now() % 1000).padStart(3, '0')}`,
+      name: form.name,
+      metadata: {
+        active: true,
+        version: '1.0'
+      },
+      sections: []
     };
-    const custom = this.storage.getItem<Form[]>('customForms') ?? [];
-    custom.push(newForm);
-    this.storage.setItem('customForms', custom);
-    this.formsSubject.next([...this.formsSubject.value, newForm]);
+
+    // Envia para o backend
+    this.http.post<any>(`${this.apiUrl}/forms`, payload).subscribe({
+      next: () => {
+        // Recarrega a lista do backend após criar
+        this.loadFormsFromApi();
+      },
+      error: (err) => {
+        console.error('Erro ao criar formulário no backend:', err);
+      }
+    });
   }
 
   getFormById(id: string): Form | undefined {
