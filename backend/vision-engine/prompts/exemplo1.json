@@ -12,30 +12,55 @@
     {
       "titulo_secao": "1. Antes da Indução Anestésica",
       "campos": [
-        { "campo_id": "paciente_confirmou_identidade", "label": "Paciente Confirmou Identidade", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "paciente_confirmou_identidade", "label": "Identidade", "valor": false, "tipo_componente": "checkbox" },
         { "campo_id": "sitio_cirurgico_correto", "label": "Sítio Cirúrgico Correto", "valor": false, "tipo_componente": "checkbox" },
-        { "campo_id": "procedimento_confirmado", "label": "Procedimento Confirmado", "valor": false, "tipo_componente": "checkbox" },
-        { "campo_id": "consentimento_informado", "label": "Consentimento Informado", "valor": false, "tipo_componente": "checkbox" },
-        { "campo_id": "sitio_demarcado", "label": "Sítio Demarcado", "valor": "Não se aplica", "tipo_componente": "texto" },
-        { "campo_id": "historico_reacao_alergica", "label": "Histórico de Reação Alérgica", "valor": "Não", "tipo_componente": "texto" }
+        { "campo_id": "procedimento_confirmado", "label": "Procedimento", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "consentimento_informado", "label": "Consentimento", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "sitio_demarcado", "label": "Sítio Demarcado (Lateralidade)", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "verificacao_seguranca_anestesica_so", "label": "Montagem da SO de acordo com o procedimento", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "verificacao_seguranca_anestesica_material", "label": "Material anestésico disponível, revisados e funcionantes", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "via_aerea_dificil_broncoaspiracao", "label": "Via aérea difícil / broncoaspiração", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "risco_perda_sanguinea", "label": "Risco de grande perda sanguínea superior a 500 ml ou mais 7 ml/kg em crianças", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "reserva_sangue_disponivel", "label": "Reserva de sangue disponível", "valor": false, "tipo_componente": "checkbox" },
+        { "campo_id": "acesso_venoso_adequado", "label": "Acesso venoso adequado e pérvio", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "historico_reacao_alergica", "label": "Histórico de reação alérgica", "valor": null, "tipo_componente": "texto" }
       ]
     },
     {
       "titulo_secao": "2. Antes da Incisão Anestésica",
       "campos": [
-        { "campo_id": "apresentacao_oral_equipe", "label": "Apresentação Oral da Equipe", "valor": false, "tipo_componente": "checkbox" },
-        { "campo_id": "confirmacao_verbal_dados_essenciais", "label": "Confirmação Verbal de Dados Essenciais", "valor": false, "tipo_componente": "checkbox" },
-        { "campo_id": "antibiotico_profilatico", "label": "Antibiótico Profilático", "valor": "Não se aplica", "tipo_componente": "texto" }
+        { "campo_id": "apresentacao_oral_equipe", "label": "Apresentação oral de cada membro da equipe pelo nome e função", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "confirmacao_verbal_dados_essenciais", "label": "Cirurgião, anestesista e enfermagem confirmam verbalmente nome, sítio e procedimento", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "antibiotico_profilatico", "label": "Antibiótico profilático", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "revisao_cirurgiao", "label": "Revisão do cirurgião: Momentos críticos, tempos principais, riscos, perda sanguínea", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "revisao_anestesista", "label": "Revisão do anestesista: Há alguma preocupação em relação ao paciente?", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "revisao_enfermagem_esterilizacao", "label": "Correta esterilização do material cirúrgico com fixação dos integradores ao prontuário", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "placa_eletrocauterio_posicionada", "label": "Placa de eletrocautério posicionada", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "equipamentos_disponiveis_funcionantes", "label": "Equipamentos disponíveis e funcionantes", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "insumos_instrumentais_disponiveis", "label": "Insumos e instrumentais disponíveis", "valor": null, "tipo_componente": "texto" }
       ]
     },
     {
       "titulo_secao": "3. Antes da Saída do Paciente da Sala de Cirurgia",
       "campos": [
-        { "campo_id": "confirmacao_procedimento_realizado", "label": "Confirmação do Procedimento Realizado", "valor": false, "tipo_componente": "checkbox" },
-        { "campo_id": "contagem_compressas", "label": "Contagem de Compressas", "valor": "Não se aplica", "tipo_componente": "texto" },
-        { "campo_id": "amostra_cirurgica_identificada", "label": "Amostra Cirúrgica Identificada Adequadamente", "valor": "Não se aplica", "tipo_componente": "texto" }
+        { "campo_id": "confirmacao_procedimento_realizado", "label": "Confirmação do procedimento realizado", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "contagem_compressas", "label": "Contagem de compressas", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "contagem_instrumentos", "label": "Contagem de instrumentos", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "contagem_agulhas", "label": "Contagem de agulhas", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "amostra_cirurgica_identificada", "label": "Amostra cirúrgica identificada adequadamente", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "problema_equipamentos_solucionar", "label": "Problema com equipamentos que deve ser solucionado", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "recomendacoes_recuperacao_cirurgiao", "label": "Recomendações importantes - Cirurgião", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "recomendacoes_recuperacao_anestesista", "label": "Recomendações importantes - Anestesista", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "recomendacoes_recuperacao_enfermagem", "label": "Recomendações importantes - Enfermagem", "valor": null, "tipo_componente": "texto" }
+      ]
+    },
+    {
+      "titulo_secao": "Identificação do Responsável",
+      "campos": [
+        { "campo_id": "responsavel_preenchimento", "label": "Responsável", "valor": null, "tipo_componente": "texto" },
+        { "campo_id": "data_preenchimento", "label": "Data", "valor": null, "tipo_componente": "texto" }
       ]
     }
   ],
-  "resumo_narrativo": "Formulário de Cirurgia Segura gerado para análise. Nenhum dado do paciente foi preenchido na folha de exemplo."
+  "resumo_narrativo": "Formulário de Lista de Verificação de Cirurgia Segura zerado para modelo de extração exaustiva."
 }

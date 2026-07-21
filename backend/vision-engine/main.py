@@ -13,9 +13,20 @@ from pymongo import MongoClient
 
 try:
     import easyocr
-    leitor_ocr = easyocr.Reader(['pt'])
 except ImportError:
-    leitor_ocr = None
+    easyocr = None
+
+leitor_ocr = None
+
+def get_leitor_ocr():
+    """Inicializa o leitor OCR apenas na primeira vez que for utilizado."""
+    global leitor_ocr
+    if leitor_ocr is None and easyocr is not None:
+        try:
+            leitor_ocr = easyocr.Reader(['pt'], gpu=False)
+        except Exception:
+            leitor_ocr = None
+    return leitor_ocr
 
 # --- INICIALIZAÇÃO DA API E ARMAZENAMENTO EM MEMÓRIA ---
 app = FastAPI(title="FalaTexto LLM Gateway API (Assíncrona)")
@@ -70,10 +81,11 @@ def extrair_texto_de_imagem_local(caminho_imagem: str) -> str:
     Executa o OCR em uma imagem local utilizando a biblioteca EasyOCR.
     Retorna o texto detectado unificado em uma única string.
     """
-    if leitor_ocr is None:
+    ocr = get_leitor_ocr()
+    if ocr is None:
         return ""
     try:
-        resultado = leitor_ocr.readtext(caminho_imagem, detail=0)
+        resultado = ocr.readtext(caminho_imagem, detail=0)
         return "\n".join(resultado)
     except Exception:
         return ""
@@ -136,56 +148,52 @@ def processar_llm_em_segundo_plano(
     global EXEMPLOS_FEW_SHOT_CACHE
 
     
-    prompt_sistema = f"""Você é um motor de IA médico universal. Sua ÚNICA tarefa é transformar dados clínicos brutos no esquema JSON exato fornecido abaixo.
+    prompt_sistema = f"""You are a universal medical AI extraction engine. Your SOLE task is to convert raw clinical data (text/OCR) into the exact JSON schema provided below.
 
-    Você está PROIBIDO de criar chaves como 'paciente', 'consulta', 'diagnostico' ou qualquer outra que não esteja no esquema abaixo. Toda e qualquer informação clínica (como nome do paciente, idade, queixas, conduta, receitas) DEVE ser encaixada obrigatoriamente dentro da lista de 'campos' divididos por 'secoes'.
+    You are STRICTLY FORBIDDEN from creating keys like 'patient', 'consultation', 'diagnosis', or any other key not present in the schema below. Every piece of clinical information (e.g., patient name, age, clinical findings, checklist items, doctor's notes) MUST be mapped inside the 'campos' array divided into 'secoes'.
 
-    Você DEVE retornar OBRIGATORIAMENTE um objeto JSON com esta estrutura exata:
+    CRITICAL INSTRUCTION - STRICT SKELETON & FULL COVERAGE:
+    - DO NOT SKIP, OMIT, COMBINE, OR TRUNCATE ANY FIELD OR CHECKLIST ITEM.
+    - If the input matches a document structure found in FEW-SHOT EXAMPLES (e.g., 'Lista de Verificação de Cirurgia Segura'), you MUST preserve ALL sections ('secoes') and fields ('campos') defined in that template.
+    - Map the extracted text/audio to each field in the template. If a field is mentioned, update its 'valor' (true/false for checkboxes, string/number for inputs). If a field is NOT mentioned, set its 'valor' to null. NEVER delete the field object.
+
+    You MUST strictly return a JSON object with this exact structure:
     {{
-      "tipo_documento": "Ex: Atendimento de Emergência, Prontuário Ambulatorial",
-      "secoes": [
+    "tipo_documento": "Ex: Lista de Verificação de Cirurgia Segura, Prontuário Ambulatorial",
+    "secoes": [
         {{
-          "titulo_secao": "Nome da Seção (Ex: Identificação do Paciente, Histórico Clínico, Prescrição Médica)",
-          "campos": [
+        "titulo_secao": "Exact Section Name from document (Ex: Identificação Básica, 1. Antes da Indução Anestésica)",
+        "campos": [
             {{
-              "campo_id": "nome_do_campo_em_snake_case (Ex: nome_paciente, queixa_principal, medicamento_receitado)",
-              "label": "Nome legível para exibição na tela do usuário",
-              "valor": "O dado extraído (Pode ser texto, número ou booleano true/false para checagens. Use null se não mencionado)",
-              "tipo_componente": "Defina estritamente como 'texto', 'numero' ou 'checkbox'"
+            "campo_id": "field_identifier_in_snake_case (Ex: nome_paciente, sitio_cirurgico_correto, contagem_compressas)",
+            "label": "Human-readable label as written on the document",
+            "valor": "Extracted value (String, Number, boolean true/false, or null if unmentioned/blank)",
+            "tipo_componente": "Strictly defined as 'texto', 'numero', or 'checkbox'"
             }}
-          ]
+        ]
         }}
-      ],
-      "resumo_narrativo": "Um resumo clínico formal, contínuo e corrido do atendimento médico feito."
+    ],
+    "resumo_narrativo": "A comprehensive, continuous formal medical narrative summarizing the entire form and findings."
     }}
 
-    REGRAS DE OURO:
-    - Nunca mude os nomes das chaves principais ('tipo_documento', 'secoes', 'titulo_secao', 'campos', 'campo_id', 'label', 'valor', 'tipo_componente', 'resumo_narrativo').
-    - Se o paciente tem uma alergia, crie uma seção chamada 'Alergias' ou coloque como um campo de texto dentro de uma seção pertinente.
-    - Responda APENAS o JSON puro, sem textos explicativos antes ou depois.
-    - O campo 'tipo_componente' DEVE ser escrito OBRIGATORIAMENTE em letras totalmente minúsculas: 'texto', 'numero' ou 'checkbox'. Nunca use 'Texto', 'Numero' ou 'Texto/Numero'.
+    GOLDEN RULES:
+    1. Never alter the primary key names ('tipo_documento', 'secoes', 'titulo_secao', 'campos', 'campo_id', 'label', 'valor', 'tipo_componente', 'resumo_narrativo'). Keep key names exactly as defined in Portuguese to preserve backend contracts.
+    2. Output ONLY pure JSON. No markdown code blocks wrapping, no explanatory text before or after.
+    3. The 'tipo_componente' field MUST ALWAYS be lowercase string: 'texto', 'numero', or 'checkbox'. Never use 'Texto', 'Date', or 'String'.
+    4. For missing or unformatted values, assign null. NEVER hallucinate names, dates, or clinical facts that are not present in the input.
+    5. For checkboxes, radios, or option lists:
+    - If an option is selected/checked, set 'valor' to true or the selected option string, and 'tipo_componente' to 'checkbox'.
+    - If an option is explicitly marked as unchecked or "Não/No", evaluate accordingly (false or null).
+    6. Section titles ('titulo_secao') and field labels ('label') MUST be in Portuguese, strictly derived from the medical document context.
 
-    Se você não encontrar o valor exato de um campo no texto extraído, ou se o texto estiver ilegível, preencha o campo 'valor' as null ou string vazia. NUNCA invente datas, 
-    anos ou palavras que não estejam explicitamente no texto.
-
-    Para campos de seleção (caixas de seleção ou checkboxes), identifique qual option possui uma marcação (como 'X', 'X marcado' ou preenchimento). 
-    Exemplo: se o texto contiver um quadrado com X ao lado de 'azul', o valor do campo deve ser 'azul'.
-
-    NUNCA utilize termos das instruções ou exemplos fornecidos (como 'Few-Shot', 'Exemplo', 'Fewo') 
-    nos títulos das seções ou IDs dos campos. Os títulos das seções devem ser estritamente baseados no contexto do documento médico encontrado (ex: 'Identificação do Paciente', 'Dados Clínicos').
-
-    Preste atenção a listas com caixas de seleção [ ] ou [X]. Se houver uma opção marcada com um 'X' ou rasurada, você DEVE extrair essa opção e colocá-la no JSON. 
-    No caso da imagem, o campo 'Cor' com a opção 'azul' marcada deve gerar um campo com valor 'azul'.
-
-    VEJA ABAIXO OS EXEMPLOS DE DOCUMENTOS E AS RESPECTIVAS SAÍDAS QUE VOCÊ DEVE SEGUIR APENAS COMO GUIA DE ESTRUTURA:
+    FEW-SHOT EXAMPLES FOR STRUCTURAL GUIDANCE ONLY:
     {EXEMPLOS_FEW_SHOT_CACHE}
 
-     ATENÇÃO EXTREMA - REGRAS DE ISOLAMENTO:
-    1. Você NUNCA deve copiar palavras, termos técnicos ou erros contidos nos exemplos acima para o resultado atual. Os exemplos servem APENAS para você entender o formato do JSON.
-    2. É terminantemente PROIBIDO gerar termos como 'Fewo', 'Few-Shot', 'data_fewo', ou 'Labela' nos títulos de seções, labels ou valores.
-    3. Se um campo ou informação não puder ser lido com clareza na imagem atual, ignore-o ou use null. Não tente adivinhar palavras com base nos exemplos fornecidos.
-    4. Baseie-se unicamente nas informações reais encontradas no texto extraído da imagem do usuário.
-    5. Para campos que contenham datas (como data de nascimento ou data de consulta), defina o 'tipo_componente' estritamente como 'texto'. Nunca use 'data' ou 'date'.
+    STRICT ISOLATION & DATA INTEGRITY RULES:
+    1. NEVER copy terms, medical concepts, or placeholder data from the examples above into the result.
+    2. DO NOT use structural terms like 'Few-Shot', 'Example', or 'Fewo' in section titles or field IDs.
+    3. For fields containing dates (e.g., birth dates, surgical dates), set 'tipo_componente' strictly to 'texto'.
+    4. Ensure 100% field coverage: Header info, all checklist columns, notes, and footer fields (e.g., Responsável, Data) must be included in the JSON.
     """
     mensagens = [{"role": "system", "content": prompt_sistema}]
     caminho_temporario = None
@@ -236,16 +244,30 @@ def processar_llm_em_segundo_plano(
         dados_prontuario = dados_validados.model_dump()
         
         # Estruturação do payload mapeando o esquema esperado pela rota GET /forms do Core
+        secoes_formatadas = []
+        for secao in dados_prontuario.get("secoes", []):
+            campos_formatados = []
+            for campo in secao.get("campos", []):
+                campos_formatados.append({
+                    "id": campo.get("campo_id"),
+                    "label": campo.get("label"),
+                    "value": campo.get("valor"),
+                    "type": str(campo.get("tipo_componente")).lower() if campo.get("tipo_componente") else "texto"
+                })
+            
+            secoes_formatadas.append({
+                "title": secao.get("titulo_secao"),
+                "fields": campos_formatados
+            })
+
         documento_mongo = {
-            "_id": id_sessao,  
-            "name": f"Prontuário Automático - {dados_prontuario.get('tipo_documento', 'Documento Clínico')}",
+            "_id": id_sessao,
+            "name": f"Prontuário Automático - {dados_prontuario.get('tipo_documento', 'Atendimento')}",
             "metadata": {
-                "version": "1.0",
-                "active": True,
-                "origem": "Vision Engine AI"
-            },
-            "sections": dados_prontuario.get("secoes", []),
-            "resumo_narrativo": dados_prontuario.get("resumo_narrativo", "")
+                   "version": "1.0",
+                   "active": True
+             },
+            "sections": secoes_formatadas
         }
         
         # Persistência na coleção 'forms'
