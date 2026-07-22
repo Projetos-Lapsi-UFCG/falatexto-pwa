@@ -11,6 +11,10 @@
       <div class="header-right">
         <app-language-selector />
         @if (form) {
+          <button mat-stroked-button color="warn" (click)="deleteForm()" class="delete-btn">
+            <ng-icon name="lucideTrash2" size="16" />
+            Deletar
+          </button>
           <button mat-raised-button color="primary" (click)="openFillDialog()" class="fill-btn">
             {{ 'FORM_DETAIL.FILL_BTN' | translate }}
           </button>

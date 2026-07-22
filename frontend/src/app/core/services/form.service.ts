@@ -96,6 +96,23 @@ export class FormService {
     return newInstance;
   }
 
+  /**
+   * Deleta um formulário pelo id no backend.
+   * Método: DELETE
+   * Rota: /forms/{form_id}
+   */
+  deleteForm(id: string): void {
+    this.http.delete<any>(`${this.apiUrl}/forms/${id}`).subscribe({
+      next: () => {
+        // Recarrega a lista do backend após deletar
+        this.loadFormsFromApi();
+      },
+      error: (err) => {
+        console.error('Erro ao deletar formulário no backend:', err);
+      }
+    });
+  }
+  
   searchForms(query: string): Form[] {
     if (!query.trim()) return this.formsSubject.value;
     const q = query.toLowerCase();

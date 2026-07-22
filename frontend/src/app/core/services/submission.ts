@@ -56,4 +56,13 @@ export class SubmissionService {
   }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/submissions`, dados);
   }
+
+  /**
+   * Deleta um formulário pelo id.
+   * Método: DELETE
+   * Rota: /forms/{form_id}
+   */
+  deleteForm(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/forms/${id}`);
+  }
 }

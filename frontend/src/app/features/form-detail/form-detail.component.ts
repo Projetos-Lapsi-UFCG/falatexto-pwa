@@ -12,6 +12,7 @@ import {
   lucideImage,
   lucideCamera,
   lucideFileText,
+  lucideTrash2,
 } from '@ng-icons/lucide';
 import { TranslateModule } from '@ngx-translate/core';
 import { FormService } from '../../core/services/form.service';
@@ -35,6 +36,7 @@ import { fadeIn, scaleIn } from '../../shared/animations/fade.animation';
       lucideImage,
       lucideCamera,
       lucideFileText,
+      lucideTrash2,
     }),
   ],
   templateUrl: './form-detail.component.html',
@@ -71,6 +73,15 @@ export class FormDetailComponent implements OnInit {
   openFillDialog(): void {
     if (!this.form) return;
     this.router.navigate(['/forms', this.form.id, 'fill']);
+  }
+
+  /**
+   * Deleta o formulário atual e volta para o dashboard.
+   */
+  deleteForm(): void {
+    if (!this.form) return;
+    this.formService.deleteForm(this.form.id);
+    this.router.navigate(['/dashboard']);
   }
 
   formatDate(dateStr: string): string {
