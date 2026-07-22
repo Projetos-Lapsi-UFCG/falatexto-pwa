@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, forkJoin } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { StorageService } from './storage.service';
-import { Form, FormInstance } from '../models/form.model';
+import { Form, FormInstance, QuestionField, FieldOption, Section } from '../models/form.model';
+import { ApiQuestion, ApiQuestionType, ApiSection, ApiSectionsResponse, ApiQuestionsResponse } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
 export class FormService {
@@ -93,7 +94,157 @@ export class FormService {
 
     return `form_${numeroFormatado}`;
   }
+  /**
+   * Tabela de tradução: tipo do backend -> tipo do frontend.
+   * Fica como propriedade da classe porque é informação fixa, não muda nunca.
+   */
+  private readonly mapaDeTipos: Record<ApiQuestionType, QuestionField['type']> = {
+    ABERTA: 'text',
+    ESTIMULADA: 'radio_group',
+    MULTIPLA: 'checkbox_group',
+    COMPOSTA: 'radio_with_fields',
+  };
 
+  /**
+   * Converte UMA pergunta do formato do backend para o formato do frontend.
+   * Este é o coração da tradução (DTO).
+   */
+  private converterPergunta(apiQuestion: ApiQuestion): QuestionField {
+    // 1. Traduz o tipo usando a tabela.
+    //    Se vier um tipo desconhecido, cai em 'text' como segurança.
+    const tipo = this.mapaDeTipos[apiQuestion.type] ?? 'text';
+
+    // 2. Converte as opções.
+    //    Backend:  { label: "Feminino", value: "F" }
+    //    Frontend: { id: "F", label: "Feminino" }
+    //    Ou seja, o "value" do backend vira o "id" do frontend.
+    const opcoes: FieldOption[] = (apiQuestion.options ?? []).map(opt => ({
+      id: opt.value,
+      label: opt.label,
+    }));
+
+    // 3. Monta a pergunta no formato do frontend
+    const pergunta: QuestionField = {
+      id: apiQuestion._id,
+      label: apiQuestion.title,
+      type: tipo,
+    };
+
+    // 4. Só adiciona "options" se houver alguma.
+    //    Perguntas ABERTA não têm opções, e um array vazio
+    //    pode confundir a renderização na tela.
+    if (opcoes.length > 0) {
+      pergunta.options = opcoes;
+    }
+
+    return pergunta;
+  }
+
+  /**
+   * Converte uma lista inteira de perguntas de uma vez.
+   */
+  private converterPerguntas(apiQuestions: ApiQuestion[]): QuestionField[] {
+    return (apiQuestions ?? []).map(q => this.converterPergunta(q));
+  }
+
+  /**
+   * Converte UMA seção do formato do backend para o formato do frontend.
+   * Recebe as perguntas já convertidas, porque elas vêm de outra chamada HTTP.
+   */
+  private converterSecao(apiSection: ApiSection, perguntas: QuestionField[]): Section {
+    return {
+      id: apiSection._id,
+      name: apiSection.title,
+      questions: perguntas,
+    };
+  }
+  /**
+   * Busca UM formulário completo do backend, com todas as suas seções
+   * e perguntas já convertidas para o formato do frontend.
+   *
+   * Faz três níveis de chamada:
+   *   1. GET /forms/{id}           -> dados básicos do formulário
+   *   2. GET /forms/{id}/sections  -> as seções
+   *   3. GET /sections/{id}/questions -> as perguntas de CADA seção (em paralelo)
+   *
+   * Devolve um Observable — quem chamar precisa dar .subscribe().
+   */
+  loadFormDetail(formId: string): Observable<Form> {
+    return new Observable<Form>(observer => {
+      // ETAPA 1: busca os dados básicos do formulário
+      this.http.get<any>(`${this.apiUrl}/forms/${formId}`).subscribe({
+        next: (formData) => {
+
+          // ETAPA 2: busca as seções desse formulário
+          this.http.get<ApiSectionsResponse>(`${this.apiUrl}/forms/${formId}/sections`).subscribe({
+            next: (sectionsResponse) => {
+              const apiSections = sectionsResponse.sections ?? [];
+
+              // Se o formulário não tem nenhuma seção, já terminamos.
+              if (apiSections.length === 0) {
+                observer.next({
+                  id: formData._id,
+                  name: formData.name,
+                  questions: 0,
+                  entity: 'Backend',
+                  createdAt: new Date().toISOString(),
+                  type: 'template',
+                  sections: [],
+                });
+                observer.complete();
+                return;
+              }
+
+              // ETAPA 3: monta UMA chamada HTTP para cada seção.
+              // Ainda não executa nada — só prepara a lista de "pedidos".
+              const pedidosDePerguntas = apiSections.map(secao =>
+                this.http.get<ApiQuestionsResponse>(
+                  `${this.apiUrl}/sections/${secao._id}/questions`
+                )
+              );
+
+              // O forkJoin dispara todos os pedidos em paralelo e só
+              // devolve quando TODOS responderem.
+              forkJoin(pedidosDePerguntas).subscribe({
+                next: (respostas) => {
+                  // respostas[0] são as perguntas de apiSections[0], e assim por diante.
+                  // Por isso usamos o índice para casar seção com suas perguntas.
+                  const secoesConvertidas: Section[] = apiSections.map((secao, indice) => {
+                    const perguntasDaApi = respostas[indice].questions ?? [];
+                    const perguntasConvertidas = this.converterPerguntas(perguntasDaApi);
+                    return this.converterSecao(secao, perguntasConvertidas);
+                  });
+
+                  // Conta o total de perguntas somando as de todas as seções
+                  const totalDePerguntas = secoesConvertidas.reduce(
+                    (soma, secao) => soma + secao.questions.length,
+                    0
+                  );
+
+                  // Monta o formulário completo no formato do frontend
+                  const formCompleto: Form = {
+                    id: formData._id,
+                    name: formData.name,
+                    questions: totalDePerguntas,
+                    entity: 'Backend',
+                    createdAt: new Date().toISOString(),
+                    type: 'template',
+                    sections: secoesConvertidas,
+                  };
+
+                  observer.next(formCompleto);
+                  observer.complete();
+                },
+                error: (err) => observer.error(err),
+              });
+            },
+            error: (err) => observer.error(err),
+          });
+        },
+        error: (err) => observer.error(err),
+      });
+    });
+  }
   /**
    * Cria um novo formulário no backend.
    * Método: POST
