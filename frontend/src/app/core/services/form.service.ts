@@ -52,6 +52,49 @@ export class FormService {
   }
 
   /**
+   * Gera o próximo id sequencial no padrão form_XXX.
+   * Olha todos os formulários já existentes, encontra o maior número
+   * e devolve esse número + 1, formatado com 3 dígitos.
+   */
+  private generateNextFormId(): string {
+    // 1. Pega a lista de formulários que já temos em memória
+    const forms = this.formsSubject.value;
+
+    // 2. Descobre qual é o maior número já usado.
+    //    Começa em 0 para que, se não houver nenhum, o primeiro seja form_001.
+    let maiorNumero = 0;
+
+    for (const form of forms) {
+      // Só nos interessam ids que seguem o padrão form_XXX (3 dígitos).
+      // O ^ marca o início e o $ marca o fim, então "form_12" ou
+      // "abc_form_003" não passam — precisa ser exatamente o formato.
+      if (!/^form_\d{3}$/.test(form.id)) {
+        continue; // ignora esse id e vai para o próximo
+      }
+
+      // 3. Tira o prefixo "form_" e converte o resto para número.
+      //    "form_003" -> "003" -> 3
+      //    O 10 no parseInt diz "interprete na base decimal".
+      const numero = parseInt(form.id.replace('form_', ''), 10);
+
+      // 4. Se esse número for maior que o maior encontrado até agora, atualiza
+      if (numero > maiorNumero) {
+        maiorNumero = numero;
+      }
+    }
+
+    // 5. O próximo é o maior + 1
+    const proximoNumero = maiorNumero + 1;
+
+    // 6. Converte de volta para texto com 3 dígitos.
+    //    padStart(3, '0') significa: "complete com zeros à esquerda
+    //    até o texto ter 3 caracteres". 4 -> "4" -> "004"
+    const numeroFormatado = String(proximoNumero).padStart(3, '0');
+
+    return `form_${numeroFormatado}`;
+  }
+
+  /**
    * Cria um novo formulário no backend.
    * Método: POST
    * Rota: /forms
@@ -59,7 +102,7 @@ export class FormService {
   addForm(form: Omit<Form, 'id' | 'createdAt'>): void {
     // Monta o objeto no formato que o backend espera
     const payload = {
-      id: `form_${String(Date.now() % 1000).padStart(3, '0')}`,
+      id: this.generateNextFormId(),
       name: form.name,
       metadata: {
         active: true,
@@ -112,7 +155,7 @@ export class FormService {
       }
     });
   }
-  
+
   searchForms(query: string): Form[] {
     if (!query.trim()) return this.formsSubject.value;
     const q = query.toLowerCase();
