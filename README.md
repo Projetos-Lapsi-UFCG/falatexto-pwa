@@ -6,7 +6,7 @@ Backend FastAPI + Frontend Angular PWA para o sistema de documentação clínica
 
 ## Pré-requisitos
 
-- Docker e Docker Compose
+- [Docker e Docker Compose](https://www.docker.com/get-started/)
 - [Ollama](https://ollama.com) rodando localmente na porta padrão (`11434`), com o modelo usado pelo `vision-engine` já baixado:
   ```bash
   ollama pull gemma:7b
