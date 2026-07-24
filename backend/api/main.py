@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import CORS_ORIGINS
-from .routers import forms, sections, questions, vision
+from .routers import forms, sections, questions, submissions, vision
 
 DESCRIPTION = """
 API do **Fala-Texto**, sistema de documentação clínica.
@@ -36,6 +36,10 @@ tags_metadata = [
         ),
     },
     {
+        "name": "submissions",
+        "description": "Formulários preenchidos (respostas, dados do paciente e encerramento).",
+    },
+    {
         "name": "vision",
         "description": "Integração com o Vision Engine para extração de dados clínicos via LLM.",
     },
@@ -59,6 +63,7 @@ app.add_middleware(
 app.include_router(forms.router)
 app.include_router(sections.router)
 app.include_router(questions.router)
+app.include_router(submissions.router)
 app.include_router(vision.router)
 
 
