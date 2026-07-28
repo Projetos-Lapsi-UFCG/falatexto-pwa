@@ -12,10 +12,11 @@ services:
     networks:
       - falatexto-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
+      test: ["CMD", "mongosh", "--quiet", "--eval", "printjson(db.adminCommand({ping:1}))"]
+      interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   api:
     build:
@@ -25,8 +26,7 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      database:
-        condition: service_healthy
+      - database
     extra_hosts:
       - "localhost:172.17.0.1"
     environment:
@@ -46,13 +46,14 @@ services:
     ports:
       - "8001:8001"
     depends_on:
-      database:
-        condition: service_healthy
+      - database
     environment:
       MONGO_URI: mongodb://database:27017
       # Requer Ollama rodando no HOST (fora do Docker) na porta 11434,
       # com o modelo abaixo já baixado: `ollama pull gemma:7b`.
       OLLAMA_HOST: http://172.17.0.1:11434
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_URL: http://172.17.0.1:11434
       OLLAMA_MODEL: llama3.1:8b
     networks:
       - falatexto-network
