@@ -1,45 +1,54 @@
 import os
 import uuid
+import base64
+import json
+import re
 from typing import Any, Dict, List, Literal, Optional
-import glob
+from datetime import datetime, timedelta
+
 from pypdf import PdfReader
 import ollama
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 import uvicorn
-import json
 from pymongo import MongoClient
 
-try:
-    import easyocr
-except ImportError:
-    easyocr = None
+# ==============================================================================
+# INICIALIZAÇÃO DA APLICAÇÃO E GERENCIAMENTO DE MEMÓRIA (TTL)
+# ==============================================================================
+app = FastAPI(
+    title="FalaTexto LLM Vision Engine (Multimodal Nativo)",
+    description="Motor de extração clínica estruturada utilizando LLMs Multimodais e MongoDB."
+)
 
-leitor_ocr = None
-
-def get_leitor_ocr():
-    """Inicializa o leitor OCR apenas na primeira vez que for utilizado."""
-    global leitor_ocr
-    if leitor_ocr is None and easyocr is not None:
-        try:
-            leitor_ocr = easyocr.Reader(['pt'], gpu=False)
-        except Exception:
-            leitor_ocr = None
-    return leitor_ocr
-
-# --- INICIALIZAÇÃO DA API E ARMAZENAMENTO EM MEMÓRIA ---
-app = FastAPI(title="FalaTexto LLM Gateway API (Assíncrona)")
-
-PASTA_PROMPTS = "prompts"
-
-# Cache global para armazenar os exemplos do prompt de sistema (Few-Shot)
-EXEMPLOS_FEW_SHOT_CACHE = ""
-
-# Fila em memória para gerenciar o status das sessões de processamento
+# Tabela em memória para rastreamento do estado das requisições assíncronas
 fila_de_sessoes: Dict[str, Any] = {}
 
-# --- CONFIGURAÇÃO DE SEGURANÇA (CORS) ---
+# Janela de retenção máxima dos dados na memória (TTL de 7 dias para evitar estouro de RAM)
+DIAS_EXPIRACAO_SESSAO = 7
+
+
+def limpar_sessoes_expiradas() -> None:
+    """
+    Varre o dicionário de sessões em memória e descarta registros
+    criados há mais de 7 dias para otimizar o uso da memória RAM.
+    """
+    agora = datetime.now()
+    limite = agora - timedelta(days=DIAS_EXPIRACAO_SESSAO)
+    
+    ids_expirados = [
+        id_sessao for id_sessao, dados in fila_de_sessoes.items()
+        if dados.get("criado_em") and dados["criado_em"] < limite
+    ]
+    
+    for id_sessao in ids_expirados:
+        del fila_de_sessoes[id_sessao]
+
+
+# ==============================================================================
+# CONFIGURAÇÕES DE REDE, BANCO E CLIENTES
+# ==============================================================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -48,170 +57,174 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- CONFIGURAÇÃO DO OLLAMA ---
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://172.17.0.1:11434")
 client = ollama.Client(host=OLLAMA_HOST)
-MODELO = os.getenv("OLLAMA_MODEL", "gemma:7b")
 
-# --- CONFIGURAÇÃO DO MONGODB ---
-# Conexão utilizando a rede interna do Docker (host 'database')
+MODELO = os.getenv("OLLAMA_MODEL", "llama3.2-vision")
+
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://database:27017")
 mongo_client = MongoClient(MONGO_URI)
 db = mongo_client["assis_db"]
 
-# --- SCHEMAS DE VALIDAÇÃO (PYDANTIC V2) ---
+
+# ==============================================================================
+# SCHEMAS PYDANTIC DE VALIDAÇÃO DOS DADOS
+# ==============================================================================
 class CampoDinamico(BaseModel):
-    campo_id: str = Field(description="ID único em snake_case")
-    label: str = Field(description="Nome amigável do campo")
-    valor: Any = Field(None, description="Valor dinâmico extraído")
-    tipo_componente: Literal["checkbox", "texto", "numero", "Texto", "Numero", "Checkbox", "data", "Data"] = Field(description="Tipo de input do Front")
+    campo_id: str = Field(description="Identificador único no formato snake_case")
+    label: str = Field(description="Rótulo legível para apresentação na UI")
+    valor: Any = Field(None, description="Conteúdo extraído do documento/áudio/texto")
+    tipo_componente: Literal["checkbox", "texto", "numero", "Texto", "Numero", "Checkbox", "data", "Data"] = Field(
+        default="texto",
+        description="Tipo do componente de formulário na UI"
+    )
 
 class SecaoDinamica(BaseModel):
-    titulo_secao: str = Field(description="Título do bloco de dados")
-    campos: List[CampoDinamico] = Field(description="Lista de campos dentro da seção")
+    titulo_secao: str = Field(description="Título do agrupamento de campos")
+    campos: List[CampoDinamico] = Field(description="Lista de campos extraídos pertencentes à seção")
+
+    @field_validator("campos", mode="before")
+    @classmethod
+    def filtrar_campos_invalidos(cls, v):
+        # Garante que apenas objetos válidos entrem no processamento do Pydantic
+        if isinstance(v, list):
+            return [item for item in v if isinstance(item, dict)]
+        return v
 
 class ProntuarioUniversal(BaseModel):
-    tipo_documento: str = Field(description="Tipo do prontuário ou consulta")
-    secoes: List[SecaoDinamica] = Field(description="Seções do documento")
-    resumo_narrativo: Optional[str] = Field(default="", description="Resumo descritivo da consulta")
+    tipo_documento: str = Field(description="Classificação do documento médico")
+    secoes: List[SecaoDinamica] = Field(description="Coleção de seções estruturadas")
+    resumo_narrativo: Optional[str] = Field(default="", description="Síntese clínica legível")
 
 
-def extrair_texto_de_imagem_local(caminho_imagem: str) -> str:
+# ==============================================================================
+# SANITIZAÇÃO E NORMALIZAÇÃO DE RESPOSTAS DA LLM (BLINDAGEM DE PAYLOAD)
+# ==============================================================================
+def sanitizar_dicionario_recursivo(dado: Any) -> Any:
     """
-    Executa o OCR em uma imagem local utilizando a biblioteca EasyOCR.
-    Retorna o texto detectado unificado em uma única string.
+    Função de higienização defensiva para conter imperfeições comuns de LLMs menores:
+    1. Remove caracteres de controle, espaços excedentes e sufixos ':' nas chaves.
+    2. Corrigi desaninhar de payloads como {"valor": {"": "Conteudo"}}.
+    3. Trata alucinações de nomes de chaves (ex: 'campostein' no lugar de 'campo_id').
+    4. Auto-gera 'campo_id' e 'label' sintéticos em fallback para evitar falhas do Pydantic.
     """
-    ocr = get_leitor_ocr()
-    if ocr is None:
-        return ""
-    try:
-        resultado = ocr.readtext(caminho_imagem, detail=0)
-        return "\n".join(resultado)
-    except Exception:
-        return ""
-
-
-def carregar_exemplos_da_pasta(pasta: str) -> str:
-    """
-    Varre o diretório de prompts mapeando pares de imagem e JSON.
-    Gera a estrutura de suporte para a técnica de Few-Shot Prompting na LLM.
-    """
-    blocos_exemplo = ""
-    extensoes_imagem = ["*.png", "*.jpg", "*.jpeg", "*.webp"]
-    arquivos_imagem = []
-    
-    for ext in extensoes_imagem:
-        arquivos_imagem.extend(glob.glob(os.path.join(pasta, ext)))
-    
-    for caminho_img in arquivos_imagem:
-        try:
-            caminho_base = os.path.splitext(caminho_img)[0]
-            caminho_json = caminho_base + ".json"
+    if isinstance(dado, dict):
+        novo_dict = {}
+        for k, v in dado.items():
+            chave_limpa = k.strip().rstrip(":").strip() if isinstance(k, str) else k
             
-            if os.path.exists(caminho_json):
-                texto_extraido_da_imagem = extrair_texto_de_imagem_local(caminho_img)
-                
-                with open(caminho_json, "r", encoding="utf-8") as f_json:
-                    conteudo_json_esperado = f_json.read()
-                
-                nome_exemplo = os.path.basename(caminho_base)
+            if chave_limpa == "campos" and isinstance(v, list):
+                campos_limpos = []
+                for idx, item in enumerate(v):
+                    if isinstance(item, dict):
+                        item_sanitizado = sanitizar_dicionario_recursivo(item)
+                        
+                        # Correção 1: Desaninha o atributo 'valor' caso a IA retorne como um dicionário
+                        valor_bruto = item_sanitizado.get("valor")
+                        if isinstance(valor_bruto, dict):
+                            item_sanitizado["valor"] = next(iter(valor_bruto.values()), None) if valor_bruto else None
 
-                blocos_exemplo += f"\n### EXEMPLO DE REFERÊNCIA DE DOCUMENTO ({nome_exemplo}):\n"
-                blocos_exemplo += f"Texto extraído visualmente da imagem pelo OCR:\n\"{texto_extraido_da_imagem}\"\n\n"
-                blocos_exemplo += f"SAÍDA JSON ESPERADA CORRESPONDENTE:\n{conteudo_json_esperado}\n"
-                blocos_exemplo += "-" * 50 + "\n"
-                
-        except Exception as e:
-            print(f"Erro ao carregar par de exemplos ({caminho_img}): {str(e)}")
-            continue
-            
-    return blocos_exemplo
+                        # Correção 2: Fallback defensivo para a chave 'campo_id'
+                        if "campo_id" not in item_sanitizado or not item_sanitizado["campo_id"]:
+                            label_ref = str(item_sanitizado.get("label", "")).strip()
+                            if label_ref:
+                                # Converte o label para formato snake_case limpo
+                                item_sanitizado["campo_id"] = re.sub(r'[^a-zA-Z0-9_]', '', label_ref.lower().replace(" ", "_")) or f"campo_{idx}"
+                            else:
+                                item_sanitizado["campo_id"] = f"campo_{idx}"
+                        else:
+                            item_sanitizado["campo_id"] = str(item_sanitizado["campo_id"]).strip()
+
+                        # Correção 3: Fallback defensivo para a chave 'label'
+                        if "label" not in item_sanitizado or not item_sanitizado["label"]:
+                            item_sanitizado["label"] = item_sanitizado["campo_id"].replace("_", " ").title()
+                        else:
+                            item_sanitizado["label"] = str(item_sanitizado["label"]).strip()
+
+                        # Correção 4: Normalização do tipo do componente
+                        if "tipo_componente" not in item_sanitizado or not item_sanitizado["tipo_componente"]:
+                            item_sanitizado["tipo_componente"] = "texto"
+
+                        campos_limpos.append(item_sanitizado)
+                novo_dict[chave_limpa] = campos_limpos
+            else:
+                novo_dict[chave_limpa] = sanitizar_dicionario_recursivo(v)
+        return novo_dict
+
+    elif isinstance(dado, list):
+        itens_filtrados = []
+        for item in dado:
+            if isinstance(item, (dict, list)):
+                itens_filtrados.append(sanitizar_dicionario_recursivo(item))
+            elif isinstance(item, (str, int, float, bool)) or item is None:
+                itens_filtrados.append(item)
+        return itens_filtrados
+
+    return dado
 
 
-@app.on_event("startup")
-def inicializar_prompts_sistema():
-    global EXEMPLOS_FEW_SHOT_CACHE
-    print("Carregando base de exemplos do diretório prompts...")
-    EXEMPLOS_FEW_SHOT_CACHE = carregar_exemplos_da_pasta(PASTA_PROMPTS)
-    print("Exemplos pré-carregados na memória com sucesso.")
-
-
-# --- PROCESSAMENTO ASSÍNCRONO EM SEGUNDO PLANO ---
-# Função definida como síncrona comum (def) para delegação em thread pool separada,
-# impedindo o bloqueio do loop de eventos principal do FastAPI durante a execução da LLM e OCR.
+# ==============================================================================
+# FLUXO DE EXECUÇÃO ASSÍNCRONA EM BACKGROUND
+# ==============================================================================
 def processar_llm_em_segundo_plano(
     id_sessao: str, 
     texto_clinico: str, 
     conteudo_arquivo: bytes = None, 
     nome_arquivo: str = None
 ):
-    global EXEMPLOS_FEW_SHOT_CACHE
+    prompt_sistema = """You are a precise medical AI assistant extracting form data from medical images and text into JSON.
 
-    
-    prompt_sistema = f"""You are a universal medical AI extraction engine. Your SOLE task is to convert raw clinical data (text/OCR) into the exact JSON schema provided below.
+CRITICAL STRUCTURAL RULE:
+The 'campos' property MUST BE an array of JSON Objects.
+NEVER insert raw strings or key names into the 'campos' array. Do NOT add trailing colons to JSON key names.
 
-    You are STRICTLY FORBIDDEN from creating keys like 'patient', 'consultation', 'diagnosis', or any other key not present in the schema below. Every piece of clinical information (e.g., patient name, age, clinical findings, checklist items, doctor's notes) MUST be mapped inside the 'campos' array divided into 'secoes'.
+CORRECT STRUCTURAL EXAMPLE:
+{
+  "tipo_documento": "Prontuário Médico",
+  "secoes": [
+    {
+      "titulo_secao": "Identificação do Paciente",
+      "campos": [
+        {
+          "campo_id": "nome_paciente",
+          "label": "Nome do Paciente",
+          "valor": "João Silva",
+          "tipo_componente": "texto"
+        },
+        {
+          "campo_id": "idade",
+          "label": "Idade",
+          "valor": 45,
+          "tipo_componente": "numero"
+        }
+      ]
+    }
+  ],
+  "resumo_narrativo": "Paciente do sexo masculino, 45 anos, sem queixas."
+}
 
-    CRITICAL INSTRUCTION - STRICT SKELETON & FULL COVERAGE:
-    - DO NOT SKIP, OMIT, COMBINE, OR TRUNCATE ANY FIELD OR CHECKLIST ITEM.
-    - If the input matches a document structure found in FEW-SHOT EXAMPLES (e.g., 'Lista de Verificação de Cirurgia Segura'), you MUST preserve ALL sections ('secoes') and fields ('campos') defined in that template.
-    - Map the extracted text/audio to each field in the template. If a field is mentioned, update its 'valor' (true/false for checkboxes, string/number for inputs). If a field is NOT mentioned, set its 'valor' to null. NEVER delete the field object.
+INSTRUCTIONS:
+1. Parse all clinical text and handwritten notes from the image.
+2. Group the extracted information logically into sections.
+3. Translate all 'label', 'titulo_secao', 'tipo_documento', and 'resumo_narrativo' to Portuguese.
+4. 'tipo_componente' must strictly be one of: 'texto', 'numero', or 'checkbox'.
+5. Output ONLY valid JSON, without markdown formatting or conversational prose."""
 
-    You MUST strictly return a JSON object with this exact structure:
-    {{
-    "tipo_documento": "Ex: Lista de Verificação de Cirurgia Segura, Prontuário Ambulatorial",
-    "secoes": [
-        {{
-        "titulo_secao": "Exact Section Name from document (Ex: Identificação Básica, 1. Antes da Indução Anestésica)",
-        "campos": [
-            {{
-            "campo_id": "field_identifier_in_snake_case (Ex: nome_paciente, sitio_cirurgico_correto, contagem_compressas)",
-            "label": "Human-readable label as written on the document",
-            "valor": "Extracted value (String, Number, boolean true/false, or null if unmentioned/blank)",
-            "tipo_componente": "Strictly defined as 'texto', 'numero', or 'checkbox'"
-            }}
-        ]
-        }}
-    ],
-    "resumo_narrativo": "A comprehensive, continuous formal medical narrative summarizing the entire form and findings."
-    }}
-
-    GOLDEN RULES:
-    1. Never alter the primary key names ('tipo_documento', 'secoes', 'titulo_secao', 'campos', 'campo_id', 'label', 'valor', 'tipo_componente', 'resumo_narrativo'). Keep key names exactly as defined in Portuguese to preserve backend contracts.
-    2. Output ONLY pure JSON. No markdown code blocks wrapping, no explanatory text before or after.
-    3. The 'tipo_componente' field MUST ALWAYS be lowercase string: 'texto', 'numero', or 'checkbox'. Never use 'Texto', 'Date', or 'String'.
-    4. For missing or unformatted values, assign null. NEVER hallucinate names, dates, or clinical facts that are not present in the input.
-    5. For checkboxes, radios, or option lists:
-    - If an option is selected/checked, set 'valor' to true or the selected option string, and 'tipo_componente' to 'checkbox'.
-    - If an option is explicitly marked as unchecked or "Não/No", evaluate accordingly (false or null).
-    6. Section titles ('titulo_secao') and field labels ('label') MUST be in Portuguese, strictly derived from the medical document context.
-
-    FEW-SHOT EXAMPLES FOR STRUCTURAL GUIDANCE ONLY:
-    {EXEMPLOS_FEW_SHOT_CACHE}
-
-    STRICT ISOLATION & DATA INTEGRITY RULES:
-    1. NEVER copy terms, medical concepts, or placeholder data from the examples above into the result.
-    2. DO NOT use structural terms like 'Few-Shot', 'Example', or 'Fewo' in section titles or field IDs.
-    3. For fields containing dates (e.g., birth dates, surgical dates), set 'tipo_componente' strictly to 'texto'.
-    4. Ensure 100% field coverage: Header info, all checklist columns, notes, and footer fields (e.g., Responsável, Data) must be included in the JSON.
-    """
-    mensagens = [{"role": "system", "content": prompt_sistema}]
     caminho_temporario = None
+    imagem_base64 = None
 
     try:
-        # 1. PROCESSAMENTO DE ENTRADAS DE ARQUIVOS
+        # Processamento preliminar de anexos (Imagens, PDFs e CSVs)
         if conteudo_arquivo and nome_arquivo:
             extensao = nome_arquivo.lower().split('.')[-1]
-            caminho_temporario = f"temp_{id_sessao}_{nome_arquivo}"
             
-            with open(caminho_temporario, "wb") as f:
-                f.write(conteudo_arquivo)
-
             if extensao in ["png", "jpg", "jpeg", "webp"]:
-                texto_da_imagem_usuario = extrair_texto_de_imagem_local(caminho_temporario)
-                texto_clinico += f"\n\n[CONTEÚDO EXTRAÍDO DA IMAGEM DO USUÁRIO]:\n{texto_da_imagem_usuario}"
-
+                imagem_base64 = base64.b64encode(conteudo_arquivo).decode('utf-8')
+            
             elif extensao == "pdf":
+                caminho_temporario = f"temp_{id_sessao}_{nome_arquivo}"
+                with open(caminho_temporario, "wb") as f:
+                    f.write(conteudo_arquivo)
                 reader = PdfReader(caminho_temporario)
                 texto_extraido_pdf = "".join([p.extract_text() or "" for p in reader.pages])
                 texto_clinico += f"\n\n[CONTEÚDO EXTRAÍDO DO PDF]:\n{texto_extraido_pdf}"
@@ -219,88 +232,114 @@ def processar_llm_em_segundo_plano(
             elif extensao == "csv":
                 texto_clinico += f"\n\n[CONTEÚDO EXTRAÍDO DO CSV]:\n{conteudo_arquivo.decode('utf-8', errors='ignore')}"
 
-        mensagens.append({"role": "user", "content": f"Processe as seguintes informações médicas seguindo o padrão estabelecido: {texto_clinico}"})
+        mensagem_usuario: Dict[str, Any] = {
+            "role": "user",
+            "content": f"Analyze and structure the following clinical information according to the required schema: {texto_clinico}"
+        }
 
-        # 2. EXECUÇÃO DO MODELO NO OLLAMA
+        if imagem_base64:
+            mensagem_usuario["images"] = [imagem_base64]
+
+        mensagens = [
+            {"role": "system", "content": prompt_sistema},
+            mensagem_usuario
+        ]
+
+        # Chamada à API da LLM garantindo formato JSON estrito
         response = client.chat(
             model=MODELO, 
-            format='json', 
+            format="json",
             options={
-                'temperature': 0.0,   
-                'num_predict': 2048,  
-                'num_ctx': 8192       
+                'temperature': 0.0,
+                'num_predict': 2048,
+                'num_ctx': 8192
             }, 
             messages=mensagens
         )
 
+        # Limpeza do arquivo de disco temporário (se houver)
         if caminho_temporario and os.path.exists(caminho_temporario):
             os.remove(caminho_temporario)
 
-        # 3. VALIDAÇÃO E PARSING DO RETORNO VIA PYDANTIC
         resposta_pura_llm = response['message']['content']
-        dados_validados = ProntuarioUniversal.model_validate_json(resposta_pura_llm)
 
-        # 4. PERSISTÊNCIA DOS DADOS NO MONGODB
+        # Desserialização e duplo pipeline de sanitização/validação
+        dados_brutos = json.loads(resposta_pura_llm)
+        dados_sanitizados = sanitizar_dicionario_recursivo(dados_brutos)
+        dados_validados = ProntuarioUniversal.model_validate(dados_sanitizados)
+
         dados_prontuario = dados_validados.model_dump()
-        
-        # Estruturação do payload mapeando o esquema esperado pela rota GET /forms do Core
-        secoes_formatadas = []
-        for secao in dados_prontuario.get("secoes", []):
-            campos_formatados = []
-            for campo in secao.get("campos", []):
-                campos_formatados.append({
-                    "id": campo.get("campo_id"),
-                    "label": campo.get("label"),
-                    "value": campo.get("valor"),
-                    "type": str(campo.get("tipo_componente")).lower() if campo.get("tipo_componente") else "texto"
-                })
-            
-            secoes_formatadas.append({
-                "title": secao.get("titulo_secao"),
-                "fields": campos_formatados
-            })
+        secoes_tratadas = dados_prontuario.get("secoes", [])
 
+        # Persistência estruturada do documento final no MongoDB
         documento_mongo = {
-            "_id": id_sessao,
-            "name": f"Prontuário Automático - {dados_prontuario.get('tipo_documento', 'Atendimento')}",
+            "_id": id_sessao,  
+            "name": f"Prontuário Automático - {dados_prontuario.get('tipo_documento', 'Documento Clínico')}",
             "metadata": {
-                   "version": "1.0",
-                   "active": True
-             },
-            "sections": secoes_formatadas
+                "version": "1.0",
+                "active": True,
+                "origem": f"Vision Engine AI ({MODELO})"
+            },
+            "sections": secoes_tratadas,
+            "resumo_narrativo": dados_prontuario.get("resumo_narrativo", "")
         }
         
-        # Persistência na coleção 'forms'
         db.forms.insert_one(documento_mongo)
 
-        # Atualização de estado na fila em memória para consulta via GET /status
+        # Atualização do estado mantendo o timestamp original da requisição
+        data_criacao = fila_de_sessoes.get(id_sessao, {}).get("criado_em", datetime.now())
         fila_de_sessoes[id_sessao] = {
             "status": "executed",
-            "dados": dados_prontuario
+            "dados": dados_prontuario,
+            "criado_em": data_criacao
         }
 
     except ValidationError as erro_schema:
-        if caminho_temporario and os.path.exists(caminho_temporario): os.remove(caminho_temporario)
+        if caminho_temporario and os.path.exists(caminho_temporario): 
+            os.remove(caminho_temporario)
+        data_criacao = fila_de_sessoes.get(id_sessao, {}).get("criado_em", datetime.now())
         fila_de_sessoes[id_sessao] = {
             "status": "failed",
-            "erro": "Erro de Validação: A IA não seguiu o Schema do banco de dados.",
-            "detalhes": erro_schema.errors()
+            "erro": "Erro de Validação: A IA não seguiu o Schema exigido pelo sistema.",
+            "detalhes": erro_schema.errors(),
+            "criado_em": data_criacao
         }
     except Exception as e:
-        if caminho_temporario and os.path.exists(caminho_temporario): os.remove(caminho_temporario)
+        if caminho_temporario and os.path.exists(caminho_temporario): 
+            os.remove(caminho_temporario)
+        data_criacao = fila_de_sessoes.get(id_sessao, {}).get("criado_em", datetime.now())
         fila_de_sessoes[id_sessao] = {
             "status": "failed",
-            "erro": str(e)
+            "erro": str(e),
+            "criado_em": data_criacao
         }
 
+
+# ==============================================================================
+# ENDPOINTS REST DA API
+# ==============================================================================
+
+@app.post("/vision/processar-clinica")
 @app.post("/api/processar-clinica")
 async def empilhar_processamento_clinico(
     background_tasks: BackgroundTasks,
     arquivo: UploadFile = File(None),
     texto_clinico: str = Form(...),
 ):
+    """
+    Recebe requisições de extração, faz o controle de sessão e delega
+    o processamento pesado para as BackgroundTasks do FastAPI.
+    """
+    # Limpeza proativa de registros antigos (> 7 dias) antes de aceitar novos dados
+    limpar_sessoes_expiradas()
+
     id_sessao = str(uuid.uuid4())
-    fila_de_sessoes[id_sessao] = {"status": "pending"}
+    
+    # Registra o item na fila com o timestamp de criação atual
+    fila_de_sessoes[id_sessao] = {
+        "status": "pending",
+        "criado_em": datetime.now()
+    }
 
     conteudo_arquivo = None
     nome_arquivo = None
@@ -308,7 +347,6 @@ async def empilhar_processamento_clinico(
         conteudo_arquivo = await arquivo.read()
         nome_arquivo = arquivo.filename
 
-    # Adição da tarefa ao BackgroundTasks para execução assíncrona
     background_tasks.add_task(
         processar_llm_em_segundo_plano, 
         id_sessao, 
@@ -321,36 +359,62 @@ async def empilhar_processamento_clinico(
         "mensagem": "Requisição empilhada com sucesso.",
         "id_sessao": id_sessao,
         "status": "pending",
-        "link_consulta": f"/api/status/{id_sessao}"
+        "link_consulta": f"/vision/status/{id_sessao}"
     }
 
+
+@app.get("/vision/status/{id_sessao}")
 @app.get("/api/status/{id_sessao}")
 async def consultar_status_sessao(id_sessao: str):
+    """
+    Consulta o estado de processamento de uma sessão pelo ID.
+    """
     sessao = fila_de_sessoes.get(id_sessao)
     if not sessao:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada ou expirada.")
-    return sessao
+        raise HTTPException(
+            status_code=404, 
+            detail="Sessão não encontrada ou expirada (limite de retenção de 7 dias)."
+        )
+    
+    # Serialização do campo datetime para ISO String
+    resposta = dict(sessao)
+    if "criado_em" in resposta and isinstance(resposta["criado_em"], datetime):
+        resposta["criado_em"] = resposta["criado_em"].isoformat()
+        
+    return resposta
 
+
+@app.get("/vision/sessoes")
 @app.get("/api/sessoes")
 async def listar_sessoes_disponiveis():
+    """
+    Lista todas as sessões registradas em memória dentro do período de retenção.
+    """
+    limpar_sessoes_expiradas()
+    
     if not fila_de_sessoes:
         return {
             "total_sessoes": 0,
-            "mensagem": "Nenhuma sessão ativa ou registrada no momento.",
+            "mensagem": "Nenhuma sessão ativa no momento.",
             "sessoes": []
         }
     
     historico_sessoes = []
     for id_sessao, dados_da_sessao in fila_de_sessoes.items():
+        criado_em = dados_da_sessao.get("criado_em")
+        criado_em_str = criado_em.isoformat() if isinstance(criado_em, datetime) else criado_em
+        
         historico_sessoes.append({
             "id_sessao": id_sessao,
-            "status": dados_da_sessao["status"]
+            "status": dados_da_sessao["status"],
+            "criado_em": criado_em_str
         })
         
     return {
         "total_sessoes": len(historico_sessoes),
         "sessoes": historico_sessoes
     }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)
