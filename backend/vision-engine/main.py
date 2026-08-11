@@ -319,8 +319,7 @@ INSTRUCTIONS:
 # ENDPOINTS REST DA API
 # ==============================================================================
 
-@app.post("/vision/processar-clinica")
-@app.post("/api/processar-clinica")
+@app.post("/api/v1/processar-clinica")
 async def empilhar_processamento_clinico(
     background_tasks: BackgroundTasks,
     arquivo: UploadFile = File(None),
@@ -359,12 +358,11 @@ async def empilhar_processamento_clinico(
         "mensagem": "Requisição empilhada com sucesso.",
         "id_sessao": id_sessao,
         "status": "pending",
-        "link_consulta": f"/vision/status/{id_sessao}"
+        "link_consulta": f"/api/v1/status/{id_sessao}"
     }
 
 
-@app.get("/vision/status/{id_sessao}")
-@app.get("/api/status/{id_sessao}")
+@app.get("/api/v1/status/{id_sessao}")
 async def consultar_status_sessao(id_sessao: str):
     """
     Consulta o estado de processamento de uma sessão pelo ID.
@@ -384,8 +382,7 @@ async def consultar_status_sessao(id_sessao: str):
     return resposta
 
 
-@app.get("/vision/sessoes")
-@app.get("/api/sessoes")
+@app.get("/api/v1/sessoes")
 async def listar_sessoes_disponiveis():
     """
     Lista todas as sessões registradas em memória dentro do período de retenção.

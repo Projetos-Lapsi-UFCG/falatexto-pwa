@@ -54,7 +54,7 @@ async def processar_clinica(
     async with httpx.AsyncClient(timeout=VISION_ENGINE_TIMEOUT) as client_http:
         try:
             response = await client_http.post(
-                f"{VISION_ENGINE_URL}/api/processar-clinica",
+                f"{VISION_ENGINE_URL}/api/v1/processar-clinica",
                 data=dados_formulario,
                 files=arquivos,
             )
@@ -76,7 +76,7 @@ async def processar_clinica(
     responses={503: {"description": VISION_INDISPONIVEL}},
 )
 async def listar_sessoes():
-    return await _proxy_get("/api/sessoes")
+    return await _proxy_get("/api/v1/sessoes")
 
 
 @router.get(
@@ -93,4 +93,4 @@ async def listar_sessoes():
     },
 )
 async def consultar_status(id_sessao: str):
-    return await _proxy_get(f"/api/status/{id_sessao}")
+    return await _proxy_get(f"/api/v1/status/{id_sessao}")
