@@ -22,7 +22,13 @@
   <!-- Content -->
   <main class="detail-main">
 
-    @if (notFound) {
+    @if (loading) {
+      <div [@fadeIn] class="not-found">
+        <p class="not-found-title">{{ 'FORM_DETAIL.LOADING' | translate }}</p>
+      </div>
+    }
+
+    @if (!loading && notFound) {
       <div [@fadeIn] class="not-found">
         <ng-icon name="lucideFileText" size="48" class="not-found-icon" />
         <p class="not-found-title">{{ 'FORM_DETAIL.NOT_FOUND_TITLE' | translate }}</p>

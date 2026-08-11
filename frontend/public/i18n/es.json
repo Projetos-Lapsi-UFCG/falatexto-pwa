@@ -57,7 +57,11 @@
     "EMPTY_TITLE": "No se encontraron formularios",
     "EMPTY_SUBTITLE": "Intenta con una búsqueda diferente o crea un nuevo formulario.",
     "CREATE_FORM": "Crear Formulario",
-    "LOGOUT_TITLE": "Cerrar sesión"
+    "LOGOUT_TITLE": "Cerrar sesión",
+    "LOADING": "Cargando formularios...",
+    "ERRORS": {
+      "LOAD_FAILED": "No se pudieron cargar los formularios. Inténtalo de nuevo."
+    }
   },
   "FORM_CARD": {
     "QUESTIONS_SUFFIX": "preguntas"
@@ -69,23 +73,11 @@
     "NAME_LABEL": "Nombre del formulario",
     "NAME_PLACEHOLDER": "ej.: Registro de Paciente",
     "NAME_ERROR": "El nombre es obligatorio (mín. 3 caracteres)",
-    "ENTITY_LABEL": "Departamento / Entidad",
-    "ENTITY_PLACEHOLDER": "ej.: Cardiología",
-    "ENTITY_ERROR": "El departamento es obligatorio",
-    "QUESTIONS_LABEL": "Número de preguntas",
-    "QUESTIONS_PLACEHOLDER": "ej.: 12",
-    "QUESTIONS_ERROR": "Ingresa al menos 1 pregunta",
-    "TYPE_LABEL": "Tipo de formulario",
-    "TYPE_MANUAL": "Manual",
-    "TYPE_TEMPLATE": "Plantilla",
-    "INPUT_METHOD_LABEL": "Método de entrada",
-    "INPUT_DICTATE": "Dictar",
-    "INPUT_UPLOAD": "Subir Imagen",
-    "INPUT_CAMERA": "Abrir Cámara",
     "CANCEL": "Cancelar",
     "SUBMIT": "Crear Formulario",
     "ERRORS": {
-      "FILL_REQUIRED": "Por favor, completa todos los campos obligatorios"
+      "FILL_REQUIRED": "Por favor, completa todos los campos obligatorios",
+      "CREATE_FAILED": "No se pudo crear el formulario. Inténtalo de nuevo."
     },
     "SUCCESS": {
       "CREATED": "Formulario creado con éxito"
@@ -94,8 +86,12 @@
   "FORM_DETAIL": {
     "BACK": "Dashboard",
     "FILL_BTN": "Llenar",
+    "LOADING": "Cargando formulario...",
     "NOT_FOUND_TITLE": "Formulario no encontrado",
     "NOT_FOUND_BACK": "Volver al Dashboard",
+    "ERRORS": {
+      "LOAD_FAILED": "No se pudo cargar este formulario. Inténtalo de nuevo."
+    },
     "LABEL_QUESTIONS": "Preguntas",
     "LABEL_DEPARTMENT": "Departamento",
     "LABEL_CREATED_AT": "Creado el",

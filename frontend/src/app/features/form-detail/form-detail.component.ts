@@ -1,5 +1,6 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -13,8 +14,9 @@ import {
   lucideCamera,
   lucideFileText,
 } from '@ng-icons/lucide';
-import { TranslateModule } from '@ngx-translate/core';
-import { FormService } from '../../core/services/form.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { ToastrService } from 'ngx-toastr';
+import { FormApiService } from '../../core/services/form-api.service';
 import { Form } from '../../core/models/form.model';
 import { LanguageService } from '../../core/services/language.service';
 import { LanguageSelectorComponent } from '../../shared/components/language-selector/language-selector.component';
@@ -44,11 +46,15 @@ import { fadeIn, scaleIn } from '../../shared/animations/fade.animation';
 export class FormDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly formService = inject(FormService);
+  private readonly formApiService = inject(FormApiService);
   private readonly languageService = inject(LanguageService);
+  private readonly toastr = inject(ToastrService);
+  private readonly translate = inject(TranslateService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   form: Form | null = null;
   notFound = false;
+  loading = true;
 
   readonly inputMethodInfo: Record<string, { labelKey: string; icon: string }> = {
     dictate: { labelKey: 'FORM_DETAIL.INPUT_METHODS.DICTATE', icon: 'lucideMic' },
@@ -58,10 +64,28 @@ export class FormDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.form = this.formService.getFormById(id) ?? null;
-      if (!this.form) this.notFound = true;
+    if (!id) {
+      this.loading = false;
+      this.notFound = true;
+      return;
     }
+
+    this.formApiService.getFormById(id).subscribe({
+      next: form => {
+        this.form = form;
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading = false;
+        if (err.status === 404) {
+          this.notFound = true;
+        } else {
+          this.toastr.error(this.translate.instant('FORM_DETAIL.ERRORS.LOAD_FAILED'));
+        }
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   goBack(): void {
