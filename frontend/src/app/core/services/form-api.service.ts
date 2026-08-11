@@ -149,7 +149,7 @@ export class FormApiService {
     return {
       id: summary.id,
       name: summary.name,
-      questions: 0,
+      questions: summary.questionCount ?? 0,
       entity: '',
       createdAt: new Date().toISOString(),
     };

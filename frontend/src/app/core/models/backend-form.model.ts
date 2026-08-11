@@ -66,11 +66,18 @@ export interface BackendFormCreate {
 
 export type BackendFormOut = BackendFormCreate;
 
-/** Forma resumida retornada por GET /forms (sem sections/questions). */
+/**
+ * Forma resumida retornada por GET /forms (sem sections/questions, mas com
+ * uma contagem agregada de perguntas). `questionCount` é opcional porque
+ * `summaryToForm()` (form-api.service.ts) também recebe objetos `BackendFormOut`
+ * (resposta de POST /forms) que não têm esse campo — nesse caso o form é
+ * recém-criado e tem 0 perguntas de qualquer forma.
+ */
 export interface BackendFormSummary {
   id: string;
   name: string;
   metadata: BackendFormMetadata;
+  questionCount?: number;
 }
 
 export type BackendAnswerValue = string | number | boolean | string[] | null;

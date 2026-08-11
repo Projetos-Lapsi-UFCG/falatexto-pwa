@@ -25,11 +25,18 @@ describe('FormApiService', () => {
     service.listForms().subscribe(forms => (result = forms));
 
     httpMock.expectOne(`${API_BASE_URL}/forms`).flush({
-      forms: [{ _id: 'form_001', name: 'Protocolo de Cirurgia Cardíaca', metadata: { version: '1.0', active: true } }],
+      forms: [
+        {
+          _id: 'form_001',
+          name: 'Protocolo de Cirurgia Cardíaca',
+          metadata: { version: '1.0', active: true },
+          questionCount: 3,
+        },
+      ],
     });
 
     expect(result).toEqual([
-      { id: 'form_001', name: 'Protocolo de Cirurgia Cardíaca', questions: 0, entity: '', createdAt: expect.any(String) },
+      { id: 'form_001', name: 'Protocolo de Cirurgia Cardíaca', questions: 3, entity: '', createdAt: expect.any(String) },
     ]);
   });
 
