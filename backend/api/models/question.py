@@ -63,10 +63,9 @@ class QuestionOption(BaseModel):
                 raise ValueError(
                     "Opções com hasComplement=True devem informar complementLabel"
                 )
-            if not self.complementType:
-                raise ValueError(
-                    "Opções com hasComplement=True devem informar complementType"
-                )
+            # complementType é opcional mesmo com hasComplement=True — o frontend
+            # nem sempre o define (ex.: um campo de complemento genérico, sem
+            # tipo específico), então não é exigido aqui.
         else:
             if self.complementLabel is not None or self.complementType is not None:
                 raise ValueError(

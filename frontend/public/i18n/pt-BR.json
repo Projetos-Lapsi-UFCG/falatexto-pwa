@@ -57,7 +57,11 @@
     "EMPTY_TITLE": "Nenhum formulário encontrado",
     "EMPTY_SUBTITLE": "Tente uma busca diferente ou crie um novo formulário.",
     "CREATE_FORM": "Criar Formulário",
-    "LOGOUT_TITLE": "Sair"
+    "LOGOUT_TITLE": "Sair",
+    "LOADING": "Carregando formulários...",
+    "ERRORS": {
+      "LOAD_FAILED": "Não foi possível carregar os formulários. Tente novamente."
+    }
   },
   "FORM_CARD": {
     "QUESTIONS_SUFFIX": "perguntas"
@@ -69,23 +73,11 @@
     "NAME_LABEL": "Nome do formulário",
     "NAME_PLACEHOLDER": "ex.: Triagem de Paciente",
     "NAME_ERROR": "Nome é obrigatório (mín. 3 caracteres)",
-    "ENTITY_LABEL": "Departamento / Entidade",
-    "ENTITY_PLACEHOLDER": "ex.: Cardiologia",
-    "ENTITY_ERROR": "Departamento é obrigatório",
-    "QUESTIONS_LABEL": "Número de perguntas",
-    "QUESTIONS_PLACEHOLDER": "ex.: 12",
-    "QUESTIONS_ERROR": "Insira pelo menos 1 pergunta",
-    "TYPE_LABEL": "Tipo de formulário",
-    "TYPE_MANUAL": "Manual",
-    "TYPE_TEMPLATE": "Modelo",
-    "INPUT_METHOD_LABEL": "Método de entrada",
-    "INPUT_DICTATE": "Ditar",
-    "INPUT_UPLOAD": "Enviar Imagem",
-    "INPUT_CAMERA": "Abrir Câmera",
     "CANCEL": "Cancelar",
     "SUBMIT": "Criar Formulário",
     "ERRORS": {
-      "FILL_REQUIRED": "Por favor, preencha todos os campos obrigatórios"
+      "FILL_REQUIRED": "Por favor, preencha todos os campos obrigatórios",
+      "CREATE_FAILED": "Não foi possível criar o formulário. Tente novamente."
     },
     "SUCCESS": {
       "CREATED": "Formulário criado com sucesso"
@@ -94,8 +86,12 @@
   "FORM_DETAIL": {
     "BACK": "Dashboard",
     "FILL_BTN": "Preencher",
+    "LOADING": "Carregando formulário...",
     "NOT_FOUND_TITLE": "Formulário não encontrado",
     "NOT_FOUND_BACK": "Voltar ao Dashboard",
+    "ERRORS": {
+      "LOAD_FAILED": "Não foi possível carregar este formulário. Tente novamente."
+    },
     "LABEL_QUESTIONS": "Perguntas",
     "LABEL_DEPARTMENT": "Departamento",
     "LABEL_CREATED_AT": "Criado em",

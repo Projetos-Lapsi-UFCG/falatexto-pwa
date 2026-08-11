@@ -48,7 +48,11 @@
 
   <!-- Forms grid -->
   <main class="forms-main">
-    @if (filteredForms.length > 0) {
+    @if (loading) {
+      <div [@fadeIn] class="empty-state">
+        <p class="empty-title">{{ 'DASHBOARD.LOADING' | translate }}</p>
+      </div>
+    } @else if (filteredForms.length > 0) {
       <div [@staggerFade]="filteredForms.length" class="forms-grid">
         @for (form of filteredForms; track form.id) {
           <app-form-card [form]="form" />

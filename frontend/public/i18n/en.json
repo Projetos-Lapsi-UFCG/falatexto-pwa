@@ -57,7 +57,11 @@
     "EMPTY_TITLE": "No forms found",
     "EMPTY_SUBTITLE": "Try a different search or create a new form.",
     "CREATE_FORM": "Create Form",
-    "LOGOUT_TITLE": "Logout"
+    "LOGOUT_TITLE": "Logout",
+    "LOADING": "Loading forms...",
+    "ERRORS": {
+      "LOAD_FAILED": "Could not load forms. Please try again."
+    }
   },
   "FORM_CARD": {
     "QUESTIONS_SUFFIX": "questions"
@@ -69,23 +73,11 @@
     "NAME_LABEL": "Form name",
     "NAME_PLACEHOLDER": "e.g. Patient Intake",
     "NAME_ERROR": "Name is required (min 3 characters)",
-    "ENTITY_LABEL": "Department / Entity",
-    "ENTITY_PLACEHOLDER": "e.g. Cardiology",
-    "ENTITY_ERROR": "Department is required",
-    "QUESTIONS_LABEL": "Number of questions",
-    "QUESTIONS_PLACEHOLDER": "e.g. 12",
-    "QUESTIONS_ERROR": "Enter at least 1 question",
-    "TYPE_LABEL": "Form type",
-    "TYPE_MANUAL": "Manual",
-    "TYPE_TEMPLATE": "Template",
-    "INPUT_METHOD_LABEL": "Input method",
-    "INPUT_DICTATE": "Dictate",
-    "INPUT_UPLOAD": "Upload Image",
-    "INPUT_CAMERA": "Open Camera",
     "CANCEL": "Cancel",
     "SUBMIT": "Create Form",
     "ERRORS": {
-      "FILL_REQUIRED": "Please fill in all required fields"
+      "FILL_REQUIRED": "Please fill in all required fields",
+      "CREATE_FAILED": "Could not create the form. Please try again."
     },
     "SUCCESS": {
       "CREATED": "Form created successfully"
@@ -94,8 +86,12 @@
   "FORM_DETAIL": {
     "BACK": "Dashboard",
     "FILL_BTN": "Fill",
+    "LOADING": "Loading form...",
     "NOT_FOUND_TITLE": "Form not found",
     "NOT_FOUND_BACK": "Back to Dashboard",
+    "ERRORS": {
+      "LOAD_FAILED": "Could not load this form. Please try again."
+    },
     "LABEL_QUESTIONS": "Questions",
     "LABEL_DEPARTMENT": "Department",
     "LABEL_CREATED_AT": "Created on",

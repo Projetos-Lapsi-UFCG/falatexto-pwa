@@ -107,8 +107,10 @@ export function mapOptionFromBackend(option: BackendQuestionOption): FieldOption
 
   if (option.hasComplement) {
     fieldOption.hasComplement = true;
-    fieldOption.complementLabel = option.complementLabel;
-    fieldOption.complementType = option.complementType;
+    // O backend envia `null` explícito para campos opcionais não definidos;
+    // o modelo do frontend só conhece `undefined`.
+    fieldOption.complementLabel = option.complementLabel ?? undefined;
+    fieldOption.complementType = option.complementType ?? undefined;
   }
 
   return fieldOption;
