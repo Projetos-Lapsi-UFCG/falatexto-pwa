@@ -21,6 +21,21 @@ QUESTION_EXAMPLES = {
             "compositeFields": [],
         },
     },
+    "aberta_data": {
+        "summary": "Pergunta aberta com dica de formato (data)",
+        "description": (
+            "Pergunta ABERTA cujo inputFormat orienta o frontend a renderizar "
+            "um seletor de data em vez de um campo de texto livre."
+        ),
+        "value": {
+            "id": "q_data_nascimento",
+            "title": "Data de nascimento",
+            "type": "ABERTA",
+            "options": [],
+            "compositeFields": [],
+            "inputFormat": "data",
+        },
+    },
     "estimulada_ou_multipla": {
         "summary": "Pergunta estimulada ou múltipla",
         "description": "Escolha entre opções pré-definidas; exige options.",
@@ -31,6 +46,29 @@ QUESTION_EXAMPLES = {
             "options": [
                 {"label": "Feminino", "value": "F"},
                 {"label": "Masculino", "value": "M"},
+            ],
+            "compositeFields": [],
+        },
+    },
+    "estimulada_com_complemento": {
+        "summary": "Pergunta estimulada com opção complementar",
+        "description": (
+            "Opção com hasComplement=True revela um campo extra na UI quando "
+            "selecionada (ex.: 'Outro, qual?')."
+        ),
+        "value": {
+            "id": "q_alergia",
+            "title": "Possui alguma alergia?",
+            "type": "ESTIMULADA",
+            "options": [
+                {"label": "Não", "value": "nao"},
+                {
+                    "label": "Sim",
+                    "value": "sim",
+                    "hasComplement": True,
+                    "complementLabel": "Qual?",
+                    "complementType": "text",
+                },
             ],
             "compositeFields": [],
         },
@@ -116,6 +154,7 @@ def criar_question_na_section(
         "type": question.type.value,
         "options": [option.model_dump() for option in question.options],
         "compositeFields": question.compositeFields,
+        "inputFormat": question.inputFormat,
     }
 
     db.questions.insert_one(nova_question)
@@ -164,6 +203,7 @@ def atualizar_question(
         "type": question.type.value,
         "options": [option.model_dump() for option in question.options],
         "compositeFields": question.compositeFields,
+        "inputFormat": question.inputFormat,
     }
 
     db.questions.update_one({"_id": question_id}, {"$set": dados_atualizados})
