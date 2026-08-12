@@ -8,32 +8,52 @@ from datetime import datetime, timedelta
 
 from pypdf import PdfReader
 import ollama
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile, BackgroundTasks
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, BackgroundTasks, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError, field_validator
 import uvicorn
 from pymongo import MongoClient
 
 # ==============================================================================
-# INICIALIZAÇÃO DA APLICAÇÃO E GERENCIAMENTO DE MEMÓRIA (TTL)
+# INICIALIZAÇÃO DA APLICAÇÃO E SEGURANÇA
 # ==============================================================================
+API_SECRET_TOKEN = os.getenv("VISION_API_SECRET_TOKEN", "0000")
+security = HTTPBearer(auto_error=False)
+
 app = FastAPI(
     title="FalaTexto LLM Vision Engine (Multimodal Nativo)",
-    description="Motor de extração clínica estruturada utilizando LLMs Multimodais e MongoDB."
+    description="Motor de extração clínica estruturada utilizando LLMs Multimodais e MongoDB.",
+    dependencies=[Depends(security)]
 )
+
+def validar_token_bearer(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """
+    Validação estrita do token secreto.
+    Lança HTTP 401 caso o token enviado seja incorreto ou ausente.
+    """
+    if not credentials or not credentials.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de autenticação ausente.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if credentials.scheme.lower() != "bearer" or credentials.credentials != API_SECRET_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de autenticação inválido.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return credentials.credentials
 
 # Tabela em memória para rastreamento do estado das requisições assíncronas
 fila_de_sessoes: Dict[str, Any] = {}
 
-# Janela de retenção máxima dos dados na memória (TTL de 7 dias para evitar estouro de RAM)
+# Janela de retenção máxima dos dados na memória (TTL de 7 dias)
 DIAS_EXPIRACAO_SESSAO = 7
 
 
 def limpar_sessoes_expiradas() -> None:
-    """
-    Varre o dicionário de sessões em memória e descarta registros
-    criados há mais de 7 dias para otimizar o uso da memória RAM.
-    """
     agora = datetime.now()
     limite = agora - timedelta(days=DIAS_EXPIRACAO_SESSAO)
     
@@ -86,7 +106,6 @@ class SecaoDinamica(BaseModel):
     @field_validator("campos", mode="before")
     @classmethod
     def filtrar_campos_invalidos(cls, v):
-        # Garante que apenas objetos válidos entrem no processamento do Pydantic
         if isinstance(v, list):
             return [item for item in v if isinstance(item, dict)]
         return v
@@ -95,19 +114,12 @@ class ProntuarioUniversal(BaseModel):
     tipo_documento: str = Field(description="Classificação do documento médico")
     secoes: List[SecaoDinamica] = Field(description="Coleção de seções estruturadas")
     resumo_narrativo: Optional[str] = Field(default="", description="Síntese clínica legível")
-
+    
 
 # ==============================================================================
-# SANITIZAÇÃO E NORMALIZAÇÃO DE RESPOSTAS DA LLM (BLINDAGEM DE PAYLOAD)
+# SANITIZAÇÃO E NORMALIZAÇÃO DE RESPOSTAS DA LLM
 # ==============================================================================
 def sanitizar_dicionario_recursivo(dado: Any) -> Any:
-    """
-    Função de higienização defensiva para conter imperfeições comuns de LLMs menores:
-    1. Remove caracteres de controle, espaços excedentes e sufixos ':' nas chaves.
-    2. Corrigi desaninhar de payloads como {"valor": {"": "Conteudo"}}.
-    3. Trata alucinações de nomes de chaves (ex: 'campostein' no lugar de 'campo_id').
-    4. Auto-gera 'campo_id' e 'label' sintéticos em fallback para evitar falhas do Pydantic.
-    """
     if isinstance(dado, dict):
         novo_dict = {}
         for k, v in dado.items():
@@ -119,29 +131,24 @@ def sanitizar_dicionario_recursivo(dado: Any) -> Any:
                     if isinstance(item, dict):
                         item_sanitizado = sanitizar_dicionario_recursivo(item)
                         
-                        # Correção 1: Desaninha o atributo 'valor' caso a IA retorne como um dicionário
                         valor_bruto = item_sanitizado.get("valor")
                         if isinstance(valor_bruto, dict):
                             item_sanitizado["valor"] = next(iter(valor_bruto.values()), None) if valor_bruto else None
 
-                        # Correção 2: Fallback defensivo para a chave 'campo_id'
                         if "campo_id" not in item_sanitizado or not item_sanitizado["campo_id"]:
                             label_ref = str(item_sanitizado.get("label", "")).strip()
                             if label_ref:
-                                # Converte o label para formato snake_case limpo
                                 item_sanitizado["campo_id"] = re.sub(r'[^a-zA-Z0-9_]', '', label_ref.lower().replace(" ", "_")) or f"campo_{idx}"
                             else:
                                 item_sanitizado["campo_id"] = f"campo_{idx}"
                         else:
                             item_sanitizado["campo_id"] = str(item_sanitizado["campo_id"]).strip()
 
-                        # Correção 3: Fallback defensivo para a chave 'label'
                         if "label" not in item_sanitizado or not item_sanitizado["label"]:
                             item_sanitizado["label"] = item_sanitizado["campo_id"].replace("_", " ").title()
                         else:
                             item_sanitizado["label"] = str(item_sanitizado["label"]).strip()
 
-                        # Correção 4: Normalização do tipo do componente
                         if "tipo_componente" not in item_sanitizado or not item_sanitizado["tipo_componente"]:
                             item_sanitizado["tipo_componente"] = "texto"
 
@@ -214,7 +221,6 @@ INSTRUCTIONS:
     imagem_base64 = None
 
     try:
-        # Processamento preliminar de anexos (Imagens, PDFs e CSVs)
         if conteudo_arquivo and nome_arquivo:
             extensao = nome_arquivo.lower().split('.')[-1]
             
@@ -245,7 +251,6 @@ INSTRUCTIONS:
             mensagem_usuario
         ]
 
-        # Chamada à API da LLM garantindo formato JSON estrito
         response = client.chat(
             model=MODELO, 
             format="json",
@@ -257,13 +262,11 @@ INSTRUCTIONS:
             messages=mensagens
         )
 
-        # Limpeza do arquivo de disco temporário (se houver)
         if caminho_temporario and os.path.exists(caminho_temporario):
             os.remove(caminho_temporario)
 
         resposta_pura_llm = response['message']['content']
 
-        # Desserialização e duplo pipeline de sanitização/validação
         dados_brutos = json.loads(resposta_pura_llm)
         dados_sanitizados = sanitizar_dicionario_recursivo(dados_brutos)
         dados_validados = ProntuarioUniversal.model_validate(dados_sanitizados)
@@ -271,7 +274,6 @@ INSTRUCTIONS:
         dados_prontuario = dados_validados.model_dump()
         secoes_tratadas = dados_prontuario.get("secoes", [])
 
-        # Persistência estruturada do documento final no MongoDB
         documento_mongo = {
             "_id": id_sessao,  
             "name": f"Prontuário Automático - {dados_prontuario.get('tipo_documento', 'Documento Clínico')}",
@@ -286,7 +288,6 @@ INSTRUCTIONS:
         
         db.forms.insert_one(documento_mongo)
 
-        # Atualização do estado mantendo o timestamp original da requisição
         data_criacao = fila_de_sessoes.get(id_sessao, {}).get("criado_em", datetime.now())
         fila_de_sessoes[id_sessao] = {
             "status": "executed",
@@ -316,26 +317,21 @@ INSTRUCTIONS:
 
 
 # ==============================================================================
-# ENDPOINTS REST DA API
+# ENDPOINTS REST DA API (Protegidos por Token)
 # ==============================================================================
 
 @app.post("/vision/processar-clinica")
 @app.post("/api/processar-clinica")
 async def empilhar_processamento_clinico(
     background_tasks: BackgroundTasks,
-    arquivo: UploadFile = File(None),
     texto_clinico: str = Form(...),
+    arquivo: UploadFile = File(None),
+    token: str = Depends(validar_token_bearer)
 ):
-    """
-    Recebe requisições de extração, faz o controle de sessão e delega
-    o processamento pesado para as BackgroundTasks do FastAPI.
-    """
-    # Limpeza proativa de registros antigos (> 7 dias) antes de aceitar novos dados
     limpar_sessoes_expiradas()
 
     id_sessao = str(uuid.uuid4())
     
-    # Registra o item na fila com o timestamp de criação atual
     fila_de_sessoes[id_sessao] = {
         "status": "pending",
         "criado_em": datetime.now()
@@ -365,10 +361,10 @@ async def empilhar_processamento_clinico(
 
 @app.get("/vision/status/{id_sessao}")
 @app.get("/api/status/{id_sessao}")
-async def consultar_status_sessao(id_sessao: str):
-    """
-    Consulta o estado de processamento de uma sessão pelo ID.
-    """
+async def consultar_status_sessao(
+    id_sessao: str,
+    token: str = Depends(validar_token_bearer)
+):
     sessao = fila_de_sessoes.get(id_sessao)
     if not sessao:
         raise HTTPException(
@@ -376,7 +372,6 @@ async def consultar_status_sessao(id_sessao: str):
             detail="Sessão não encontrada ou expirada (limite de retenção de 7 dias)."
         )
     
-    # Serialização do campo datetime para ISO String
     resposta = dict(sessao)
     if "criado_em" in resposta and isinstance(resposta["criado_em"], datetime):
         resposta["criado_em"] = resposta["criado_em"].isoformat()
@@ -386,10 +381,9 @@ async def consultar_status_sessao(id_sessao: str):
 
 @app.get("/vision/sessoes")
 @app.get("/api/sessoes")
-async def listar_sessoes_disponiveis():
-    """
-    Lista todas as sessões registradas em memória dentro do período de retenção.
-    """
+async def listar_sessoes_disponiveis(
+    token: str = Depends(validar_token_bearer)
+):
     limpar_sessoes_expiradas()
     
     if not fila_de_sessoes:
