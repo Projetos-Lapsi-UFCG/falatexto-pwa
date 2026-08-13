@@ -10,6 +10,7 @@ import {
   lucidePlus,
   lucideLogOut,
   lucideUser,
+  lucideClipboardList,
 } from '@ng-icons/lucide';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
@@ -35,7 +36,7 @@ import { fadeIn, staggerFade } from '../../shared/animations/fade.animation';
     LanguageSelectorComponent,
   ],
   providers: [
-    provideIcons({ lucideSearch, lucidePlus, lucideLogOut, lucideUser }),
+    provideIcons({ lucideSearch, lucidePlus, lucideLogOut, lucideUser, lucideClipboardList }),
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
@@ -97,5 +98,9 @@ export class DashboardComponent implements OnInit {
 
   createForm(): void {
     this.router.navigate(['/create']);
+  }
+
+  goToSubmissions(): void {
+    this.router.navigate(['/submissions']);
   }
 }

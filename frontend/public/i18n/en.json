@@ -59,8 +59,23 @@
     "CREATE_FORM": "Create Form",
     "LOGOUT_TITLE": "Logout",
     "LOADING": "Loading forms...",
+    "SUBMISSIONS_BTN": "Submitted forms",
     "ERRORS": {
       "LOAD_FAILED": "Could not load forms. Please try again."
+    }
+  },
+  "SUBMISSIONS": {
+    "TITLE": "Submitted forms",
+    "BACK": "Dashboard",
+    "LOADING": "Loading submissions...",
+    "EMPTY_TITLE": "No submissions found",
+    "EMPTY_SUBTITLE": "No forms have been submitted yet.",
+    "COLUMN_FORM": "Form",
+    "COLUMN_DATE": "Date/Time",
+    "COLUMN_RESPONSIBLE": "Registered by",
+    "RESPONSIBLE_FALLBACK": "—",
+    "ERRORS": {
+      "LOAD_FAILED": "Could not load submissions. Please try again."
     }
   },
   "FORM_CARD": {

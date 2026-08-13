@@ -59,8 +59,23 @@
     "CREATE_FORM": "Crear Formulario",
     "LOGOUT_TITLE": "Cerrar sesión",
     "LOADING": "Cargando formularios...",
+    "SUBMISSIONS_BTN": "Formularios enviados",
     "ERRORS": {
       "LOAD_FAILED": "No se pudieron cargar los formularios. Inténtalo de nuevo."
+    }
+  },
+  "SUBMISSIONS": {
+    "TITLE": "Formularios enviados",
+    "BACK": "Dashboard",
+    "LOADING": "Cargando envíos...",
+    "EMPTY_TITLE": "No se encontraron envíos",
+    "EMPTY_SUBTITLE": "Todavía no hay formularios enviados.",
+    "COLUMN_FORM": "Formulario",
+    "COLUMN_DATE": "Fecha/Hora",
+    "COLUMN_RESPONSIBLE": "Registrado por",
+    "RESPONSIBLE_FALLBACK": "—",
+    "ERRORS": {
+      "LOAD_FAILED": "No se pudieron cargar los envíos. Inténtalo de nuevo."
     }
   },
   "FORM_CARD": {

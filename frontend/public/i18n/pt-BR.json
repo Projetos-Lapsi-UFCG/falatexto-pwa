@@ -59,8 +59,23 @@
     "CREATE_FORM": "Criar Formulário",
     "LOGOUT_TITLE": "Sair",
     "LOADING": "Carregando formulários...",
+    "SUBMISSIONS_BTN": "Formulários submetidos",
     "ERRORS": {
       "LOAD_FAILED": "Não foi possível carregar os formulários. Tente novamente."
+    }
+  },
+  "SUBMISSIONS": {
+    "TITLE": "Formulários submetidos",
+    "BACK": "Dashboard",
+    "LOADING": "Carregando submissões...",
+    "EMPTY_TITLE": "Nenhuma submissão encontrada",
+    "EMPTY_SUBTITLE": "Ainda não há formulários preenchidos.",
+    "COLUMN_FORM": "Formulário",
+    "COLUMN_DATE": "Data/Hora",
+    "COLUMN_RESPONSIBLE": "Responsável",
+    "RESPONSIBLE_FALLBACK": "—",
+    "ERRORS": {
+      "LOAD_FAILED": "Não foi possível carregar as submissões. Tente novamente."
     }
   },
   "FORM_CARD": {

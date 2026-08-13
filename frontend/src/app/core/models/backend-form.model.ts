@@ -100,3 +100,8 @@ export interface SubmissionOut extends Required<Omit<SubmissionCreate, 'formName
   entity?: string;
   submittedAt: string;
 }
+
+/** Resposta crua de GET /submissions. */
+export interface SubmissionListOut {
+  submissions: SubmissionOut[];
+}
