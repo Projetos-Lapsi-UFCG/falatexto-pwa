@@ -18,6 +18,16 @@ services:
       retries: 5
       start_period: 10s
 
+  ollama:
+    image: ollama/ollama:0.24.0
+    container_name: assis_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - falatexto-network
+
   api:
     build:
       context: ./backend
@@ -27,12 +37,10 @@ services:
       - "8000:8000"
     depends_on:
       - database
-    extra_hosts:
-      - "localhost:172.17.0.1"
     environment:
       MONGO_URI: mongodb://database:27017
       MONGO_DB_NAME: assis_db
-      OLLAMA_HOST: http://172.17.0.1:11434
+      OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: llama3.1:8b
       VISION_ENGINE_URL: http://vision-engine:8001
     networks:
@@ -48,9 +56,10 @@ services:
       - "8001:8001"
     depends_on:
       - database
+      - ollama
     environment:
       MONGO_URI: mongodb://database:27017
-      OLLAMA_BASE_URL: http://172.17.0.1:11434
+      OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: llama3.2-vision
     networks:
       - falatexto-network
@@ -86,6 +95,7 @@ services:
 volumes:
   mongo_data:
   proxy_logs:
+  ollama_data:
 
 networks:
   falatexto-network:

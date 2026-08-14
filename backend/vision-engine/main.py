@@ -60,7 +60,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://172.17.0.1:11434")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://ollama:11434")
 client = ollama.Client(host=OLLAMA_HOST)
 
 MODELO = os.getenv("OLLAMA_MODEL", "llama3.2-vision")

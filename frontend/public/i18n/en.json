@@ -96,6 +96,24 @@
     },
     "SUCCESS": {
       "CREATED": "Form created successfully"
+    },
+    "VISION": {
+      "TITLE": "Process with AI",
+      "SUBTITLE": "Submit a clinical text and, optionally, a file (image or PDF) for automatic processing.",
+      "TEXT_LABEL": "Clinical text",
+      "TEXT_PLACEHOLDER": "Describe the clinical case...",
+      "TEXT_ERROR": "Clinical text is required",
+      "FILE_LABEL": "File (optional)",
+      "FILE_ATTACH": "Attach file",
+      "FILE_REMOVE": "Remove file",
+      "SUBMIT": "Process",
+      "ERRORS": {
+        "INVALID_FILE_TYPE": "Invalid file. Please upload an image or a PDF.",
+        "PROCESS_FAILED": "Could not process. Please try again."
+      },
+      "SUCCESS": {
+        "QUEUED": "Processing submitted (session {{id}})"
+      }
     }
   },
   "FORM_DETAIL": {
