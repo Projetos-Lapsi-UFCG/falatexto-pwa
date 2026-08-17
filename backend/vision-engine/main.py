@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 from pypdf import PdfReader
 import ollama
+from json_repair import repair_json
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, BackgroundTasks, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
@@ -77,7 +78,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://172.17.0.1:11434")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "[http://172.17.0.1:11434](http://172.17.0.1:11434)")
 client = ollama.Client(host=OLLAMA_HOST)
 
 MODELO = os.getenv("OLLAMA_MODEL", "llama3.2-vision")
@@ -267,7 +268,17 @@ INSTRUCTIONS:
 
         resposta_pura_llm = response['message']['content']
 
-        dados_brutos = json.loads(resposta_pura_llm)
+        # Clean Markdown wrappers if present
+        resposta_limpa = re.sub(r"^```json\s*", "", resposta_pura_llm.strip(), flags=re.MULTILINE)
+        resposta_limpa = re.sub(r"^```\s*", "", resposta_limpa, flags=re.MULTILINE)
+
+        # Parse resiliente com fallback do json-repair
+        try:
+            dados_brutos = json.loads(resposta_limpa)
+        except json.JSONDecodeError:
+            # Garante a correção caso o modelo esqueça vírgulas ou aspas
+            dados_brutos = json.loads(repair_json(resposta_limpa))
+
         dados_sanitizados = sanitizar_dicionario_recursivo(dados_brutos)
         dados_validados = ProntuarioUniversal.model_validate(dados_sanitizados)
 
