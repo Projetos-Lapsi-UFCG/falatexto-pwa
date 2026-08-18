@@ -12,7 +12,7 @@ from json_repair import repair_json
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, BackgroundTasks, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, ConfigDict
 import uvicorn
 from pymongo import MongoClient
 
@@ -78,7 +78,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "[http://172.17.0.1:11434](http://172.17.0.1:11434)")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://172.17.0.1:11434")
 client = ollama.Client(host=OLLAMA_HOST)
 
 MODELO = os.getenv("OLLAMA_MODEL", "llama3.2-vision")
@@ -100,6 +100,18 @@ class CampoDinamico(BaseModel):
         description="Tipo do componente de formulário na UI"
     )
 
+    @field_validator("tipo_componente", mode="before")
+    @classmethod
+    def padronizar_tipo_componente(cls, v):
+        """
+        Garante a normalização do tipo_componente para caixa baixa antes da validação.
+        """
+        if isinstance(v, str):
+            v_lower = v.lower()
+            if v_lower in ["checkbox", "texto", "numero", "data"]:
+                return v_lower
+        return "texto"
+
 class SecaoDinamica(BaseModel):
     titulo_secao: str = Field(description="Título do agrupamento de campos")
     campos: List[CampoDinamico] = Field(description="Lista de campos extraídos pertencentes à seção")
@@ -115,7 +127,13 @@ class ProntuarioUniversal(BaseModel):
     tipo_documento: str = Field(description="Classificação do documento médico")
     secoes: List[SecaoDinamica] = Field(description="Coleção de seções estruturadas")
     resumo_narrativo: Optional[str] = Field(default="", description="Síntese clínica legível")
-    
+    criado_em: datetime = Field(default_factory=datetime.utcnow, description="Data de inserção da extração")
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True
+    )
+
 
 # ==============================================================================
 # SANITIZAÇÃO E NORMALIZAÇÃO DE RESPOSTAS DA LLM
@@ -180,43 +198,44 @@ def processar_llm_em_segundo_plano(
     conteudo_arquivo: bytes = None, 
     nome_arquivo: str = None
 ):
-    prompt_sistema = """You are a precise medical AI assistant extracting form data from medical images and text into JSON.
+    prompt_sistema = """You are an expert Medical Vision AI engine. Your job is to perform OCR on medical forms/documents and map the extracted data into JSON.
 
-CRITICAL STRUCTURAL RULE:
-The 'campos' property MUST BE an array of JSON Objects.
-NEVER insert raw strings or key names into the 'campos' array. Do NOT add trailing colons to JSON key names.
+### ABSOLUTE RULES AGAINST HALLUCINATION:
+1. Extract ONLY information explicitly visible in the document or present in the text.
+2. NEVER use default names, example names (like João, Maria, Silva), fake dates, or fictional values.
+3. If a field label exists on the paper but has no written value, set `valor: ""` or `null`. DO NOT fill in fake data.
+4. If a field is not present in the document at all, DO NOT create it in the JSON.
 
-CORRECT STRUCTURAL EXAMPLE:
+### JSON SCHEMA RULES:
+- The 'campos' property MUST ALWAYS be an array of Objects.
+- 'tipo_componente' MUST strictly be one of: 'texto', 'numero', 'checkbox', or 'data'.
+- Translate 'label', 'titulo_secao', 'tipo_documento', and 'resumo_narrativo' into Natural Portuguese (pt-BR).
+
+### CHECKBOX DETECTION RULES:
+- Box with a mark (X, checkmark, stroke, fill) -> `valor: true`
+- Unmarked empty box -> `valor: false`
+
+### STRUCTURAL SCHEMA TEMPLATE (DO NOT COPY KEY NAMES OR VALUES, USE AS STRUCTURAL GUIDE ONLY):
 {
-  "tipo_documento": "Prontuário Médico",
+  "tipo_documento": "TIPO_DO_DOCUMENTO_DETECTADO",
   "secoes": [
     {
-      "titulo_secao": "Identificação do Paciente",
+      "titulo_secao": "NOME_DA_SECAO",
       "campos": [
         {
-          "campo_id": "nome_paciente",
-          "label": "Nome do Paciente",
-          "valor": "João Silva",
+          "campo_id": "id_do_campo",
+          "label": "Rótulo do Campo",
+          "valor": "VALOR_EXATO_LIDO_OU_EXTRAIDO",
           "tipo_componente": "texto"
-        },
-        {
-          "campo_id": "idade",
-          "label": "Idade",
-          "valor": 45,
-          "tipo_componente": "numero"
         }
       ]
     }
   ],
-  "resumo_narrativo": "Paciente do sexo masculino, 45 anos, sem queixas."
+  "resumo_narrativo": "Resumo sintético baseado exclusivamente nos dados reais encontrados."
 }
 
-INSTRUCTIONS:
-1. Parse all clinical text and handwritten notes from the image.
-2. Group the extracted information logically into sections.
-3. Translate all 'label', 'titulo_secao', 'tipo_documento', and 'resumo_narrativo' to Portuguese.
-4. 'tipo_componente' must strictly be one of: 'texto', 'numero', or 'checkbox'.
-5. Output ONLY valid JSON, without markdown formatting or conversational prose."""
+### OUTPUT FORMAT:
+Output ONLY raw JSON. No markdown syntax, no ```json formatting, no commentary."""
 
     caminho_temporario = None
     imagem_base64 = None
@@ -282,6 +301,7 @@ INSTRUCTIONS:
         dados_sanitizados = sanitizar_dicionario_recursivo(dados_brutos)
         dados_validados = ProntuarioUniversal.model_validate(dados_sanitizados)
 
+        # Converte o objeto Pydantic validado diretamente para o formato do MongoDB
         dados_prontuario = dados_validados.model_dump()
         secoes_tratadas = dados_prontuario.get("secoes", [])
 
@@ -294,9 +314,11 @@ INSTRUCTIONS:
                 "origem": f"Vision Engine AI ({MODELO})"
             },
             "sections": secoes_tratadas,
-            "resumo_narrativo": dados_prontuario.get("resumo_narrativo", "")
+            "resumo_narrativo": dados_prontuario.get("resumo_narrativo", ""),
+            "criado_em": dados_prontuario.get("criado_em", datetime.utcnow())
         }
         
+        # Persiste o prontuário estruturado na coleção de formulários do MongoDB
         db.forms.insert_one(documento_mongo)
 
         data_criacao = fila_de_sessoes.get(id_sessao, {}).get("criado_em", datetime.now())
