@@ -96,6 +96,24 @@
     },
     "SUCCESS": {
       "CREATED": "Formulário criado com sucesso"
+    },
+    "VISION": {
+      "TITLE": "Processar com IA",
+      "SUBTITLE": "Envie um texto clínico e, opcionalmente, um arquivo (imagem ou PDF) para processamento automático.",
+      "TEXT_LABEL": "Texto clínico",
+      "TEXT_PLACEHOLDER": "Descreva o caso clínico...",
+      "TEXT_ERROR": "Texto clínico é obrigatório",
+      "FILE_LABEL": "Arquivo (opcional)",
+      "FILE_ATTACH": "Anexar arquivo",
+      "FILE_REMOVE": "Remover arquivo",
+      "SUBMIT": "Processar",
+      "ERRORS": {
+        "INVALID_FILE_TYPE": "Arquivo inválido. Envie uma imagem ou um PDF.",
+        "PROCESS_FAILED": "Não foi possível processar. Tente novamente."
+      },
+      "SUCCESS": {
+        "QUEUED": "Processamento enviado (sessão {{id}})"
+      }
     }
   },
   "FORM_DETAIL": {

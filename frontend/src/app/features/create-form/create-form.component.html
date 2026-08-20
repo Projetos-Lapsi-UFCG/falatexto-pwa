@@ -37,5 +37,75 @@
       </form>
     </div>
 
+    <!-- AI processing card -->
+    <div [@scaleIn] class="create-card vision-card">
+      <div class="create-header">
+        <h2 class="create-title">{{ 'CREATE_FORM.VISION.TITLE' | translate }}</h2>
+        <p class="create-subtitle">{{ 'CREATE_FORM.VISION.SUBTITLE' | translate }}</p>
+      </div>
+
+      <form [formGroup]="visionForm" (ngSubmit)="handleProcessWithAI()" class="create-form">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'CREATE_FORM.VISION.TEXT_LABEL' | translate }}</mat-label>
+          <textarea
+            matInput
+            rows="4"
+            formControlName="textoClinico"
+            [placeholder]="'CREATE_FORM.VISION.TEXT_PLACEHOLDER' | translate"
+          ></textarea>
+          @if (visionForm.get('textoClinico')?.invalid && visionForm.get('textoClinico')?.dirty) {
+            <mat-error>{{ 'CREATE_FORM.VISION.TEXT_ERROR' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="file-upload-section">
+          <span class="input-method-label">{{ 'CREATE_FORM.VISION.FILE_LABEL' | translate }}</span>
+
+          <input
+            #fileInput
+            type="file"
+            id="visionFile"
+            class="file-input-hidden"
+            accept="application/pdf,image/*"
+            (change)="onFileSelected($event)"
+          />
+
+          @if (!selectedFile) {
+            <button
+              mat-stroked-button
+              type="button"
+              class="attach-btn"
+              (click)="fileInput.click()"
+              [disabled]="visionLoading"
+            >
+              <ng-icon name="lucidePaperclip" size="16" />
+              {{ 'CREATE_FORM.VISION.FILE_ATTACH' | translate }}
+            </button>
+          } @else {
+            <div class="selected-file">
+              <span class="selected-file-name">{{ selectedFile.name }}</span>
+              <button
+                mat-icon-button
+                type="button"
+                (click)="removeSelectedFile()"
+                [disabled]="visionLoading"
+                [attr.aria-label]="'CREATE_FORM.VISION.FILE_REMOVE' | translate"
+              >
+                <ng-icon name="lucideFileX" size="16" />
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="form-actions">
+          <button mat-raised-button color="primary" type="submit" class="submit-btn" [disabled]="visionLoading">
+            {{ 'CREATE_FORM.VISION.SUBMIT' | translate }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+
   </div>
 </div>

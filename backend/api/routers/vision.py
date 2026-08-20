@@ -1,10 +1,10 @@
-from typing import Optional
-
+import os
 import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from typing import Optional
 
-from ..config import VISION_API_SECRET_TOKEN, VISION_ENGINE_URL
+from ..config import VISION_ENGINE_URL
 from ..models.vision import (
     VisionProcessarClinicaOut,
     VisionSessoesListOut,
@@ -16,23 +16,20 @@ router = APIRouter(prefix="/vision", tags=["vision"])
 VISION_ENGINE_TIMEOUT = 120.0
 VISION_INDISPONIVEL = "Não foi possível conectar ao Motor de Visão"
 
+API_SECRET_TOKEN = os.getenv("VISION_API_SECRET_TOKEN", "0000")
+
 security = HTTPBearer(auto_error=False)
 
 
-def validar_token_bearer(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-) -> str:
-    """Valida estritamente se o token enviado é o correto."""
+def validar_token_bearer(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Valida estritamente se o token enviado é o correto (0000)."""
     if not credentials or not credentials.credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token de autenticação ausente.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    if (
-        credentials.scheme.lower() != "bearer"
-        or credentials.credentials != VISION_API_SECRET_TOKEN
-    ):
+    if credentials.scheme.lower() != "bearer" or credentials.credentials != API_SECRET_TOKEN:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token de autenticação inválido.",
@@ -45,9 +42,7 @@ async def _proxy_get(caminho: str, token: str):
     headers = {"Authorization": f"Bearer {token}"}
     async with httpx.AsyncClient(timeout=VISION_ENGINE_TIMEOUT) as client_http:
         try:
-            response = await client_http.get(
-                f"{VISION_ENGINE_URL}{caminho}", headers=headers
-            )
+            response = await client_http.get(f"{VISION_ENGINE_URL}{caminho}", headers=headers)
         except httpx.RequestError as exc:
             raise HTTPException(
                 status_code=503, detail=f"{VISION_INDISPONIVEL}: {exc}"
@@ -82,13 +77,15 @@ async def processar_clinica(
         conteudo_arquivo = await file.read()
         arquivos = {"arquivo": (file.filename, conteudo_arquivo, file.content_type)}
 
+    headers = {"Authorization": f"Bearer {token}"}
+
     async with httpx.AsyncClient(timeout=VISION_ENGINE_TIMEOUT) as client_http:
         try:
             response = await client_http.post(
                 f"{VISION_ENGINE_URL}/api/v1/processar-clinica",
                 data=dados_formulario,
                 files=arquivos,
-                headers={"Authorization": f"Bearer {token}"},
+                headers=headers,
             )
         except httpx.RequestError as exc:
             raise HTTPException(
@@ -124,7 +121,5 @@ async def listar_sessoes(token: str = Depends(validar_token_bearer)):
         503: {"description": VISION_INDISPONIVEL},
     },
 )
-async def consultar_status(
-    id_sessao: str, token: str = Depends(validar_token_bearer)
-):
+async def consultar_status(id_sessao: str, token: str = Depends(validar_token_bearer)):
     return await _proxy_get(f"/api/v1/status/{id_sessao}", token)
