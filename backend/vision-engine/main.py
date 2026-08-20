@@ -8,8 +8,9 @@ from datetime import datetime, timedelta
 
 from pypdf import PdfReader
 import ollama
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile, BackgroundTasks
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, BackgroundTasks, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, ValidationError, field_validator
 import uvicorn
 from pymongo import MongoClient
@@ -21,6 +22,28 @@ app = FastAPI(
     title="FalaTexto LLM Vision Engine (Multimodal Nativo)",
     description="Motor de extração clínica estruturada utilizando LLMs Multimodais e MongoDB."
 )
+
+API_SECRET_TOKEN = os.getenv("VISION_API_SECRET_TOKEN", "0000")
+security = HTTPBearer(auto_error=False)
+
+
+def validar_token_bearer(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> str:
+    """Valida estritamente se o token enviado é o correto."""
+    if not credentials or not credentials.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de autenticação ausente.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if credentials.scheme.lower() != "bearer" or credentials.credentials != API_SECRET_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de autenticação inválido.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return credentials.credentials
 
 # Tabela em memória para rastreamento do estado das requisições assíncronas
 fila_de_sessoes: Dict[str, Any] = {}
@@ -327,6 +350,7 @@ async def empilhar_processamento_clinico(
     background_tasks: BackgroundTasks,
     arquivo: UploadFile = File(None),
     texto_clinico: str = Form(...),
+    token: str = Depends(validar_token_bearer),
 ):
     """
     Recebe requisições de extração, faz o controle de sessão e delega
@@ -366,7 +390,9 @@ async def empilhar_processamento_clinico(
 
 
 @app.get("/api/v1/status/{id_sessao}")
-async def consultar_status_sessao(id_sessao: str):
+async def consultar_status_sessao(
+    id_sessao: str, token: str = Depends(validar_token_bearer)
+):
     """
     Consulta o estado de processamento de uma sessão pelo ID.
     """
@@ -386,7 +412,7 @@ async def consultar_status_sessao(id_sessao: str):
 
 
 @app.get("/api/v1/sessoes")
-async def listar_sessoes_disponiveis():
+async def listar_sessoes_disponiveis(token: str = Depends(validar_token_bearer)):
     """
     Lista todas as sessões registradas em memória dentro do período de retenção.
     """

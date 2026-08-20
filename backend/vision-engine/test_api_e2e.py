@@ -8,7 +8,10 @@ BASE_URL = "http://localhost:8001"
 def test_fluxo_completo_processamento_clinico():
     with sync_playwright() as p:
         # Cliente da requisição HTTP isolado
-        request_context = p.request.new_context(base_url= BASE_URL)
+        request_context = p.request.new_context(
+            base_url=BASE_URL,
+            extra_http_headers={"Authorization": "Bearer 0000"},
+        )
 
         print("\n [Passo 1] Enviando texto clínico para processamento...")
 
