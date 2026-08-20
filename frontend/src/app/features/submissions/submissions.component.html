@@ -1,0 +1,47 @@
+<div class="submissions-wrapper min-h-screen bg-neutral-50">
+
+  <!-- Header -->
+  <header [@fadeIn] class="submissions-header">
+    <div class="header-inner">
+      <button mat-button (click)="goBack()" class="back-btn">
+        <ng-icon name="lucideArrowLeft" size="16" />
+        {{ 'SUBMISSIONS.BACK' | translate }}
+      </button>
+
+      <div class="header-right">
+        <app-language-selector />
+      </div>
+    </div>
+  </header>
+
+  <!-- List -->
+  <main class="submissions-main">
+    <h1 class="submissions-title">
+      <ng-icon name="lucideClipboardList" size="22" />
+      {{ 'SUBMISSIONS.TITLE' | translate }}
+    </h1>
+
+    @if (loading) {
+      <div [@fadeIn] class="empty-state">
+        <p class="empty-title">{{ 'SUBMISSIONS.LOADING' | translate }}</p>
+      </div>
+    } @else if (submissions.length > 0) {
+      <div class="submissions-list-header">
+        <span class="col-form">{{ 'SUBMISSIONS.COLUMN_FORM' | translate }}</span>
+        <span class="col-date">{{ 'SUBMISSIONS.COLUMN_DATE' | translate }}</span>
+        <span class="col-responsible">{{ 'SUBMISSIONS.COLUMN_RESPONSIBLE' | translate }}</span>
+      </div>
+      <div [@staggerFade]="submissions.length" class="submissions-list">
+        @for (submission of submissions; track submission.id) {
+          <app-submission-row [submission]="submission" />
+        }
+      </div>
+    } @else {
+      <div [@fadeIn] class="empty-state">
+        <p class="empty-title">{{ 'SUBMISSIONS.EMPTY_TITLE' | translate }}</p>
+        <p class="empty-subtitle">{{ 'SUBMISSIONS.EMPTY_SUBTITLE' | translate }}</p>
+      </div>
+    }
+  </main>
+
+</div>

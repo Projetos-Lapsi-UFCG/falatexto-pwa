@@ -19,6 +19,12 @@
         </div>
       </div>
       <div class="header-actions">
+        @if (userType === 'admin') {
+          <button mat-stroked-button (click)="goToSubmissions()" class="submissions-btn">
+            <ng-icon name="lucideClipboardList" size="16" />
+            {{ 'DASHBOARD.SUBMISSIONS_BTN' | translate }}
+          </button>
+        }
         <button mat-raised-button color="primary" (click)="createForm()" class="create-btn">
           <ng-icon name="lucidePlus" size="16" />
           {{ 'DASHBOARD.NEW_FORM' | translate }}
@@ -48,7 +54,11 @@
 
   <!-- Forms grid -->
   <main class="forms-main">
-    @if (filteredForms.length > 0) {
+    @if (loading) {
+      <div [@fadeIn] class="empty-state">
+        <p class="empty-title">{{ 'DASHBOARD.LOADING' | translate }}</p>
+      </div>
+    } @else if (filteredForms.length > 0) {
       <div [@staggerFade]="filteredForms.length" class="forms-grid">
         @for (form of filteredForms; track form.id) {
           <app-form-card [form]="form" />

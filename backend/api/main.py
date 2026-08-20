@@ -55,16 +55,21 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
+    # Sem allow_credentials=True: a API não usa cookies/auth, e a combinação
+    # allow_origins=["*"] + allow_credentials=True é inválida pela spec de CORS
+    # (navegadores rejeitam respostas credenciadas com origin "*").
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(forms.router)
-app.include_router(sections.router)
-app.include_router(questions.router)
-app.include_router(submissions.router)
-app.include_router(vision.router)
+API_V1_PREFIX = "/api/v1"
+
+app.include_router(forms.router, prefix=API_V1_PREFIX)
+app.include_router(sections.router, prefix=API_V1_PREFIX)
+app.include_router(questions.router, prefix=API_V1_PREFIX)
+app.include_router(submissions.router, prefix=API_V1_PREFIX)
+app.include_router(vision.router, prefix=API_V1_PREFIX)
 
 
 @app.get("/", tags=["health"], summary="Verifica se a API está no ar")

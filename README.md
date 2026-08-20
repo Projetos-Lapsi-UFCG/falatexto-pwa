@@ -11,7 +11,7 @@ Backend FastAPI + Frontend Angular PWA para o sistema de documentação clínica
   ```bash
   ollama pull gemma:7b
   ```
-  O `vision-engine` roda em container e acessa o Ollama do host via `host.docker.internal`; sem ele, o endpoint `/api/processar-clinica` falha.
+  O `vision-engine` roda em container e acessa o Ollama do host via `host.docker.internal`; sem ele, o endpoint `/api/v1/processar-clinica` falha.
 
 ---
 

@@ -17,7 +17,7 @@ def test_upload_imagem_e_validacao_ocr():
         # O Playwright facilita o upload de arquivos via API usando multipart/form-data
         with open(caminho_imagem, "rb") as f_imagem:
             response = request_context.post(
-                "/api/processar-clinica",
+                "/api/v1/processar-clinica",
                 multipart={
                     # Campos de texto comuns vão como strings normais
                     "texto_clinico": "Processamento de OCR com imagem de exemplo do HUAC.",
@@ -51,7 +51,7 @@ def test_upload_imagem_e_validacao_ocr():
             time.sleep(10)
             
             # NOTA: Desativando timeout no GET para o backend não pesar
-            resposta_status = request_context.get(f"/api/status/{id_sessao}", timeout=0)
+            resposta_status = request_context.get(f"/api/v1/status/{id_sessao}", timeout=0)
             assert resposta_status.ok
             
             dados_finais = resposta_status.json()

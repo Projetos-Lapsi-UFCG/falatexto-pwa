@@ -109,6 +109,7 @@ class FormSummaryOut(BaseModel):
     id: str = Field(..., alias="_id")
     name: str
     metadata: FormMetadata
+    questionCount: int
 
 
 class FormOut(BaseModel):

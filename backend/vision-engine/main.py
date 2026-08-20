@@ -72,12 +72,15 @@ def limpar_sessoes_expiradas() -> None:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    # Sem allow_credentials=True: este serviço não usa cookies/auth, e a
+    # combinação allow_origins=["*"] + allow_credentials=True é inválida pela
+    # spec de CORS (navegadores rejeitam respostas credenciadas com origin "*").
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://172.17.0.1:11434")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://ollama:11434")
 client = ollama.Client(host=OLLAMA_HOST)
 
 MODELO = os.getenv("OLLAMA_MODEL", "llama3.2-vision")
@@ -320,8 +323,7 @@ INSTRUCTIONS:
 # ENDPOINTS REST DA API (Protegidos por Token)
 # ==============================================================================
 
-@app.post("/vision/processar-clinica")
-@app.post("/api/processar-clinica")
+@app.post("/api/v1/processar-clinica")
 async def empilhar_processamento_clinico(
     background_tasks: BackgroundTasks,
     texto_clinico: str = Form(...),
@@ -355,16 +357,18 @@ async def empilhar_processamento_clinico(
         "mensagem": "Requisição empilhada com sucesso.",
         "id_sessao": id_sessao,
         "status": "pending",
-        "link_consulta": f"/vision/status/{id_sessao}"
+        "link_consulta": f"/api/v1/status/{id_sessao}"
     }
 
 
-@app.get("/vision/status/{id_sessao}")
-@app.get("/api/status/{id_sessao}")
+@app.get("/api/v1/status/{id_sessao}")
 async def consultar_status_sessao(
     id_sessao: str,
     token: str = Depends(validar_token_bearer)
 ):
+    """
+    Consulta o estado de processamento de uma sessão pelo ID.
+    """
     sessao = fila_de_sessoes.get(id_sessao)
     if not sessao:
         raise HTTPException(
@@ -379,11 +383,13 @@ async def consultar_status_sessao(
     return resposta
 
 
-@app.get("/vision/sessoes")
-@app.get("/api/sessoes")
+@app.get("/api/v1/sessoes")
 async def listar_sessoes_disponiveis(
     token: str = Depends(validar_token_bearer)
 ):
+    """
+    Lista todas as sessões registradas em memória dentro do período de retenção.
+    """
     limpar_sessoes_expiradas()
     
     if not fila_de_sessoes:

@@ -50,13 +50,3 @@ export interface Form {
   inputMethod?: 'dictate' | 'upload' | 'camera';
   sections?: Section[];
 }
-
-/**
- * Representa uma instância de preenchimento de um formulário.
- */
-export interface FormInstance {
-  id: string;
-  formId: string;
-  patientName: string;
-  createdAt: string;
-}
