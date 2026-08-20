@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_BASE_URL } from '../config/api.config';
+import { API_BASE_URL, VISION_API_TOKEN } from '../config/api.config';
 import { VisionProcessarClinicaResponse } from '../models/vision.model';
 
 /** Comunicação com o endpoint /vision do backend (proxy para o Vision Engine). */
@@ -18,7 +18,8 @@ export class VisionApiService {
 
     return this.http.post<VisionProcessarClinicaResponse>(
       `${API_BASE_URL}/vision/processar-clinica`,
-      formData
+      formData,
+      { headers: { Authorization: `Bearer ${VISION_API_TOKEN}` } }
     );
   }
 }
