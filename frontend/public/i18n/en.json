@@ -74,6 +74,22 @@
     "COLUMN_DATE": "Date/Time",
     "COLUMN_RESPONSIBLE": "Registered by",
     "RESPONSIBLE_FALLBACK": "—",
+    "DETAIL": {
+      "EXPAND": "Expand details",
+      "COLLAPSE": "Collapse details",
+      "OVERVIEW": "Overview",
+      "STATUS": "Status",
+      "STATUS_DRAFT": "Draft",
+      "STATUS_COMPLETED": "Completed",
+      "ENTITY": "Entity",
+      "FORM_ID": "Form ID",
+      "PATIENT_DATA": "Patient Data",
+      "ANSWERS": "Answers",
+      "CHECKBOX_ANSWERS": "Checkbox Answers",
+      "CLOSING_DATA": "Closing Data",
+      "YES": "Yes",
+      "NO": "No"
+    },
     "ERRORS": {
       "LOAD_FAILED": "Could not load submissions. Please try again."
     }

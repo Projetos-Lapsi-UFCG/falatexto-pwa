@@ -74,6 +74,22 @@
     "COLUMN_DATE": "Fecha/Hora",
     "COLUMN_RESPONSIBLE": "Registrado por",
     "RESPONSIBLE_FALLBACK": "—",
+    "DETAIL": {
+      "EXPAND": "Ver detalles",
+      "COLLAPSE": "Ocultar detalles",
+      "OVERVIEW": "Resumen",
+      "STATUS": "Estado",
+      "STATUS_DRAFT": "Borrador",
+      "STATUS_COMPLETED": "Completado",
+      "ENTITY": "Entidad",
+      "FORM_ID": "ID del Formulario",
+      "PATIENT_DATA": "Datos del Paciente",
+      "ANSWERS": "Respuestas",
+      "CHECKBOX_ANSWERS": "Respuestas de Casillas",
+      "CLOSING_DATA": "Datos de Cierre",
+      "YES": "Sí",
+      "NO": "No"
+    },
     "ERRORS": {
       "LOAD_FAILED": "No se pudieron cargar los envíos. Inténtalo de nuevo."
     }

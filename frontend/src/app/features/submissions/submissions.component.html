@@ -32,7 +32,7 @@
         <span class="col-responsible">{{ 'SUBMISSIONS.COLUMN_RESPONSIBLE' | translate }}</span>
       </div>
       <div [@staggerFade]="submissions.length" class="submissions-list">
-        @for (submission of submissions; track submission.id) {
+        @for (submission of submissions; track submission._id) {
           <app-submission-row [submission]="submission" />
         }
       </div>

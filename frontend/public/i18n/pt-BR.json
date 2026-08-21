@@ -74,6 +74,22 @@
     "COLUMN_DATE": "Data/Hora",
     "COLUMN_RESPONSIBLE": "Responsável",
     "RESPONSIBLE_FALLBACK": "—",
+    "DETAIL": {
+      "EXPAND": "Ver detalhes",
+      "COLLAPSE": "Ocultar detalhes",
+      "OVERVIEW": "Visão Geral",
+      "STATUS": "Status",
+      "STATUS_DRAFT": "Rascunho",
+      "STATUS_COMPLETED": "Concluído",
+      "ENTITY": "Entidade",
+      "FORM_ID": "ID do Formulário",
+      "PATIENT_DATA": "Dados do Paciente",
+      "ANSWERS": "Respostas",
+      "CHECKBOX_ANSWERS": "Respostas de Caixas de Seleção",
+      "CLOSING_DATA": "Dados de Encerramento",
+      "YES": "Sim",
+      "NO": "Não"
+    },
     "ERRORS": {
       "LOAD_FAILED": "Não foi possível carregar as submissões. Tente novamente."
     }

@@ -7,7 +7,6 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { SubmissionService } from '../../core/services/submission';
 import { SubmissionOut } from '../../core/models/backend-form.model';
-import { SubmissionListItem } from '../../core/models/submission-view.model';
 import { LanguageSelectorComponent } from '../../shared/components/language-selector/language-selector.component';
 import { SubmissionRowComponent } from './components/submission-row/submission-row.component';
 import { fadeIn, staggerFade } from '../../shared/animations/fade.animation';
@@ -34,7 +33,7 @@ export class SubmissionsComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  submissions: SubmissionListItem[] = [];
+  submissions: SubmissionOut[] = [];
   loading = true;
 
   ngOnInit(): void {
@@ -45,7 +44,7 @@ export class SubmissionsComponent implements OnInit {
     this.loading = true;
     this.submissionService.listSubmissions().subscribe({
       next: submissions => {
-        this.submissions = submissions.map(s => this.toListItem(s));
+        this.submissions = submissions;
         this.loading = false;
         // App é zoneless — sem isso, a view não re-renderiza após o retorno assíncrono.
         this.cdr.markForCheck();
@@ -56,17 +55,6 @@ export class SubmissionsComponent implements OnInit {
         this.cdr.markForCheck();
       },
     });
-  }
-
-  private toListItem(s: SubmissionOut): SubmissionListItem {
-    return {
-      id: s._id,
-      formName: s.formName || s.formId,
-      submittedAt: s.submittedAt,
-      responsible:
-        (s.closingData?.['responsible'] as string | undefined) ||
-        this.translate.instant('SUBMISSIONS.RESPONSIBLE_FALLBACK'),
-    };
   }
 
   goBack(): void {
