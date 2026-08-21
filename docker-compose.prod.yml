@@ -1,0 +1,97 @@
+services:
+  database:
+    image: mongo:latest
+    container_name: assis_mongo
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: assis_db
+    volumes:
+      - ./backend/scripts/init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
+      - mongo_data:/data/db
+    networks:
+      - falatexto-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "printjson(db.adminCommand({ping:1}))"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: assis_api
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      - database
+    extra_hosts:
+      - "localhost:172.17.0.1"
+    environment:
+      MONGO_URI: mongodb://database:27017
+      MONGO_DB_NAME: assis_db
+      OLLAMA_HOST: http://172.17.0.1:11434
+      OLLAMA_MODEL: llama3.1:8b
+      VISION_ENGINE_URL: http://vision-engine:8001
+      VISION_API_SECRET_TOKEN: "0000"
+      CORS_ORIGINS: https://fala-texto.cyberedu.com.br
+    networks:
+      - falatexto-network
+
+  vision-engine:
+    build:
+      context: ./backend/vision-engine
+      dockerfile: Dockerfile
+    container_name: assis_vision_engine
+    command: uvicorn main:app --host 0.0.0.0 --port 8001
+    ports:
+      - "127.0.0.1:8001:8001"
+    depends_on:
+      - database
+    environment:
+      MONGO_URI: mongodb://database:27017
+      OLLAMA_HOST: http://172.17.0.1:11434
+      OLLAMA_MODEL: qwen2.5vl:7b
+      VISION_API_SECRET_TOKEN: "0000"
+    networks:
+      - falatexto-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: assis_frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - api
+    networks:
+      - falatexto-network
+
+  proxy:
+    image: nginx:alpine
+    container_name: assis_proxy
+    restart: unless-stopped
+    ports:
+      # Exposto só em loopback: o nginx do host (fora do Docker) faz o
+      # TLS/roteamento de subdomínio e repassa para cá via 127.0.0.1:8085.
+      - "127.0.0.1:8085:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - proxy_logs:/var/log/nginx
+    depends_on:
+      - frontend
+      - api
+    networks:
+      - falatexto-network
+
+volumes:
+  mongo_data:
+  proxy_logs:
+
+networks:
+  falatexto-network:
+    driver: bridge
