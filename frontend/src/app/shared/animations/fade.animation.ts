@@ -41,6 +41,17 @@ export const staggerFade = trigger('staggerFade', [
   ]),
 ]);
 
+export const expandCollapse = trigger('expandCollapse', [
+  transition(':enter', [
+    style({ height: 0, opacity: 0, overflow: 'hidden' }),
+    animate('220ms ease-out', style({ height: '*', opacity: 1 })),
+  ]),
+  transition(':leave', [
+    style({ overflow: 'hidden' }),
+    animate('180ms ease-in', style({ height: 0, opacity: 0 })),
+  ]),
+]);
+
 export const scaleIn = trigger('scaleIn', [
   transition(':enter', [
     style({ opacity: 0, transform: 'scale(0.95)' }),

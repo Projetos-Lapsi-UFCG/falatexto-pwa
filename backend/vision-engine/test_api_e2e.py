@@ -8,13 +8,16 @@ BASE_URL = "http://localhost:8001"
 def test_fluxo_completo_processamento_clinico():
     with sync_playwright() as p:
         # Cliente da requisição HTTP isolado
-        request_context = p.request.new_context(base_url= BASE_URL)
+        request_context = p.request.new_context(
+            base_url=BASE_URL,
+            extra_http_headers={"Authorization": "Bearer 0000"},
+        )
 
         print("\n [Passo 1] Enviando texto clínico para processamento...")
 
         # Passando como form e usando a chave exata 'texto_clinico' que o main.py exige.
         response = request_context.post(
-            "/api/processar-clinica",
+            "/api/v1/processar-clinica",
             form={
                 "texto_clinico": "Paciente Luizmar, 21 anos, compareceu com forte dor de cabeça. Foi receitado Paracetamol 500mg"
             },
@@ -38,7 +41,7 @@ def test_fluxo_completo_processamento_clinico():
         for i in range(15): # Até 15 tentativas
             time.sleep(2) # espera 2 segundos entre checagens
 
-            resposta_status = request_context.get(f"/api/status/{id_sessao}", timeout=0) # Desativando o timeout para não encerrar o processo por pressa do playwright
+            resposta_status = request_context.get(f"/api/v1/status/{id_sessao}", timeout=0) # Desativando o timeout para não encerrar o processo por pressa do playwright
             assert resposta_status.ok
 
             dados_finais = resposta_status.json()

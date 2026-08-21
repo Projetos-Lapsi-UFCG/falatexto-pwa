@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
@@ -16,6 +16,19 @@ class QuestionOption(BaseModel):
 
     label: str = Field(..., min_length=1, max_length=80)
     value: str = Field(..., min_length=1, max_length=40)
+    hasComplement: bool = Field(
+        default=False,
+        description="Indica se, ao selecionar esta opção, um campo complementar deve ser exibido",
+    )
+    complementLabel: Optional[str] = Field(
+        default=None,
+        max_length=80,
+        description="Rótulo do campo complementar exibido quando a opção é selecionada",
+    )
+    complementType: Optional[Literal["text", "number"]] = Field(
+        default=None,
+        description="Tipo do campo complementar exibido quando a opção é selecionada",
+    )
 
     @field_validator("label", "value")
     @classmethod
@@ -30,6 +43,37 @@ class QuestionOption(BaseModel):
 
         return value
 
+    @field_validator("complementLabel")
+    @classmethod
+    def validar_complement_label(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+
+        value = value.strip()
+
+        if not value:
+            raise ValueError("complementLabel não pode ser vazio")
+
+        return value
+
+    @model_validator(mode="after")
+    def validar_regras_complemento(self):
+        if self.hasComplement:
+            if not self.complementLabel:
+                raise ValueError(
+                    "Opções com hasComplement=True devem informar complementLabel"
+                )
+            # complementType é opcional mesmo com hasComplement=True — o frontend
+            # nem sempre o define (ex.: um campo de complemento genérico, sem
+            # tipo específico), então não é exigido aqui.
+        else:
+            if self.complementLabel is not None or self.complementType is not None:
+                raise ValueError(
+                    "complementLabel/complementType só são permitidos quando hasComplement=True"
+                )
+
+        return self
+
 
 class QuestionBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -38,6 +82,10 @@ class QuestionBase(BaseModel):
     type: QuestionType
     options: List[QuestionOption] = Field(default_factory=list)
     compositeFields: List[str] = Field(default_factory=list)
+    inputFormat: Optional[Literal["texto", "data", "numero"]] = Field(
+        default=None,
+        description="Dica de renderização para perguntas ABERTA (texto livre, data ou número)",
+    )
 
     @field_validator("title")
     @classmethod
@@ -89,12 +137,16 @@ class QuestionBase(BaseModel):
                 raise ValueError(
                     "Perguntas do tipo ESTIMULADA ou MULTIPLA não devem ter compositeFields"
                 )
+            if self.inputFormat is not None:
+                raise ValueError("inputFormat só é permitido em perguntas ABERTA")
 
         elif self.type == QuestionType.COMPOSTA:
             if self.options:
                 raise ValueError("Perguntas do tipo COMPOSTA não devem ter options")
             if not self.compositeFields:
                 raise ValueError("Perguntas do tipo COMPOSTA devem ter compositeFields")
+            if self.inputFormat is not None:
+                raise ValueError("inputFormat só é permitido em perguntas ABERTA")
 
         return self
 
@@ -157,6 +209,7 @@ class QuestionOut(BaseModel):
     type: QuestionType
     options: List[QuestionOption]
     compositeFields: List[str]
+    inputFormat: Optional[Literal["texto", "data", "numero"]] = None
 
 
 class QuestionListOut(BaseModel):

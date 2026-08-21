@@ -17,9 +17,53 @@ FORM_NAO_ENCONTRADO = "Formulário não encontrado"
     description="Retorna uma versão resumida (id, nome e metadata) de cada formulário cadastrado.",
 )
 def listar_forms():
-    forms = list(db.forms.find({}, {"_id": 1, "name": 1, "metadata": 1}))
+    forms = list(db.forms.find({}, {"_id": 1, "name": 1, "metadata": 1, "sections": 1}))
+
+    all_section_ids = {sid for form in forms for sid in form.get("sections", [])}
+    sections = list(
+        db.sections.find(
+            {"_id": {"$in": list(all_section_ids)}},
+            {"_id": 1, "questions": 1, "subSections": 1},
+        )
+    )
+    sections_by_id = {section["_id"]: section for section in sections}
+
+    all_subsection_ids = {sid for section in sections for sid in section.get("subSections", [])}
+    subsections = list(
+        db.sections.find(
+            {"_id": {"$in": list(all_subsection_ids)}}, {"_id": 1, "questions": 1}
+        )
+    )
+    subsections_by_id = {subsection["_id"]: subsection for subsection in subsections}
+
+    all_question_ids = set()
+    for section in sections + subsections:
+        all_question_ids.update(section.get("questions", []))
+
+    questions = list(
+        db.questions.find(
+            {"_id": {"$in": list(all_question_ids)}}, {"_id": 1, "compositeFields": 1}
+        )
+    )
+    composite_child_ids = {
+        child_id for question in questions for child_id in question.get("compositeFields", [])
+    }
+
     for form in forms:
+        question_ids = set()
+        for section_id in form.get("sections", []):
+            section = sections_by_id.get(section_id)
+            if not section:
+                continue
+            question_ids.update(section.get("questions", []))
+            for sub_id in section.get("subSections", []):
+                subsection = subsections_by_id.get(sub_id)
+                if subsection:
+                    question_ids.update(subsection.get("questions", []))
+
+        form["questionCount"] = len(question_ids - composite_child_ids)
         form["_id"] = str(form["_id"])
+
     return {"forms": forms}
 
 
