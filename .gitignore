@@ -1,2 +1,19 @@
-node_modules/
-.env
+frontend/dist/*
+frontend/node_modules/*
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.env
+
+# Logs / Temp
+*.log
+nohup.out
+
+# Docker / Mongo local
+.mongo_data/
+
+*.prod.yml
+*.prod.yaml

@@ -1,0 +1,63 @@
+<mat-card class="submission-row" [class.expanded]="expanded">
+  <button
+    type="button"
+    class="submission-row-header"
+    [attr.aria-expanded]="expanded"
+    [attr.aria-controls]="'submission-detail-' + submission._id"
+    [attr.aria-label]="(expanded ? 'SUBMISSIONS.DETAIL.COLLAPSE' : 'SUBMISSIONS.DETAIL.EXPAND') | translate"
+    (click)="toggle()"
+  >
+    <div class="submission-row-content">
+      <span class="col-form">{{ submission.formName || submission.formId }}</span>
+      <span class="col-date">{{ formatDateTime(submission.submittedAt) }}</span>
+      <span class="col-responsible">
+        {{ responsible || ('SUBMISSIONS.RESPONSIBLE_FALLBACK' | translate) }}
+      </span>
+    </div>
+    <ng-icon name="lucideChevronDown" size="18" class="chevron" [class.expanded]="expanded" />
+  </button>
+
+  @if (expanded) {
+    <div
+      class="submission-row-detail"
+      [id]="'submission-detail-' + submission._id"
+      role="region"
+      [@expandCollapse]
+    >
+      <section class="detail-section">
+        <h3 class="detail-section-title">{{ 'SUBMISSIONS.DETAIL.OVERVIEW' | translate }}</h3>
+        <dl class="detail-grid">
+          <dt>{{ 'SUBMISSIONS.DETAIL.STATUS' | translate }}</dt>
+          <dd>
+            {{ (submission.status === 'draft'
+                  ? 'SUBMISSIONS.DETAIL.STATUS_DRAFT'
+                  : 'SUBMISSIONS.DETAIL.STATUS_COMPLETED') | translate }}
+          </dd>
+          @if (submission.entity) {
+            <dt>{{ 'SUBMISSIONS.DETAIL.ENTITY' | translate }}</dt>
+            <dd>{{ submission.entity }}</dd>
+          }
+          <dt>{{ 'SUBMISSIONS.DETAIL.FORM_ID' | translate }}</dt>
+          <dd>{{ submission.formId }}</dd>
+        </dl>
+      </section>
+
+      <app-submission-detail-section
+        titleKey="SUBMISSIONS.DETAIL.PATIENT_DATA"
+        [entries]="patientDataEntries"
+      />
+      <app-submission-detail-section
+        titleKey="SUBMISSIONS.DETAIL.ANSWERS"
+        [entries]="answerEntries"
+      />
+      <app-submission-detail-section
+        titleKey="SUBMISSIONS.DETAIL.CHECKBOX_ANSWERS"
+        [entries]="checkboxEntries"
+      />
+      <app-submission-detail-section
+        titleKey="SUBMISSIONS.DETAIL.CLOSING_DATA"
+        [entries]="closingDataEntries"
+      />
+    </div>
+  }
+</mat-card>

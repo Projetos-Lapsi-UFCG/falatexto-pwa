@@ -1,164 +1,116 @@
-# FalaTexto PWA
-### Assistente de Preenchimento de Formulário com IA
+# Fala-Texto PWA
 
-Aplicação web progressiva (PWA) que utiliza inteligência artificial para digitalizar, interpretar e preencher formulários de forma assistida — por voz ou texto.
-
----
-
-## Sobre o Projeto
-
-O FalaTexto é um assistente inteligente de formulários desenvolvido pelo **LABMET/LAPSI**. Diferente dos formulários tradicionais, o app aceita perguntas em qualquer formato — foto, PDF, CSV ou JSON — interpreta automaticamente os campos usando um modelo de IA com visão computacional, e permite que o usuário responda por **voz** ou **digitando**.
+Backend FastAPI + Frontend Angular PWA para o sistema de documentação clínica.
 
 ---
 
-## Funcionalidades
+## Pré-requisitos
 
-- Recebe formulários em múltiplos formatos: PDF, CSV, JSON, PNG e foto
-- Identifica e classifica campos automaticamente via IA (texto, número, data, booleano, múltipla escolha)
-- Resposta por voz com conversão fala-para-texto (STT)
-- Resposta por digitação como alternativa
-- Funciona em Android, iPhone e computador com o mesmo código
-- Privacidade total — os dados não saem para servidores de terceiros
-- Instalável na tela inicial como app nativo
-
----
-
-## Tecnologias
-
-| Camada | Tecnologia |
-|---|---|
-| Frontend | Angular + PWA |
-| Backend | Node.js |
-| Modelo de IA | Gemma 4 via Ollama |
-| Banco de dados | MongoDB ou SQLite (a definir) |
-| STT (voz) | Whisper |
+- [Docker e Docker Compose](https://www.docker.com/get-started/)
+- [Ollama](https://ollama.com) rodando localmente na porta padrão (`11434`), com o modelo usado pelo `vision-engine` já baixado:
+  ```bash
+  ollama pull gemma:7b
+  ```
+  O `vision-engine` roda em container e acessa o Ollama do host via `host.docker.internal`; sem ele, o endpoint `/api/v1/processar-clinica` falha.
 
 ---
 
-## Arquitetura
+## Executando o projeto completo (recomendado)
 
-```
-Usuário (qualquer dispositivo)
-        ↓
-   PWA Angular (frontend)
-        ↓
-   Backend Node.js
-        ↓
-   Ollama + Gemma 4 (modelo local)
-```
-
-O modelo de IA roda localmente no servidor do projeto, garantindo privacidade total dos dados processados.
-
----
-
-## Fluxograma do Sistema
-
-```mermaid
-flowchart TD
-    A[Usuário envia documento] --> B[Detecção de formato]
-    B --> C{Qual formato?}
-    C --> D[CSV / JSON\nParser]
-    C --> E[PDF\nExtrator de PDF]
-    C --> F[PNG / Foto\nOCR · Vision LLM]
-    D --> G[Texto bruto]
-    E --> G
-    F --> G
-    G --> H[Texto normalizado]
-    H --> I[LLM · Gemma 4 via Ollama]
-    I --> J[Campos identificados em JSON]
-    J --> K[Formulário gerado dinamicamente]
-    K --> L{Como o usuário responde?}
-    L --> M[Por voz\nSTT]
-    L --> N[Digitando]
-    M --> O[Respostas coletadas e salvas]
-    N --> O
-```
-
-## Como rodar o projeto
-
-### Pré-requisitos
-
-- Node.js v24+ (LTS)
-- Angular CLI v21+
-- Ollama instalado
-
-### Instalação e desenvolvimento
+A partir da **raiz do repositório** (`falatexto-pwa/`), um único `docker-compose.yml` sobe os três serviços em uma rede compartilhada:
 
 ```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/falatexto-pwa.git
-cd falatexto-pwa
+docker compose up --build -d
+```
 
-# Instale as dependências
+| Serviço   | URL                        |
+|-----------|----------------------------|
+| Frontend  | http://localhost:4200      |
+| Backend   | http://localhost:8000      |
+| API Docs  | http://localhost:8000/docs |
+| Vision Engine | http://localhost:8001  |
+
+> Na primeira execução o `--build` é necessário para construir as imagens. Nas seguintes, pode omiti-lo se o código não mudou.
+
+### Acompanhar logs
+
+```bash
+# Todos os serviços
+docker compose logs -f
+
+# Serviço específico
+docker compose logs -f api
+docker compose logs -f frontend
+docker compose logs -f database
+```
+
+### Reconstruir apenas um serviço
+
+```bash
+docker compose up --build -d frontend
+docker compose up --build -d api
+```
+
+### Derrubar tudo
+
+```bash
+# Para os containers (preserva o volume do banco)
+docker compose down
+
+# Para os containers e remove o volume do banco
+docker compose down -v
+```
+
+---
+
+## Executando apenas o backend
+
+```bash
+cd backend/
+docker compose -f docker-compose.backend.yml up -d
+```
+
+Sobe a API FastAPI (`assis_api`) e o banco de dados MongoDB (`assis_mongo`) com dados de amostra.
+
+### Desenvolvimento local (API com hot-reload)
+
+```bash
+cd backend/
+
+# Sobe apenas o MongoDB em Docker
+docker compose -f docker-compose.backend.yml up -d database
+
+# Instala dependências e inicia a API localmente
+pip install -r requirements.txt
+python -m uvicorn api.main:app --reload
+```
+
+---
+
+## Executando apenas o frontend
+
+```bash
+cd frontend/
+docker compose -f docker-compose.frontend.yml up -d
+```
+
+O build de produção Angular ocorre dentro do container (etapa Node.js) e os arquivos são servidos via nginx.
+
+### Desenvolvimento local (hot-reload)
+
+```bash
+cd frontend/
 npm install
-
-# Inicie o servidor de desenvolvimento
 npm start
 ```
 
-Acesse `http://localhost:4200` no navegador.
-
-### Build de produção
-
-```bash
-npm run build
-```
-
-Os arquivos gerados ficam em `dist/falatexto-pwa/browser/`. O service worker (PWA) só é registrado no build de produção. Para testá-lo localmente:
-
-```bash
-npx http-server dist/falatexto-pwa/browser -p 8080 -c-1
-```
-
-### Testes
-
-```bash
-npm test
-```
-
-### Subindo o modelo de IA
-
-```bash
-# Baixar o modelo (necessário apenas uma vez)
-ollama pull gemma4
-
-# Iniciar o Ollama
-ollama serve
-```
-
 ---
 
-## Estrutura do Projeto
+## Portas
 
-```
-falatexto-pwa/
-├── src/
-│   ├── app/
-│   │   ├── core/
-│   │   │   ├── guards/       ← authGuard (proteção de rotas)
-│   │   │   ├── models/       ← interfaces Form, User
-│   │   │   └── services/     ← AuthService, FormService, StorageService
-│   │   ├── features/
-│   │   │   ├── onboarding/   ← tela inicial
-│   │   │   ├── login/        ← autenticação por PIN
-│   │   │   ├── dashboard/    ← listagem e busca de formulários
-│   │   │   └── create-form/  ← criação de novo formulário
-│   │   ├── shared/
-│   │   │   ├── animations/   ← animações Angular (fadeIn, staggerFade…)
-│   │   │   └── components/   ← pin-input, button, card, input
-│   │   └── app.routes.ts     ← rotas com lazy loading
-│   ├── index.html
-│   └── main.ts
-├── public/
-│   └── icons/                ← ícones do PWA
-├── ngsw-config.json          ← configuração do service worker
-└── package.json
-```
-
----
-
-## Equipe
-
-Projeto desenvolvido no âmbito do **LABMET/LAPSI**.
-
----
+| Container            | Porta host | Porta interna |
+|----------------------|------------|---------------|
+| `assis_frontend`     | 4200       | 80            |
+| `assis_api`          | 8000       | 8000          |
+| `assis_vision_engine`| 8001       | 8001          |
+| `assis_mongo`        | 27017      | 27017         |
