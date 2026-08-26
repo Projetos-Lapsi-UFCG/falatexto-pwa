@@ -139,7 +139,8 @@
     "NOT_FOUND_TITLE": "Form not found",
     "NOT_FOUND_BACK": "Back to Dashboard",
     "ERRORS": {
-      "LOAD_FAILED": "Could not load this form. Please try again."
+      "LOAD_FAILED": "Could not load this form. Please try again.",
+      "DELETE_FAILED": "Could not delete the form. Please try again."
     },
     "LABEL_QUESTIONS": "Questions",
     "LABEL_DEPARTMENT": "Department",
@@ -147,6 +148,9 @@
     "LABEL_INPUT_METHOD": "Input Method",
     "FILL_CTA": "Fill this form",
     "FILL_CTA_HINT": "You will be asked for the patient / client name.",
+    "DELETE_BTN": "Delete form",
+    "DELETE_CONFIRM": "Are you sure you want to delete the form \"{{name}}\"? This action cannot be undone.",
+    "DELETE_SUCCESS": "Form deleted successfully.",
     "INPUT_METHODS": {
       "DICTATE": "Voice Dictation",
       "UPLOAD": "Image Upload",

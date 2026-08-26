@@ -98,9 +98,21 @@
 
         <!-- Fill CTA -->
         <div class="fill-cta">
-          <button mat-raised-button color="primary" (click)="openFillDialog()" class="fill-cta-btn">
-            {{ 'FORM_DETAIL.FILL_CTA' | translate }}
-          </button>
+          <div class="fill-cta-actions">
+            <button mat-raised-button color="primary" (click)="openFillDialog()" class="fill-cta-btn">
+              {{ 'FORM_DETAIL.FILL_CTA' | translate }}
+            </button>
+            <button
+              mat-stroked-button
+              color="warn"
+              [disabled]="deleting"
+              (click)="deleteForm()"
+              class="delete-btn"
+            >
+              <ng-icon name="lucideTrash2" size="16" />
+              {{ 'FORM_DETAIL.DELETE_BTN' | translate }}
+            </button>
+          </div>
           <p class="fill-cta-hint">{{ 'FORM_DETAIL.FILL_CTA_HINT' | translate }}</p>
         </div>
 

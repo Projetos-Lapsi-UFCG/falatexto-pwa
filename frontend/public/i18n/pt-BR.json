@@ -139,7 +139,8 @@
     "NOT_FOUND_TITLE": "Formulário não encontrado",
     "NOT_FOUND_BACK": "Voltar ao Dashboard",
     "ERRORS": {
-      "LOAD_FAILED": "Não foi possível carregar este formulário. Tente novamente."
+      "LOAD_FAILED": "Não foi possível carregar este formulário. Tente novamente.",
+      "DELETE_FAILED": "Não foi possível excluir o formulário. Tente novamente."
     },
     "LABEL_QUESTIONS": "Perguntas",
     "LABEL_DEPARTMENT": "Departamento",
@@ -147,6 +148,9 @@
     "LABEL_INPUT_METHOD": "Método de entrada",
     "FILL_CTA": "Preencher este formulário",
     "FILL_CTA_HINT": "Será solicitado o nome do paciente.",
+    "DELETE_BTN": "Excluir formulário",
+    "DELETE_CONFIRM": "Tem certeza que deseja excluir o formulário \"{{name}}\"? Essa ação não pode ser desfeita.",
+    "DELETE_SUCCESS": "Formulário excluído com sucesso.",
     "INPUT_METHODS": {
       "DICTATE": "Ditado por voz",
       "UPLOAD": "Upload de imagem",

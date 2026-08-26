@@ -13,6 +13,7 @@ import {
   lucideImage,
   lucideCamera,
   lucideFileText,
+  lucideTrash2,
 } from '@ng-icons/lucide';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
@@ -37,6 +38,7 @@ import { fadeIn, scaleIn } from '../../shared/animations/fade.animation';
       lucideImage,
       lucideCamera,
       lucideFileText,
+      lucideTrash2,
     }),
   ],
   templateUrl: './form-detail.component.html',
@@ -55,6 +57,7 @@ export class FormDetailComponent implements OnInit {
   form: Form | null = null;
   notFound = false;
   loading = true;
+  deleting = false;
 
   readonly inputMethodInfo: Record<string, { labelKey: string; icon: string }> = {
     dictate: { labelKey: 'FORM_DETAIL.INPUT_METHODS.DICTATE', icon: 'lucideMic' },
@@ -95,6 +98,28 @@ export class FormDetailComponent implements OnInit {
   openFillDialog(): void {
     if (!this.form) return;
     this.router.navigate(['/forms', this.form.id, 'fill']);
+  }
+
+  deleteForm(): void {
+    if (!this.form || this.deleting) return;
+
+    const confirmado = confirm(
+      this.translate.instant('FORM_DETAIL.DELETE_CONFIRM', { name: this.form.name })
+    );
+    if (!confirmado) return;
+
+    this.deleting = true;
+    this.formApiService.deleteForm(this.form.id).subscribe({
+      next: () => {
+        this.toastr.success(this.translate.instant('FORM_DETAIL.DELETE_SUCCESS'));
+        this.router.navigate(['/dashboard']);
+      },
+      error: () => {
+        this.deleting = false;
+        this.toastr.error(this.translate.instant('FORM_DETAIL.ERRORS.DELETE_FAILED'));
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   formatDate(dateStr: string): string {

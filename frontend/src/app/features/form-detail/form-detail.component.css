@@ -187,10 +187,26 @@
   text-align: center;
 }
 
+.fill-cta-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .fill-cta-btn {
   font-family: var(--font-sans) !important;
   font-weight: 500 !important;
   padding: 0 2rem !important;
+}
+
+.delete-btn {
+  display: flex !important;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
 }
 
 .fill-cta-hint {
