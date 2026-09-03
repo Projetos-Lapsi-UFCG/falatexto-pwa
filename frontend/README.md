@@ -116,6 +116,17 @@ ng serve -o
 
 O app abre automaticamente em `http://localhost:4200`.
 
+### Configuração de runtime (`config.js`)
+
+O token do Vision e o PIN de administrador **não** são embutidos no bundle. Eles são
+lidos de `window.__APP_CONFIG__`, definido por `/config.js`:
+
+- **Dev (`ng serve` / `ng build`):** usa `public/config.js`, com valores padrão de
+  desenvolvimento (`0000`).
+- **Container:** o `docker-entrypoint.sh` regenera `/config.js` na inicialização a
+  partir das variáveis de ambiente `VISION_API_SECRET_TOKEN` e `ADMIN_PIN` (ver
+  `.env.example` na raiz do repositório). Rotacionar um segredo não exige rebuild.
+
 ### Build de produção
 
 ```bash
@@ -138,20 +149,24 @@ falatexto-pwa/
 ├── src/
 │   └── app/
 │       ├── core/
+│       │   ├── config/
+│       │   │   ├── api.config.ts       → base URL da API
+│       │   │   └── runtime-config.ts   → lê /config.js (token do Vision, PIN de admin) injetado no runtime
 │       │   ├── guards/
-│       │   │   └── auth.guard.ts       → protege rotas que exigem login
+│       │   │   ├── auth.guard.ts       → protege rotas que exigem login
+│       │   │   └── admin.guard.ts      → protege rotas restritas a administradores
 │       │   ├── models/
 │       │   │   ├── form.model.ts       → interfaces Form, Section, QuestionField, FieldOption
 │       │   │   └── user.model.ts       → interface User e tipo UserType
 │       │   └── services/
-│       │       ├── auth.service.ts     → login, logout e autenticação por PIN
+│       │       ├── auth.service.ts     → login/logout; admin exige o PIN de ADMIN_PIN, guest aceita qualquer PIN de 4 dígitos
 │       │       ├── form.service.ts     → gerencia formulários pré-instalados e criados pelo usuário
 │       │       ├── language.service.ts → controla o idioma da interface
 │       │       ├── storage.service.ts  → salva e lê dados no dispositivo (localStorage)
 │       │       └── submission.ts       → requisições HTTP para o backend
 │       ├── features/
 │       │   ├── onboarding/             → tela inicial com carrossel de funcionalidades
-│       │   ├── login/                  → autenticação por tipo de usuário e PIN
+│       │   ├── login/                  → autenticação por tipo de usuário e PIN (admin: PIN de ADMIN_PIN)
 │       │   ├── dashboard/              → listagem e busca de formulários
 │       │   ├── create-form/            → criação de novo formulário com validação em tempo real
 │       │   ├── form-detail/            → detalhes de um formulário específico
