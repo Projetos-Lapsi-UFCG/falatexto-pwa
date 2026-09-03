@@ -15,9 +15,26 @@ Backend FastAPI + Frontend Angular PWA para o sistema de documentação clínica
 
 ---
 
+## Variáveis de ambiente
+
+Antes de subir os serviços, copie o arquivo de exemplo e preencha os valores:
+
+```bash
+cp .env.example .env
+```
+
+| Variável                  | Descrição                                                                 |
+|---------------------------|--------------------------------------------------------------------------|
+| `VISION_API_SECRET_TOKEN` | Token compartilhado exigido pelos endpoints `/vision` (api, vision-engine e frontend usam o mesmo valor). Obrigatório, sem valor padrão. |
+| `ADMIN_PIN`               | PIN de 4 dígitos exigido para entrar como **administrador** no frontend. Obrigatório, sem valor padrão. |
+
+O `docker compose` carrega o `.env` da raiz automaticamente. Sem essas variáveis, o `docker compose up` falha indicando qual variável está faltando. O `.env` está no `.gitignore` — nunca faça commit dele.
+
+---
+
 ## Executando o projeto completo (recomendado)
 
-A partir da **raiz do repositório** (`falatexto-pwa/`), um único `docker-compose.yml` sobe os três serviços em uma rede compartilhada:
+A partir da **raiz do repositório** (`falatexto-pwa/`), um único `docker-compose.yml` sobe os três serviços em uma rede compartilhada (requer o `.env` da seção anterior):
 
 ```bash
 docker compose up --build -d
@@ -67,10 +84,11 @@ docker compose down -v
 
 ```bash
 cd backend/
+cp .env.example .env   # defina VISION_API_SECRET_TOKEN
 docker compose -f docker-compose.backend.yml up -d
 ```
 
-Sobe a API FastAPI (`assis_api`) e o banco de dados MongoDB (`assis_mongo`) com dados de amostra.
+Sobe a API FastAPI (`assis_api`) e o banco de dados MongoDB (`assis_mongo`) com dados de amostra. A API não sobe sem `VISION_API_SECRET_TOKEN` definido (no `.env` do diretório `backend/` ou exportado no ambiente).
 
 ### Desenvolvimento local (API com hot-reload)
 
@@ -82,6 +100,7 @@ docker compose -f docker-compose.backend.yml up -d database
 
 # Instala dependências e inicia a API localmente
 pip install -r requirements.txt
+export VISION_API_SECRET_TOKEN=change-me   # obrigatório
 python -m uvicorn api.main:app --reload
 ```
 
@@ -91,10 +110,11 @@ python -m uvicorn api.main:app --reload
 
 ```bash
 cd frontend/
+cp .env.example .env   # defina VISION_API_SECRET_TOKEN e ADMIN_PIN
 docker compose -f docker-compose.frontend.yml up -d
 ```
 
-O build de produção Angular ocorre dentro do container (etapa Node.js) e os arquivos são servidos via nginx.
+O build de produção Angular ocorre dentro do container (etapa Node.js) e os arquivos são servidos via nginx. Na inicialização, o container gera `/config.js` a partir de `VISION_API_SECRET_TOKEN` e `ADMIN_PIN` — sem essas variáveis o container aborta.
 
 ### Desenvolvimento local (hot-reload)
 

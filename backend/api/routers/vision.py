@@ -1,10 +1,9 @@
-import os
 import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from typing import Optional
 
-from ..config import VISION_ENGINE_URL
+from ..config import VISION_ENGINE_URL, VISION_API_SECRET_TOKEN
 from ..models.vision import (
     VisionProcessarClinicaOut,
     VisionSessoesListOut,
@@ -16,13 +15,13 @@ router = APIRouter(prefix="/vision", tags=["vision"])
 VISION_ENGINE_TIMEOUT = 120.0
 VISION_INDISPONIVEL = "Não foi possível conectar ao Motor de Visão"
 
-API_SECRET_TOKEN = os.getenv("VISION_API_SECRET_TOKEN", "0000")
+API_SECRET_TOKEN = VISION_API_SECRET_TOKEN
 
 security = HTTPBearer(auto_error=False)
 
 
 def validar_token_bearer(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
-    """Valida estritamente se o token enviado é o correto (0000)."""
+    """Valida estritamente se o token enviado corresponde ao VISION_API_SECRET_TOKEN."""
     if not credentials or not credentials.credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -22,6 +22,7 @@ services:
     environment:
       MONGO_URI: mongodb://database:27017
       MONGO_DB_NAME: assis_db
+      VISION_API_SECRET_TOKEN: ${VISION_API_SECRET_TOKEN:?VISION_API_SECRET_TOKEN is required (see .env.example)}
     networks:
       - falatexto-network
 

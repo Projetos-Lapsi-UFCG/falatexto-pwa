@@ -46,7 +46,7 @@ services:
       MONGO_URI: mongodb://database:27017
       OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: gemma2:9b
-      VISION_API_SECRET_TOKEN: "0000"
+      VISION_API_SECRET_TOKEN: ${VISION_API_SECRET_TOKEN:?VISION_API_SECRET_TOKEN is required (see .env.example)}
     networks:
       - falatexto-network
 
@@ -68,7 +68,7 @@ services:
       OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: llama3.1:8b
       VISION_ENGINE_URL: http://vision-engine:8001
-      VISION_API_SECRET_TOKEN: "0000"
+      VISION_API_SECRET_TOKEN: ${VISION_API_SECRET_TOKEN:?VISION_API_SECRET_TOKEN is required (see .env.example)}
     networks:
       - falatexto-network
 
@@ -80,6 +80,9 @@ services:
     restart: unless-stopped
     expose:
       - "80"
+    environment:
+      VISION_API_SECRET_TOKEN: ${VISION_API_SECRET_TOKEN:?VISION_API_SECRET_TOKEN is required (see .env.example)}
+      ADMIN_PIN: ${ADMIN_PIN:?ADMIN_PIN is required (see .env.example)}
     depends_on:
       - api
     networks:
