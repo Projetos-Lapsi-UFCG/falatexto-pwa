@@ -10,6 +10,10 @@ jobs:
   backend:
     name: Backend (Python / FastAPI)
     runs-on: ubuntu-latest
+    env:
+      # Token dummy só para o smoke test de import; a app exige a variável desde
+      # que o segredo passou a ser env-only (sem valor padrão).
+      VISION_API_SECRET_TOKEN: ci-dummy-token
     defaults:
       run:
         working-directory: backend
