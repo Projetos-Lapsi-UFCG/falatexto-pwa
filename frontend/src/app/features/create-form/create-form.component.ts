@@ -52,7 +52,7 @@ export class CreateFormComponent {
   });
 
   readonly visionForm = this.fb.group({
-    textoClinico: ['', [Validators.required]],
+    nomeFormulario: ['', [Validators.required]],
   });
 
   handleSubmit(): void {
@@ -100,15 +100,15 @@ export class CreateFormComponent {
   }
 
   handleProcessWithAI(): void {
-    if (this.visionForm.invalid) {
+    if (this.visionForm.invalid || !this.selectedFile) {
       this.visionForm.markAllAsTouched();
       this.toastr.error(this.translate.instant('CREATE_FORM.ERRORS.FILL_REQUIRED'));
       return;
     }
 
-    const textoClinico = this.visionForm.value.textoClinico!;
+    const nomeFormulario = this.visionForm.value.nomeFormulario!;
     this.visionLoading = true;
-    this.visionApiService.processarClinica(textoClinico, this.selectedFile).subscribe({
+    this.visionApiService.processarClinica(nomeFormulario, this.selectedFile).subscribe({
       next: response => {
         this.visionLoading = false;
         this.toastr.success(

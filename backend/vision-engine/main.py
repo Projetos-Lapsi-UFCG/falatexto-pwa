@@ -1,3 +1,4 @@
+import transcription
 import os
 import uuid
 import base64
@@ -26,6 +27,7 @@ app = FastAPI(
     description="Motor de extração clínica estruturada utilizando LLMs Multimodais e MongoDB.",
     dependencies=[Depends(security)]
 )
+app.include_router(transcription.router, prefix="/api/v1")
 
 def validar_token_bearer(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
     """

@@ -3,3 +3,9 @@ uvicorn[standard]
 pymongo
 httpx
 python-multipart
+flask
+flask-cors
+openai-whisper
+librosa
+numpy
+torch

@@ -1,3 +1,4 @@
+from api.routers import transcription
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -71,6 +72,8 @@ app.include_router(questions.router, prefix=API_V1_PREFIX)
 app.include_router(submissions.router, prefix=API_V1_PREFIX)
 app.include_router(vision.router, prefix=API_V1_PREFIX)
 
+
+app.include_router(transcription.router, prefix=API_V1_PREFIX)
 
 @app.get("/", tags=["health"], summary="Verifica se a API está no ar")
 def health():

@@ -47,15 +47,14 @@
       <form [formGroup]="visionForm" (ngSubmit)="handleProcessWithAI()" class="create-form">
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'CREATE_FORM.VISION.TEXT_LABEL' | translate }}</mat-label>
-          <textarea
+          <mat-label>{{ 'CREATE_FORM.VISION.NAME_LABEL' | translate }}</mat-label>
+          <input
             matInput
-            rows="4"
-            formControlName="textoClinico"
-            [placeholder]="'CREATE_FORM.VISION.TEXT_PLACEHOLDER' | translate"
-          ></textarea>
-          @if (visionForm.get('textoClinico')?.invalid && visionForm.get('textoClinico')?.dirty) {
-            <mat-error>{{ 'CREATE_FORM.VISION.TEXT_ERROR' | translate }}</mat-error>
+            formControlName="nomeFormulario"
+            [placeholder]="'CREATE_FORM.VISION.NAME_PLACEHOLDER' | translate"
+          />
+          @if (visionForm.get('nomeFormulario')?.invalid && visionForm.get('nomeFormulario')?.dirty) {
+            <mat-error>{{ 'CREATE_FORM.VISION.NAME_ERROR' | translate }}</mat-error>
           }
         </mat-form-field>
 
@@ -99,7 +98,7 @@
         </div>
 
         <div class="form-actions">
-          <button mat-raised-button color="primary" type="submit" class="submit-btn" [disabled]="visionLoading">
+          <button mat-raised-button color="primary" type="submit" class="submit-btn" [disabled]="visionLoading || !selectedFile">
             {{ 'CREATE_FORM.VISION.SUBMIT' | translate }}
           </button>
         </div>
