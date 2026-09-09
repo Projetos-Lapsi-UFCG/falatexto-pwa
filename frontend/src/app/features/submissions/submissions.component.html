@@ -18,7 +18,11 @@
   <main class="submissions-main">
     <h1 class="submissions-title">
       <ng-icon name="lucideClipboardList" size="22" />
-      {{ 'SUBMISSIONS.TITLE' | translate }}
+      @if (formName) {
+        {{ 'SUBMISSIONS.TITLE_FOR_FORM' | translate: { name: formName } }}
+      } @else {
+        {{ 'SUBMISSIONS.TITLE' | translate }}
+      }
     </h1>
 
     @if (loading) {
@@ -33,7 +37,11 @@
       </div>
       <div [@staggerFade]="submissions.length" class="submissions-list">
         @for (submission of submissions; track submission._id) {
-          <app-submission-row [submission]="submission" />
+          <app-submission-row
+            [submission]="submission"
+            [questionLabels]="questionLabels"
+            (deleted)="onSubmissionDeleted($event)"
+          />
         }
       </div>
     } @else {

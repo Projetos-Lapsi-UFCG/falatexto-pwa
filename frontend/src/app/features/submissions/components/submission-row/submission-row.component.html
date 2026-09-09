@@ -58,6 +58,18 @@
         titleKey="SUBMISSIONS.DETAIL.CLOSING_DATA"
         [entries]="closingDataEntries"
       />
+
+      <div class="submission-delete-actions">
+        <button
+          mat-raised-button
+          [disabled]="deleting"
+          (click)="deleteSubmission()"
+          class="delete-btn"
+        >
+          <ng-icon name="lucideTrash2" size="16" />
+          {{ 'SUBMISSIONS.DETAIL.DELETE_BTN' | translate }}
+        </button>
+      </div>
     </div>
   }
 </mat-card>

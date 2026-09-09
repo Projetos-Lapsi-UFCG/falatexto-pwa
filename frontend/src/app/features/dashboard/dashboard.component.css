@@ -62,8 +62,7 @@
   gap: 0.75rem;
 }
 
-.create-btn,
-.submissions-btn {
+.create-btn {
   display: flex;
   align-items: center;
   gap: 0.375rem;

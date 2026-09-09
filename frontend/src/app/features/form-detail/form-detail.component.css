@@ -33,7 +33,12 @@
   font-family: var(--font-sans) !important;
 }
 
-.fill-btn {
+.submissions-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  background-color: var(--color-white) !important;
+  color: var(--color-primary-900) !important;
   font-family: var(--font-sans) !important;
   font-weight: 500 !important;
 }
@@ -207,6 +212,9 @@
   gap: 0.375rem;
   font-family: var(--font-sans) !important;
   font-weight: 500 !important;
+  padding: 0 2rem !important;
+  background-color: #d9534f !important;
+  color: var(--color-white) !important;
 }
 
 .fill-cta-hint {

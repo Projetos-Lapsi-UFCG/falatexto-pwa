@@ -19,7 +19,9 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { FormApiService } from '../../core/services/form-api.service';
 import { Form } from '../../core/models/form.model';
+import { AuthService } from '../../core/services/auth.service';
 import { LanguageService } from '../../core/services/language.service';
+import { UserType } from '../../core/models/user.model';
 import { LanguageSelectorComponent } from '../../shared/components/language-selector/language-selector.component';
 import { fadeIn, scaleIn } from '../../shared/animations/fade.animation';
 
@@ -49,6 +51,7 @@ export class FormDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly formApiService = inject(FormApiService);
+  private readonly authService = inject(AuthService);
   private readonly languageService = inject(LanguageService);
   private readonly toastr = inject(ToastrService);
   private readonly translate = inject(TranslateService);
@@ -58,6 +61,7 @@ export class FormDetailComponent implements OnInit {
   notFound = false;
   loading = true;
   deleting = false;
+  userType: UserType | null = null;
 
   readonly inputMethodInfo: Record<string, { labelKey: string; icon: string }> = {
     dictate: { labelKey: 'FORM_DETAIL.INPUT_METHODS.DICTATE', icon: 'lucideMic' },
@@ -66,6 +70,8 @@ export class FormDetailComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.userType = this.authService.getCurrentUserType();
+
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       this.loading = false;
@@ -98,6 +104,11 @@ export class FormDetailComponent implements OnInit {
   openFillDialog(): void {
     if (!this.form) return;
     this.router.navigate(['/forms', this.form.id, 'fill']);
+  }
+
+  goToSubmissions(): void {
+    if (!this.form) return;
+    this.router.navigate(['/forms', this.form.id, 'submissions']);
   }
 
   deleteForm(): void {

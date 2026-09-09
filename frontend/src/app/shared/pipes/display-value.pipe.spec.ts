@@ -39,6 +39,10 @@ describe('DisplayValuePipe', () => {
     expect(pipe.transform('hello')).toBe('hello');
   });
 
+  it('converts YYYY-MM-DD dates (from <input type="date">) to DD/MM/AAAA', () => {
+    expect(pipe.transform('2026-03-05')).toBe('05/03/2026');
+  });
+
   it('falls back to JSON for plain objects', () => {
     expect(pipe.transform({ nested: true })).toBe(JSON.stringify({ nested: true }));
   });
