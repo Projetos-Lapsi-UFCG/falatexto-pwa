@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from bson import ObjectId
@@ -7,7 +7,13 @@ from fastapi import APIRouter, HTTPException, Query, status
 
 from ..database import db
 from ..models import MessageOut
-from ..models.submission import SubmissionCreate, SubmissionListOut, SubmissionOut
+from ..models.submission import (
+    SubmissionCreate,
+    SubmissionListOut,
+    SubmissionOut,
+    SubmissionUpdate,
+)
+from ..config import SOFT_DELETE_RETENTION_DAYS
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
@@ -27,8 +33,13 @@ SUBMISSION_NAO_ENCONTRADA = "Submissão não encontrada"
     ),
 )
 def criar_submission(submission: SubmissionCreate):
+
+    agora = datetime.now(timezone.utc)
     nova_submission = submission.model_dump()
-    nova_submission["submittedAt"] = datetime.now(timezone.utc)
+    nova_submission["submittedAt"] = agora
+    nova_submission["deletedAt"] = None
+    nova_submission["purgeAt"] = None
+    nova_submission["updatedAt"] = agora
 
     resultado = db.submissions.insert_one(nova_submission)
 
@@ -49,8 +60,17 @@ def listar_submissions(
         None, alias="status", description="Filtra por status (draft ou completed)"
     ),
     limit: int = Query(100, ge=1, le=500),
+    include_deleted: bool = Query(False),
 ):
-    filtro = {}
+    if include_deleted:
+        filtro = {}
+    else:
+        filtro = {
+            "$or": [
+                {"deletedAt": None},
+                {"deletedAt": {"$exists": False}}
+            ]
+        }
     if formId is not None:
         filtro["formId"] = formId
     if entity is not None:
@@ -79,7 +99,13 @@ def buscar_submission_por_id(submission_id: str):
     except InvalidId:
         raise HTTPException(status_code=404, detail=SUBMISSION_NAO_ENCONTRADA)
 
-    submission = db.submissions.find_one({"_id": object_id})
+    submission = db.submissions.find_one({
+        "_id": object_id,
+        "$or": [
+            {"deletedAt": None},
+            {"deletedAt": {"$exists": False}}
+        ]
+    })
 
     if submission is None:
         raise HTTPException(status_code=404, detail=SUBMISSION_NAO_ENCONTRADA)
@@ -95,14 +121,106 @@ def buscar_submission_por_id(submission_id: str):
     responses={404: {"description": SUBMISSION_NAO_ENCONTRADA}},
 )
 def deletar_submission(submission_id: str):
+
     try:
         object_id = ObjectId(submission_id)
     except InvalidId:
-        raise HTTPException(status_code=404, detail=SUBMISSION_NAO_ENCONTRADA)
+        raise HTTPException(
+            status_code=404,
+            detail=SUBMISSION_NAO_ENCONTRADA
+        )
 
-    resultado = db.submissions.delete_one({"_id": object_id})
+    submission = db.submissions.find_one({
+        "_id": object_id
+    })
 
-    if resultado.deleted_count == 0:
-        raise HTTPException(status_code=404, detail=SUBMISSION_NAO_ENCONTRADA)
+    if submission is None:
+        raise HTTPException(
+            status_code=404,
+            detail=SUBMISSION_NAO_ENCONTRADA
+        )
 
-    return {"mensagem": "Submissão removida com sucesso", "id": submission_id}
+    # DELETE idempotente
+    if submission.get("deletedAt") is not None:
+        return {
+            "mensagem": "Submissão removida com sucesso",
+            "id": submission_id
+        }
+
+    agora = datetime.now(timezone.utc)
+
+    purge_at = agora + timedelta(
+        days=SOFT_DELETE_RETENTION_DAYS
+    )
+
+    db.submissions.update_one(
+        {
+            "_id": object_id
+        },
+        {
+            "$set": {
+                "deletedAt": agora,
+                "purgeAt": purge_at,
+                "updatedAt": agora
+            }
+        }
+    )
+
+    return {
+        "mensagem": "Submissão removida com sucesso",
+        "id": submission_id
+    }
+
+@router.patch(
+    "/{submission_id}",
+    response_model=SubmissionOut,
+    summary="Atualiza uma submissão parcialmente",
+    responses={404: {"description": SUBMISSION_NAO_ENCONTRADA}},
+)
+def atualizar_submission(
+    submission_id: str,
+    submission: SubmissionUpdate
+):
+
+    try:
+        object_id = ObjectId(submission_id)
+    except InvalidId:
+        raise HTTPException(
+            status_code=404,
+            detail=SUBMISSION_NAO_ENCONTRADA
+        )
+
+    existente = db.submissions.find_one({
+        "_id": object_id,
+        "$or": [
+            {"deletedAt": None},
+            {"deletedAt": {"$exists": False}}
+        ]
+    })
+
+    if existente is None:
+        raise HTTPException(
+            status_code=404,
+            detail=SUBMISSION_NAO_ENCONTRADA
+        )
+
+    dados_atualizados = submission.model_dump(
+        exclude_unset=True
+    )
+
+    dados_atualizados["updatedAt"] = datetime.now(timezone.utc)
+
+    db.submissions.update_one(
+        {"_id": object_id},
+        {
+            "$set": dados_atualizados
+        }
+    )
+
+    atualizada = db.submissions.find_one({
+        "_id": object_id
+    })
+
+    atualizada["_id"] = str(atualizada["_id"])
+
+    return atualizada

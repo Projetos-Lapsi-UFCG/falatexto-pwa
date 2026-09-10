@@ -7,3 +7,5 @@ VISION_ENGINE_URL = os.getenv("VISION_ENGINE_URL", "http://vision-engine:8001")
 VISION_API_SECRET_TOKEN = os.getenv("VISION_API_SECRET_TOKEN", "0000")
 
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+
+SOFT_DELETE_RETENTION_DAYS = int(os.getenv("SOFT_DELETE_RETENTION_DAYS","90"))

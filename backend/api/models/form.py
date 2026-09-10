@@ -2,6 +2,8 @@ from typing import List
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
+from datetime import datetime
+from typing import Optional
 
 class FormMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -104,23 +106,36 @@ class FormUpdate(FormBase):
 class FormSummaryOut(BaseModel):
     """Representação resumida de um formulário, usada na listagem."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(
+    populate_by_name=True,
+    serialize_by_alias=True
+)
 
     id: str = Field(..., alias="_id")
     name: str
     metadata: FormMetadata
     questionCount: int
+    deteledAt: Optional[datetime] = None
+    purgeAt: Optional[datetime] = None
+    updateAt: Optional[datetime] = None
 
 
 class FormOut(BaseModel):
     """Representação completa de um formulário."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(
+    populate_by_name=True,
+    serialize_by_alias=True
+)
 
     id: str = Field(..., alias="_id")
     name: str
     sections: List[str]
     metadata: FormMetadata
+    deteledAt: Optional[datetime] = None
+    purgeAt: Optional[datetime] = None
+    updateAt: Optional[datetime] = None
+
 
 
 class FormListOut(BaseModel):

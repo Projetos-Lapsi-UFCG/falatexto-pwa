@@ -5,6 +5,11 @@ from ..models import MessageOut
 from ..models.form import FormCreate, FormListOut, FormOut, FormUpdate
 from ..models.section import SectionCreate, SectionListOut, SectionOut
 
+from datetime import datetime, timedelta, timezone
+
+from ..config import SOFT_DELETE_RETENTION_DAYS
+from fastapi import Query
+
 router = APIRouter(prefix="/forms", tags=["forms"])
 
 FORM_NAO_ENCONTRADO = "Formulário não encontrado"
@@ -16,8 +21,18 @@ FORM_NAO_ENCONTRADO = "Formulário não encontrado"
     summary="Lista todos os formulários",
     description="Retorna uma versão resumida (id, nome e metadata) de cada formulário cadastrado.",
 )
-def listar_forms():
-    forms = list(db.forms.find({}, {"_id": 1, "name": 1, "metadata": 1, "sections": 1}))
+def listar_forms(include_deleted: bool = Query(False)):
+
+    if include_deleted:
+        filtro = {}
+    else:
+        filtro = {
+            "$or": [
+                {"deletedAt": None},
+                {"deletedAt": {"$exists": False}}
+            ]
+        }
+    forms = list(db.forms.find(filtro))
 
     all_section_ids = {sid for form in forms for sid in form.get("sections", [])}
     sections = list(
@@ -64,6 +79,8 @@ def listar_forms():
         form["questionCount"] = len(question_ids - composite_child_ids)
         form["_id"] = str(form["_id"])
 
+    print(forms)
+
     return {"forms": forms}
 
 
@@ -74,7 +91,13 @@ def listar_forms():
     responses={404: {"description": FORM_NAO_ENCONTRADO}},
 )
 def buscar_form_por_id(form_id: str):
-    form = db.forms.find_one({"_id": form_id})
+    form = db.forms.find_one({
+    "_id": form_id,
+    "$or": [
+        {"deletedAt": None},
+        {"deletedAt": {"$exists": False}}
+    ]
+})
 
     if form is None:
         raise HTTPException(status_code=404, detail=FORM_NAO_ENCONTRADO)
@@ -122,10 +145,17 @@ def atualizar_form(form_id: str, form: FormUpdate):
     if form_existente is None:
         raise HTTPException(status_code=404, detail=FORM_NAO_ENCONTRADO)
 
+    if form_existente.get("deletedAt") is not None:
+        raise HTTPException(
+        status_code=409,
+        detail="restaure o formulário antes de editar"
+    )
+
     dados_atualizados = {
         "name": form.name,
         "sections": form.sections,
         "metadata": form.metadata.model_dump(),
+        "updatedAt": datetime.now(timezone.utc),
     }
 
     db.forms.update_one({"_id": form_id}, {"$set": dados_atualizados})
@@ -141,14 +171,98 @@ def atualizar_form(form_id: str, form: FormUpdate):
     response_model=MessageOut,
     summary="Remove um formulário",
     responses={404: {"description": FORM_NAO_ENCONTRADO}},
-)
+    )
+
 def deletar_form(form_id: str):
-    resultado = db.forms.delete_one({"_id": form_id})
 
-    if resultado.deleted_count == 0:
-        raise HTTPException(status_code=404, detail=FORM_NAO_ENCONTRADO)
+    form = db.forms.find_one({"_id": form_id})
 
-    return {"mensagem": "Formulário removido com sucesso", "id": form_id}
+    if form is None:
+        raise HTTPException(
+            status_code=404,
+            detail=FORM_NAO_ENCONTRADO
+        )
+
+    # DELETE idempotente:
+    # se já estiver deletado, não altera purgeAt
+    if form.get("deletedAt") is not None:
+        return {
+            "mensagem": "Formulário removido com sucesso",
+            "id": form_id
+        }
+
+    agora = datetime.now(timezone.utc)
+
+    purge_at = agora + timedelta(
+        days=SOFT_DELETE_RETENTION_DAYS
+    )
+
+    db.forms.update_one(
+        {"_id": form_id},
+        {
+            "$set": {
+                "deletedAt": agora,
+                "purgeAt": purge_at,
+                "updatedAt": agora
+            }
+        }
+    )
+
+    return {
+        "mensagem": "Formulário removido com sucesso",
+        "id": form_id
+    }
+
+@router.post(
+    "/{form_id}/restore",
+    response_model=MessageOut,
+    summary="Restaura um formulário removido",
+    responses={404: {"description": FORM_NAO_ENCONTRADO}},
+)
+def restaurar_form(form_id: str):
+
+    form = db.forms.find_one({"_id": form_id})
+
+    if form is None:
+        raise HTTPException(
+            status_code=404,
+            detail=FORM_NAO_ENCONTRADO
+        )
+
+    # Se já está ativo, não faz nada
+    if form.get("deletedAt") is None:
+        return {
+            "mensagem": "Formulário já está ativo",
+            "id": form_id
+        }
+
+    agora = datetime.now(timezone.utc)
+
+    # Verifica se ainda está dentro da janela de retenção
+    if form.get("purgeAt"):
+        purge_at = form["purgeAt"].replace(tzinfo=timezone.utc)
+
+        if purge_at < agora:
+            raise HTTPException(
+                status_code=404,
+                detail=FORM_NAO_ENCONTRADO
+            )
+
+    db.forms.update_one(
+        {"_id": form_id},
+        {
+            "$set": {
+                "deletedAt": None,
+                "purgeAt": None,
+                "updatedAt": agora
+            }
+        }
+    )
+
+    return {
+        "mensagem": "Formulário restaurado com sucesso",
+        "id": form_id
+    }
 
 
 @router.get(
@@ -217,3 +331,5 @@ def criar_section_no_form(form_id: str, section: SectionCreate):
 
     nova_section["_id"] = str(nova_section["_id"])
     return nova_section
+
+

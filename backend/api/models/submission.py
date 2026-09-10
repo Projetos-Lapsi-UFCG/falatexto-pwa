@@ -3,6 +3,10 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from datetime import datetime
+from datetime import datetime
+from typing import Optional, Dict, Any
+
 AnswerValue = Union[str, int, float, bool, List[str], None]
 
 SUBMISSION_EXAMPLE = {
@@ -59,7 +63,20 @@ class SubmissionOut(SubmissionBase):
 
     id: str = Field(..., alias="_id")
     submittedAt: datetime
-
+    deteledAt: Optional[datetime] = None
+    purgeAt: Optional[datetime] = None
+    updateAt: Optional[datetime] = None
 
 class SubmissionListOut(BaseModel):
     submissions: List[SubmissionOut]
+
+class SubmissionUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    patientData: Optional[Dict[str, Any]] = None
+    answers: Optional[Dict[str, AnswerValue]] = None
+    checkboxAnswers: Optional[Dict[str, bool]] = None
+    closingData: Optional[Dict[str, Any]] = None
+    status: Optional[Literal["draft", "completed"]] = None
+    formName: Optional[str] = None
+    entity: Optional[str] = None
