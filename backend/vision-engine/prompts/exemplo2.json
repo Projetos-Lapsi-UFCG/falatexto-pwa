@@ -1,0 +1,13 @@
+{
+  "dados_pessoais": {
+    "nome": "VALOR_EXATO_LIDO_OU_EXTRAIDO",
+    "nascimento": "VALOR_EXATO_LIDO_OU_EXTRAIDO",
+    "idade": "VALOR_EXATO_LIDO_OU_EXTRAIDO"
+  },
+  "cor_escolhida": {
+    "azul": false,
+    "amarelo": false,
+    "rosa": false,
+    "verde": false
+  }
+}

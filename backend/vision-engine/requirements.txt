@@ -9,3 +9,4 @@ numpy
 librosa
 openai-whisper
 soundfile
+json-repair

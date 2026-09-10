@@ -9,3 +9,7 @@ openai-whisper
 librosa
 numpy
 torch
+json-repair
+pypdf
+ollama
+pydantic
