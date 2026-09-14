@@ -13,12 +13,15 @@ import {
   lucideImage,
   lucideCamera,
   lucideFileText,
+  lucideTrash2,
 } from '@ng-icons/lucide';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { FormApiService } from '../../core/services/form-api.service';
 import { Form } from '../../core/models/form.model';
+import { AuthService } from '../../core/services/auth.service';
 import { LanguageService } from '../../core/services/language.service';
+import { UserType } from '../../core/models/user.model';
 import { LanguageSelectorComponent } from '../../shared/components/language-selector/language-selector.component';
 import { fadeIn, scaleIn } from '../../shared/animations/fade.animation';
 
@@ -37,6 +40,7 @@ import { fadeIn, scaleIn } from '../../shared/animations/fade.animation';
       lucideImage,
       lucideCamera,
       lucideFileText,
+      lucideTrash2,
     }),
   ],
   templateUrl: './form-detail.component.html',
@@ -47,6 +51,7 @@ export class FormDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly formApiService = inject(FormApiService);
+  private readonly authService = inject(AuthService);
   private readonly languageService = inject(LanguageService);
   private readonly toastr = inject(ToastrService);
   private readonly translate = inject(TranslateService);
@@ -55,6 +60,8 @@ export class FormDetailComponent implements OnInit {
   form: Form | null = null;
   notFound = false;
   loading = true;
+  deleting = false;
+  userType: UserType | null = null;
 
   readonly inputMethodInfo: Record<string, { labelKey: string; icon: string }> = {
     dictate: { labelKey: 'FORM_DETAIL.INPUT_METHODS.DICTATE', icon: 'lucideMic' },
@@ -63,6 +70,8 @@ export class FormDetailComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.userType = this.authService.getCurrentUserType();
+
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       this.loading = false;
@@ -95,6 +104,33 @@ export class FormDetailComponent implements OnInit {
   openFillDialog(): void {
     if (!this.form) return;
     this.router.navigate(['/forms', this.form.id, 'fill']);
+  }
+
+  goToSubmissions(): void {
+    if (!this.form) return;
+    this.router.navigate(['/forms', this.form.id, 'submissions']);
+  }
+
+  deleteForm(): void {
+    if (!this.form || this.deleting) return;
+
+    const confirmado = confirm(
+      this.translate.instant('FORM_DETAIL.DELETE_CONFIRM', { name: this.form.name })
+    );
+    if (!confirmado) return;
+
+    this.deleting = true;
+    this.formApiService.deleteForm(this.form.id).subscribe({
+      next: () => {
+        this.toastr.success(this.translate.instant('FORM_DETAIL.DELETE_SUCCESS'));
+        this.router.navigate(['/dashboard']);
+      },
+      error: () => {
+        this.deleting = false;
+        this.toastr.error(this.translate.instant('FORM_DETAIL.ERRORS.DELETE_FAILED'));
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   formatDate(dateStr: string): string {

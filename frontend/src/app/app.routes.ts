@@ -47,6 +47,14 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard],
   },
+  {
+    path: 'forms/:id/submissions',
+    loadComponent: () =>
+      import('./features/submissions/submissions.component').then(
+        m => m.SubmissionsComponent
+      ),
+    canActivate: [authGuard, adminGuard],
+  },
   // Rota para preenchimento do formulário — criada por Gabriela
   // Acessada após clicar em "Preencher" na tela de detalhes do formulário
   {

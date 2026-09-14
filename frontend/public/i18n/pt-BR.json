@@ -59,13 +59,13 @@
     "CREATE_FORM": "Criar Formulário",
     "LOGOUT_TITLE": "Sair",
     "LOADING": "Carregando formulários...",
-    "SUBMISSIONS_BTN": "Formulários submetidos",
     "ERRORS": {
       "LOAD_FAILED": "Não foi possível carregar os formulários. Tente novamente."
     }
   },
   "SUBMISSIONS": {
     "TITLE": "Formulários submetidos",
+    "TITLE_FOR_FORM": "Submissões — {{name}}",
     "BACK": "Dashboard",
     "LOADING": "Carregando submissões...",
     "EMPTY_TITLE": "Nenhuma submissão encontrada",
@@ -88,10 +88,21 @@
       "CHECKBOX_ANSWERS": "Respostas de Caixas de Seleção",
       "CLOSING_DATA": "Dados de Encerramento",
       "YES": "Sim",
-      "NO": "Não"
+      "NO": "Não",
+      "DELETE_BTN": "Excluir submissão",
+      "DELETE_CONFIRM": "Tem certeza que deseja excluir esta submissão do formulário \"{{name}}\"? Essa ação não pode ser desfeita.",
+      "DELETE_SUCCESS": "Submissão excluída com sucesso.",
+      "FIELDS": {
+        "NAME": "Nome",
+        "BIRTH_DATE": "Data de Nascimento",
+        "RECORD": "Prontuário",
+        "ROOM": "Sala",
+        "DATE": "Data"
+      }
     },
     "ERRORS": {
-      "LOAD_FAILED": "Não foi possível carregar as submissões. Tente novamente."
+      "LOAD_FAILED": "Não foi possível carregar as submissões. Tente novamente.",
+      "DELETE_FAILED": "Não foi possível excluir a submissão. Tente novamente."
     }
   },
   "FORM_CARD": {
@@ -134,12 +145,13 @@
   },
   "FORM_DETAIL": {
     "BACK": "Dashboard",
-    "FILL_BTN": "Preencher",
+    "SUBMISSIONS_BTN": "Formulários submetidos",
     "LOADING": "Carregando formulário...",
     "NOT_FOUND_TITLE": "Formulário não encontrado",
     "NOT_FOUND_BACK": "Voltar ao Dashboard",
     "ERRORS": {
-      "LOAD_FAILED": "Não foi possível carregar este formulário. Tente novamente."
+      "LOAD_FAILED": "Não foi possível carregar este formulário. Tente novamente.",
+      "DELETE_FAILED": "Não foi possível excluir o formulário. Tente novamente."
     },
     "LABEL_QUESTIONS": "Perguntas",
     "LABEL_DEPARTMENT": "Departamento",
@@ -147,6 +159,9 @@
     "LABEL_INPUT_METHOD": "Método de entrada",
     "FILL_CTA": "Preencher este formulário",
     "FILL_CTA_HINT": "Será solicitado o nome do paciente.",
+    "DELETE_BTN": "Excluir formulário",
+    "DELETE_CONFIRM": "Tem certeza que deseja excluir o formulário \"{{name}}\"? Essa ação não pode ser desfeita.",
+    "DELETE_SUCCESS": "Formulário excluído com sucesso.",
     "INPUT_METHODS": {
       "DICTATE": "Ditado por voz",
       "UPLOAD": "Upload de imagem",

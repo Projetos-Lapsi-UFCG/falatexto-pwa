@@ -59,13 +59,13 @@
     "CREATE_FORM": "Crear Formulario",
     "LOGOUT_TITLE": "Cerrar sesión",
     "LOADING": "Cargando formularios...",
-    "SUBMISSIONS_BTN": "Formularios enviados",
     "ERRORS": {
       "LOAD_FAILED": "No se pudieron cargar los formularios. Inténtalo de nuevo."
     }
   },
   "SUBMISSIONS": {
     "TITLE": "Formularios enviados",
+    "TITLE_FOR_FORM": "Envíos — {{name}}",
     "BACK": "Dashboard",
     "LOADING": "Cargando envíos...",
     "EMPTY_TITLE": "No se encontraron envíos",
@@ -88,10 +88,21 @@
       "CHECKBOX_ANSWERS": "Respuestas de Casillas",
       "CLOSING_DATA": "Datos de Cierre",
       "YES": "Sí",
-      "NO": "No"
+      "NO": "No",
+      "DELETE_BTN": "Eliminar envío",
+      "DELETE_CONFIRM": "¿Estás seguro de que deseas eliminar este envío del formulario \"{{name}}\"? Esta acción no se puede deshacer.",
+      "DELETE_SUCCESS": "Envío eliminado con éxito.",
+      "FIELDS": {
+        "NAME": "Nombre",
+        "BIRTH_DATE": "Fecha de Nacimiento",
+        "RECORD": "Historia Clínica",
+        "ROOM": "Sala",
+        "DATE": "Fecha"
+      }
     },
     "ERRORS": {
-      "LOAD_FAILED": "No se pudieron cargar los envíos. Inténtalo de nuevo."
+      "LOAD_FAILED": "No se pudieron cargar los envíos. Inténtalo de nuevo.",
+      "DELETE_FAILED": "No se pudo eliminar el envío. Inténtalo de nuevo."
     }
   },
   "FORM_CARD": {
@@ -116,12 +127,13 @@
   },
   "FORM_DETAIL": {
     "BACK": "Dashboard",
-    "FILL_BTN": "Llenar",
+    "SUBMISSIONS_BTN": "Formularios enviados",
     "LOADING": "Cargando formulario...",
     "NOT_FOUND_TITLE": "Formulario no encontrado",
     "NOT_FOUND_BACK": "Volver al Dashboard",
     "ERRORS": {
-      "LOAD_FAILED": "No se pudo cargar este formulario. Inténtalo de nuevo."
+      "LOAD_FAILED": "No se pudo cargar este formulario. Inténtalo de nuevo.",
+      "DELETE_FAILED": "No se pudo eliminar el formulario. Inténtalo de nuevo."
     },
     "LABEL_QUESTIONS": "Preguntas",
     "LABEL_DEPARTMENT": "Departamento",
@@ -129,6 +141,9 @@
     "LABEL_INPUT_METHOD": "Método de entrada",
     "FILL_CTA": "Llenar este formulario",
     "FILL_CTA_HINT": "Se solicitará el nombre del paciente.",
+    "DELETE_BTN": "Eliminar formulario",
+    "DELETE_CONFIRM": "¿Estás seguro de que deseas eliminar el formulario \"{{name}}\"? Esta acción no se puede deshacer.",
+    "DELETE_SUCCESS": "Formulario eliminado con éxito.",
     "INPUT_METHODS": {
       "DICTATE": "Dictado por voz",
       "UPLOAD": "Carga de imagen",
