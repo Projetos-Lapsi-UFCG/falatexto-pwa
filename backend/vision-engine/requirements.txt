@@ -5,4 +5,8 @@ ollama==0.1.6
 pymongo==4.8.0
 pydantic==2.7.1
 pypdf==4.2.0
+numpy
+librosa
+openai-whisper
+soundfile
 json-repair

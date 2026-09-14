@@ -102,8 +102,7 @@
   font-size: 0.8rem;
 }
 
-.mdc-button__label{
-  border: 2px solid #dd0031;
+.mdc-button__label {
   text-transform: uppercase;
 }
 
@@ -148,4 +147,29 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Ajustes e alinhamento do botão matSuffix com ng-icon */
+button[matSuffix] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+}
+
+button[matSuffix] ng-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+button[matSuffix] ng-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+  display: block !important;
 }

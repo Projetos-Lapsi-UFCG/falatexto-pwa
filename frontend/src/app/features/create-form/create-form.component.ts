@@ -8,12 +8,12 @@ import {
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucidePlus, lucidePaperclip, lucideFileX } from '@ng-icons/lucide';
+import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { FormApiService } from '../../core/services/form-api.service';
 import { VisionApiService } from '../../core/services/vision-api.service';
+import { VoiceInputComponent } from '../../shared/components/voice-input/voice-input';
 import { scaleIn, fadeIn } from '../../shared/animations/fade.animation';
 
 const ACCEPTED_VISION_FILE_TYPES = ['application/pdf', 'image/'];
@@ -26,10 +26,10 @@ const ACCEPTED_VISION_FILE_TYPES = ['application/pdf', 'image/'];
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    NgIcon,
+    MatIconModule,
     TranslateModule,
+    VoiceInputComponent,
   ],
-  providers: [provideIcons({ lucideArrowLeft, lucidePlus, lucidePaperclip, lucideFileX })],
   templateUrl: './create-form.component.html',
   styleUrl: './create-form.component.css',
   animations: [scaleIn, fadeIn],
@@ -52,7 +52,7 @@ export class CreateFormComponent {
   });
 
   readonly visionForm = this.fb.group({
-    textoClinico: ['', [Validators.required]],
+    nomeFormulario: ['', [Validators.required]],
   });
 
   handleSubmit(): void {
@@ -100,15 +100,15 @@ export class CreateFormComponent {
   }
 
   handleProcessWithAI(): void {
-    if (this.visionForm.invalid) {
+    if (this.visionForm.invalid || !this.selectedFile) {
       this.visionForm.markAllAsTouched();
       this.toastr.error(this.translate.instant('CREATE_FORM.ERRORS.FILL_REQUIRED'));
       return;
     }
 
-    const textoClinico = this.visionForm.value.textoClinico!;
+    const nomeFormulario = this.visionForm.value.nomeFormulario!;
     this.visionLoading = true;
-    this.visionApiService.processarClinica(textoClinico, this.selectedFile).subscribe({
+    this.visionApiService.processarClinica(nomeFormulario, this.selectedFile).subscribe({
       next: response => {
         this.visionLoading = false;
         this.toastr.success(
@@ -122,5 +122,16 @@ export class CreateFormComponent {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  appendTexto(formGroup: any, controlName: string, novoTexto: string): void {
+    const control = formGroup.get(controlName);
+    if (control && novoTexto) {
+      const valorAtual = control.value ? String(control.value).trim() + ' ' : '';
+      control.setValue(valorAtual + novoTexto);
+      control.markAsDirty();
+      control.markAsTouched();
+      this.cdr.markForCheck();
+    }
   }
 }
