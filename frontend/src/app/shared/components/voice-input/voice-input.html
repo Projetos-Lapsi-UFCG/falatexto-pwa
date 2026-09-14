@@ -1,0 +1,13 @@
+<button 
+  type="button" 
+  mat-icon-button 
+  [class.recording]="currentState === 'recording'"
+  [class.transcribing]="currentState === 'transcribing'"
+  [disabled]="currentState === 'transcribing'"
+  [matTooltip]="currentState === 'idle' ? 'Iniciar Ditado' : (currentState === 'recording' ? 'Parar e Transcrever' : 'Processando...')"
+  (click)="toggleDitado()">
+  
+  <mat-icon *ngIf="currentState === 'idle'">mic</mat-icon>
+  <mat-icon *ngIf="currentState === 'recording'">mic_off</mat-icon>
+  <mat-icon *ngIf="currentState === 'transcribing'" class="spin-icon">sync</mat-icon>
+</button>

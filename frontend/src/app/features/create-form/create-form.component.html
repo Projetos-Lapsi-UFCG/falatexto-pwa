@@ -26,20 +26,12 @@
             spellcheck="false" 
           />
           
-          <button mat-icon-button matSuffix type="button"
-                  (click)="toggleDitado(createForm, 'name')"
-                  [disabled]="dictationLoadingField === 'name' || (audioRecorder.recordingState && activeRecordingField !== 'name')"
-                  [attr.aria-label]="'Ditar'">
-            @if (dictationLoadingField === 'name') {
-              <mat-icon class="spin-icon">sync</mat-icon>
-            } @else if (activeRecordingField === 'name') {
-              <mat-icon class="text-red-600 animate-pulse">stop</mat-icon>
-            } @else {
-              <mat-icon>mic</mat-icon>
-            }
-          </button>
+          <app-voice-input
+            matSuffix
+            (textReceived)="appendTexto(createForm, 'name', $event)">
+          </app-voice-input>
 
-          @if (dictationLoadingField !== 'name' && createForm.get('name')?.invalid && createForm.get('name')?.dirty) {
+          @if (createForm.get('name')?.invalid && createForm.get('name')?.dirty) {
             <mat-error>{{ 'CREATE_FORM.NAME_ERROR' | translate }}</mat-error>
           }
         </mat-form-field>
@@ -76,20 +68,12 @@
             spellcheck="false"
           />
 
-          <button mat-icon-button matSuffix type="button"
-                  (click)="toggleDitado(visionForm, 'nomeFormulario')"
-                  [disabled]="dictationLoadingField === 'nomeFormulario' || (audioRecorder.recordingState && activeRecordingField !== 'nomeFormulario')"
-                  [attr.aria-label]="'Ditar'">
-            @if (dictationLoadingField === 'nomeFormulario') {
-              <mat-icon class="spin-icon">sync</mat-icon>
-            } @else if (activeRecordingField === 'nomeFormulario') {
-              <mat-icon class="text-red-600 animate-pulse">stop</mat-icon>
-            } @else {
-              <mat-icon>mic</mat-icon>
-            }
-          </button>
+          <app-voice-input
+            matSuffix
+            (textReceived)="appendTexto(visionForm, 'nomeFormulario', $event)">
+          </app-voice-input>
 
-          @if (dictationLoadingField !== 'nomeFormulario' && visionForm.get('nomeFormulario')?.invalid && visionForm.get('nomeFormulario')?.dirty) {
+          @if (visionForm.get('nomeFormulario')?.invalid && visionForm.get('nomeFormulario')?.dirty) {
             <mat-error>{{ 'CREATE_FORM.VISION.NAME_ERROR' | translate }}</mat-error>
           }
         </mat-form-field>
