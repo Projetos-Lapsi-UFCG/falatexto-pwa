@@ -224,3 +224,74 @@ def atualizar_submission(
     atualizada["_id"] = str(atualizada["_id"])
 
     return atualizada
+
+@router.post(
+    "/{submission_id}/restore",
+    response_model=MessageOut,
+    summary="Restaura uma submissão",
+    responses={404: {"description": SUBMISSION_NAO_ENCONTRADA}},
+)
+def restaurar_submission(submission_id: str):
+    try:
+        object_id = ObjectId(submission_id)
+    except InvalidId:
+        raise HTTPException(
+            status_code=404,
+            detail=SUBMISSION_NAO_ENCONTRADA
+        )
+
+    submission = db.submissions.find_one({
+        "_id": object_id
+    })
+
+    if submission is None:
+        raise HTTPException(
+            status_code=404,
+            detail=SUBMISSION_NAO_ENCONTRADA
+        )
+
+    # Se já estiver ativa, restauração é no-op
+    if submission.get("deletedAt") is None:
+        return {
+            "mensagem": "Submissão já está ativa",
+            "id": submission_id
+        }
+
+    purge_at = submission.get("purgeAt")
+
+    # Uma submissão deletada sem purgeAt não pode ser restaurada
+    if purge_at is None:
+        raise HTTPException(
+            status_code=404,
+            detail=SUBMISSION_NAO_ENCONTRADA
+        )
+
+    agora = datetime.now(timezone.utc)
+
+    # O PyMongo pode retornar datetime sem timezone.
+    # Nesse caso, tratamos como UTC.
+    if purge_at.tzinfo is None:
+        purge_at = purge_at.replace(tzinfo=timezone.utc)
+
+    # Já passou da janela de retenção
+    if purge_at < agora:
+        raise HTTPException(
+            status_code=404,
+            detail=SUBMISSION_NAO_ENCONTRADA
+        )
+
+    db.submissions.update_one(
+        {"_id": object_id},
+        {
+            "$set": {
+                "deletedAt": None,
+                "purgeAt": None,
+                "updatedAt": agora
+            }
+        }
+    )
+
+    return {
+        "mensagem": "Submissão restaurada com sucesso",
+        "id": submission_id
+    }

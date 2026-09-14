@@ -63,9 +63,9 @@ class SubmissionOut(SubmissionBase):
 
     id: str = Field(..., alias="_id")
     submittedAt: datetime
-    deteledAt: Optional[datetime] = None
+    deletedAt: Optional[datetime] = None
     purgeAt: Optional[datetime] = None
-    updateAt: Optional[datetime] = None
+    updatedAt: Optional[datetime] = None
 
 class SubmissionListOut(BaseModel):
     submissions: List[SubmissionOut]

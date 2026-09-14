@@ -22,6 +22,7 @@ services:
     environment:
       MONGO_URI: mongodb://database:27017
       MONGO_DB_NAME: assis_db
+      SOFT_DELETE_RETENTION_DAYS: ${SOFT_DELETE_RETENTION_DAYS:-90}
     networks:
       - falatexto-network
 
