@@ -23,6 +23,9 @@ services:
     image: ollama/ollama:0.24.0
     container_name: assis_ollama
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "11434:11434"
     volumes:
@@ -36,6 +39,9 @@ services:
       dockerfile: Dockerfile
     container_name: assis_vision_engine
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     command: uvicorn main:app --host 0.0.0.0 --port 8001
     ports:
       - "8001:8001"

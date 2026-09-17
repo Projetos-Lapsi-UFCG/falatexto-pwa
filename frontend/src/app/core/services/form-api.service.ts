@@ -36,16 +36,6 @@ interface QuestionListResponse {
   questions: Raw<BackendQuestionOut>[];
 }
 
-/**
- * Service responsável pela comunicação com o backend para forms/sections/
- * questions. Substitui o antigo FormService (mock em localStorage).
- *
- * O backend guarda forms/sections/questions de forma normalizada (cada Form
- * só referencia ids de Section, cada Section só referencia ids de Question),
- * então montar um Form completo exige uma cadeia de N+1 chamadas — ver
- * getFormById(). O form-mapper.ts (já testado) cuida da tradução de forma;
- * este service cuida apenas de buscar os dados e normalizar `_id` -> `id`.
- */
 @Injectable({ providedIn: 'root' })
 export class FormApiService {
   private readonly http = inject(HttpClient);
@@ -68,11 +58,6 @@ export class FormApiService {
   /**
    * Monta um Form completo: GET do form, GET das suas sections, e um GET de
    * questions por section, remontados via mapFormFromBackend().
-   *
-   * subSections são sempre tratadas como vazias aqui: não existe endpoint
-   * GET /sections/{id} para buscar os metadados (título, tags) de uma
-   * subSection isoladamente — só dá para resolvê-las se/quando esse endpoint
-   * existir no backend (ver nota em form-mapper.ts sobre a mesma lacuna).
    */
   getFormById(id: string): Observable<Form> {
     return this.http.get<Raw<BackendFormOut>>(`${API_BASE_URL}/forms/${id}`).pipe(
@@ -96,12 +81,7 @@ export class FormApiService {
   }
 
   /**
-   * Cria um form vazio (sem sections/questions — a UI de criação hoje só
-   * coleta o nome). O id (`form_NNN`) é gerado no cliente: lista os forms
-   * existentes, pega o maior sufixo numérico e soma 1. Não há proteção
-   * contra corrida entre o GET e o POST (dois creates simultâneos podem
-   * colidir no id) — aceitável por ora, já que a aplicação não tem
-   * autenticação nem qualquer outro controle de concorrência multiusuário.
+   * Cria um form vazio (sem sections/questions).
    */
   createForm(name: string): Observable<Form> {
     return this.listForms().pipe(
@@ -124,6 +104,14 @@ export class FormApiService {
       map(normalizeId<BackendFormOut>),
       map(form => this.summaryToForm(form))
     );
+  }
+
+  /**
+   * Envia a transcrição do áudio completo (ditado contínuo) para o backend
+   * processar via LLM e mapear a estrutura dos campos do formulário.
+   */
+  processarDitadoCompleto(formId: string, texto: string): Observable<any> {
+    return this.http.post<any>(`${API_BASE_URL}/forms/${formId}/parse-voice`, { texto });
   }
 
   private fetchQuestionsByOwnerId(

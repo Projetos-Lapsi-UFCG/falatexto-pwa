@@ -55,7 +55,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
+    allow_origins=["*"],
     # Sem allow_credentials=True: a API não usa cookies/auth, e a combinação
     # allow_origins=["*"] + allow_credentials=True é inválida pela spec de CORS
     # (navegadores rejeitam respostas credenciadas com origin "*").

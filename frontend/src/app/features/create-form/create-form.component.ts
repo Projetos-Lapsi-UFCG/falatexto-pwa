@@ -108,13 +108,22 @@ export class CreateFormComponent {
 
     const nomeFormulario = this.visionForm.value.nomeFormulario!;
     this.visionLoading = true;
+
     this.visionApiService.processarClinica(nomeFormulario, this.selectedFile).subscribe({
-      next: response => {
+      next: (response: any) => {
         this.visionLoading = false;
-        this.toastr.success(
-          this.translate.instant('CREATE_FORM.VISION.SUCCESS.QUEUED', { id: response.id_sessao })
-        );
-        this.cdr.markForCheck();
+
+        const formId = response?.id_sessao || response?.id || response?.form_id || response?.sessao_id;
+
+        if (!formId) {
+          this.toastr.error('Erro: ID do formulário não retornado pela IA.');
+          return;
+        }
+
+        this.toastr.success('Formulário extraído com sucesso!');
+        
+        // Navegação ajustada para o padrão correto 'forms/:id/fill'
+        this.router.navigate(['/forms', formId, 'fill']);
       },
       error: () => {
         this.visionLoading = false;

@@ -10,6 +10,13 @@ router = APIRouter(prefix="/forms", tags=["forms"])
 FORM_NAO_ENCONTRADO = "Formulário não encontrado"
 
 
+def _extract_id(item):
+    """Extrai o ID caso o item seja um dicionário ou o retorna caso já seja uma string/ID."""
+    if isinstance(item, dict):
+        return item.get("_id") or item.get("id")
+    return item
+
+
 @router.get(
     "",
     response_model=FormListOut,
@@ -19,7 +26,12 @@ FORM_NAO_ENCONTRADO = "Formulário não encontrado"
 def listar_forms():
     forms = list(db.forms.find({}, {"_id": 1, "name": 1, "metadata": 1, "sections": 1}))
 
-    all_section_ids = {sid for form in forms for sid in form.get("sections", [])}
+    all_section_ids = {
+        _extract_id(sid)
+        for form in forms
+        for sid in form.get("sections", [])
+        if _extract_id(sid) is not None
+    }
     sections = list(
         db.sections.find(
             {"_id": {"$in": list(all_section_ids)}},
@@ -28,7 +40,12 @@ def listar_forms():
     )
     sections_by_id = {section["_id"]: section for section in sections}
 
-    all_subsection_ids = {sid for section in sections for sid in section.get("subSections", [])}
+    all_subsection_ids = {
+        _extract_id(sid)
+        for section in sections
+        for sid in section.get("subSections", [])
+        if _extract_id(sid) is not None
+    }
     subsections = list(
         db.sections.find(
             {"_id": {"$in": list(all_subsection_ids)}}, {"_id": 1, "questions": 1}
@@ -38,7 +55,10 @@ def listar_forms():
 
     all_question_ids = set()
     for section in sections + subsections:
-        all_question_ids.update(section.get("questions", []))
+        for q in section.get("questions", []):
+            qid = _extract_id(q)
+            if qid is not None:
+                all_question_ids.add(qid)
 
     questions = list(
         db.questions.find(
@@ -46,20 +66,32 @@ def listar_forms():
         )
     )
     composite_child_ids = {
-        child_id for question in questions for child_id in question.get("compositeFields", [])
+        _extract_id(child_id)
+        for question in questions
+        for child_id in question.get("compositeFields", [])
+        if _extract_id(child_id) is not None
     }
 
     for form in forms:
         question_ids = set()
-        for section_id in form.get("sections", []):
+        for section_ref in form.get("sections", []):
+            section_id = _extract_id(section_ref)
             section = sections_by_id.get(section_id)
             if not section:
                 continue
-            question_ids.update(section.get("questions", []))
-            for sub_id in section.get("subSections", []):
+            for q in section.get("questions", []):
+                qid = _extract_id(q)
+                if qid is not None:
+                    question_ids.add(qid)
+
+            for sub_ref in section.get("subSections", []):
+                sub_id = _extract_id(sub_ref)
                 subsection = subsections_by_id.get(sub_id)
                 if subsection:
-                    question_ids.update(subsection.get("questions", []))
+                    for q in subsection.get("questions", []):
+                        qid = _extract_id(q)
+                        if qid is not None:
+                            question_ids.add(qid)
 
         form["questionCount"] = len(question_ids - composite_child_ids)
         form["_id"] = str(form["_id"])
@@ -164,14 +196,18 @@ def listar_sections_do_form(form_id: str):
     if form is None:
         raise HTTPException(status_code=404, detail=FORM_NAO_ENCONTRADO)
 
-    section_ids = form.get("sections", [])
+    raw_sections = form.get("sections", [])
+    section_ids = [
+        _extract_id(sid) for sid in raw_sections if _extract_id(sid) is not None
+    ]
 
     sections_encontradas = list(db.sections.find({"_id": {"$in": section_ids}}))
 
     sections_por_id = {section["_id"]: section for section in sections_encontradas}
 
     sections_ordenadas = []
-    for section_id in section_ids:
+    for section_ref in raw_sections:
+        section_id = _extract_id(section_ref)
         if section_id in sections_por_id:
             section = sections_por_id[section_id]
             section["_id"] = str(section["_id"])
