@@ -14,9 +14,9 @@ services:
 
   api:
     build: .
-    container_name: assis_api
+    container_name: assis_api_dev
     ports:
-      - "8000:8000"
+      - "8002:8000"
     depends_on:
       - database
     environment:
