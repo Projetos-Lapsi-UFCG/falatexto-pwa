@@ -32,6 +32,13 @@ services:
       - ollama_data:/root/.ollama
     networks:
       - falatexto-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   vision-engine:
     build:
