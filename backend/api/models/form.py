@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class FormMetadata(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     version: str = Field(..., min_length=1, max_length=20)
     active: bool
@@ -24,7 +24,7 @@ class FormMetadata(BaseModel):
 
 
 class FormBase(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     name: str = Field(..., min_length=3, max_length=120)
     sections: List[str] = Field(default_factory=list)
@@ -64,7 +64,7 @@ class FormBase(BaseModel):
 
 class FormCreate(FormBase):
     model_config = ConfigDict(
-        extra="forbid",
+        extra="ignore",
         json_schema_extra={
             "example": {
                 "id": "form_001",
@@ -90,7 +90,7 @@ class FormCreate(FormBase):
 
 class FormUpdate(FormBase):
     model_config = ConfigDict(
-        extra="forbid",
+        extra="ignore",
         json_schema_extra={
             "example": {
                 "name": "Anamnese Inicial - Revisão",
