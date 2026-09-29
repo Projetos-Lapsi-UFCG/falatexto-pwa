@@ -51,7 +51,10 @@ import {
 // Geração de ids compatíveis com os patterns do backend
 // ============================================================================
 
-function slugify(raw: string): string {
+/** Exportado para reuso por quem monta ids "legíveis" a partir de texto livre
+ *  fora deste arquivo (ex.: FormApiService, ao derivar ids de pergunta/opção
+ *  a partir dos rótulos digitados no construtor de perguntas). */
+export function slugify(raw: string): string {
   const semAcentos = raw
     .trim()
     .toLowerCase()
@@ -152,6 +155,7 @@ function frontendTypeToBackendType(type: QuestionField['type']): BackendQuestion
   switch (type) {
     case 'text':
     case 'date':
+    case 'number':
       return 'ABERTA';
     case 'boolean':
     case 'boolean_na':
@@ -214,7 +218,7 @@ export function mapQuestionToBackend(question: QuestionField): MappedQuestion {
       type: backendType,
       options,
       compositeFields: [],
-      inputFormat: question.type === 'date' ? 'data' : null,
+      inputFormat: question.type === 'date' ? 'data' : question.type === 'number' ? 'numero' : null,
     },
     extra: [],
   };
@@ -241,7 +245,7 @@ export function mapQuestionFromBackend(
       return {
         id,
         label,
-        type: question.inputFormat === 'data' ? 'date' : 'text',
+        type: question.inputFormat === 'data' ? 'date' : question.inputFormat === 'numero' ? 'number' : 'text',
       };
 
     case 'COMPOSTA':

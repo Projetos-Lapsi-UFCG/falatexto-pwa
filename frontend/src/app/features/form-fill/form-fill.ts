@@ -53,22 +53,18 @@ export class FormFillComponent implements OnInit {
   // Respostas para checkboxes — valor booleano por opção
   checkboxAnswers: Record<string, boolean> = {};
 
-  // Dados do paciente preenchidos na etapa 0
-  patientData = {
-    name: '',
-    birthDate: '',
-    record: '',
-    room: '',
-  };
-
   // Dados finais — data e responsável
   closingData = {
     date: '',
     responsible: '',
   };
 
+  // Uma etapa por seção do formulário + a etapa final de conclusão.
+  // (Não há mais etapa fixa de "Dados do Paciente" — quem quiser coletar
+  // identificação do paciente adiciona essas perguntas no construtor, como
+  // qualquer outra pergunta do formulário.)
   get totalSteps(): number {
-    return 2 + (this.form?.sections?.length ?? 0);
+    return 1 + (this.form?.sections?.length ?? 0);
   }
 
   ngOnInit(): void {
@@ -126,7 +122,6 @@ export class FormFillComponent implements OnInit {
     // Monta o objeto com todos os dados do preenchimento
     const dados = {
       formId: this.form.id,
-      patientData: this.patientData,
       answers: this.answers,
       checkboxAnswers: this.checkboxAnswers,
       closingData: this.closingData,

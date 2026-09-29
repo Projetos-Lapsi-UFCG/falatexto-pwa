@@ -124,6 +124,37 @@
     "SUCCESS": {
       "CREATED": "Formulário criado com sucesso"
     },
+    "BUILDER": {
+      "TITLE": "Perguntas do formulário",
+      "SUBTITLE": "Monte as seções e perguntas que vão aparecer no preenchimento.",
+      "ADD_SECTION": "+ Adicionar seção",
+      "ADD_QUESTION": "+ Adicionar pergunta",
+      "ADD_OPTION": "+ Adicionar opção",
+      "REMOVE_SECTION": "Remover seção",
+      "REMOVE_QUESTION": "Remover pergunta",
+      "REMOVE_OPTION": "Remover opção",
+      "SECTION_NAME_LABEL": "Nome da seção",
+      "SECTION_NAME_PLACEHOLDER": "ex.: Dados Pré-Operatórios",
+      "QUESTION_LABEL_LABEL": "Pergunta",
+      "QUESTION_LABEL_PLACEHOLDER": "ex.: O paciente possui alergias?",
+      "QUESTION_TYPE_LABEL": "Tipo de resposta",
+      "OPTION_LABEL": "Opção",
+      "TYPES": {
+        "TEXT": "Texto livre",
+        "DATE": "Data",
+        "NUMBER": "Número",
+        "BOOLEAN": "Sim / Não",
+        "BOOLEAN_NA": "Sim / Não / Não se aplica",
+        "RADIO_GROUP": "Escolha única (opções)",
+        "CHECKBOX_GROUP": "Caixas de seleção (múltipla escolha)"
+      },
+      "ERRORS": {
+        "SECTION_NAME_REQUIRED": "Toda seção precisa de um nome (mín. 3 caracteres)",
+        "SECTION_EMPTY": "Adicione pelo menos uma pergunta em cada seção, ou remova a seção",
+        "QUESTION_LABEL_REQUIRED": "Toda pergunta precisa de um texto (mín. 3 caracteres)",
+        "OPTION_REQUIRED": "Perguntas de caixas de seleção precisam de pelo menos uma opção preenchida"
+      }
+    },
     "VISION": {
       "TITLE": "Processar com IA",
       "SUBTITLE": "Envie um texto clínico e, opcionalmente, um arquivo (imagem ou PDF) para processamento automático.",
@@ -158,7 +189,7 @@
     "LABEL_CREATED_AT": "Criado em",
     "LABEL_INPUT_METHOD": "Método de entrada",
     "FILL_CTA": "Preencher este formulário",
-    "FILL_CTA_HINT": "Será solicitado o nome do paciente.",
+    "FILL_CTA_HINT": "Você vai preencher as perguntas deste formulário.",
     "DELETE_BTN": "Excluir formulário",
     "DELETE_CONFIRM": "Tem certeza que deseja excluir o formulário \"{{name}}\"? Essa ação não pode ser desfeita.",
     "DELETE_SUCCESS": "Formulário excluído com sucesso.",

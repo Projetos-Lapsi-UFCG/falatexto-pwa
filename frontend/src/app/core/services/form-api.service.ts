@@ -3,15 +3,16 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { API_BASE_URL } from '../config/api.config';
-import { Form } from '../models/form.model';
+import { Form, Section } from '../models/form.model';
 import {
   BackendFormCreate,
   BackendFormOut,
   BackendFormSummary,
   BackendQuestionOut,
+  BackendSectionCreate,
   BackendSectionOut,
 } from '../models/backend-form.model';
-import { mapFormFromBackend, toBackendFormId } from './form-mapper';
+import { MappedSection, mapFormFromBackend, mapFormToBackend, slugify, toBackendFormId } from './form-mapper';
 
 /** Forma crua de um DTO `*Out` como o backend realmente serializa: id como `_id`
  *  (FastAPI serializa por alias por padrão — ver nota no topo de backend-form.model.ts). */
@@ -126,9 +127,133 @@ export class FormApiService {
     );
   }
 
+  /**
+   * Cria um form completo (nome + seções + perguntas) a partir da estrutura
+   * montada no construtor de perguntas (CreateFormComponent). mapFormToBackend()
+   * só traduz a forma dos dados (ver nota de escopo no topo de form-mapper.ts);
+   * aqui é feito o encadeamento real que faltava: POST /forms, depois um
+   * POST /forms/{id}/sections por seção e um POST /sections/{id}/questions
+   * por pergunta daquela seção (em paralelo entre si, via forkJoin — não há
+   * dependência entre seções, nem entre perguntas da mesma seção).
+   *
+   * Sem transação: se uma chamada no meio da cadeia falhar, o form (e as
+   * seções/perguntas já criadas até ali) permanecem no banco — mesma
+   * limitação já aceita em createForm() para a corrida de id.
+   */
+  createFormWithSections(form: Form): Observable<void> {
+    return this.nextFormSequence().pipe(
+      switchMap(sequence => {
+        const uniqueSections = this.assignBackendIds(form.sections ?? [], sequence);
+        const plan = mapFormToBackend({ ...form, sections: uniqueSections }, sequence);
+
+        return this.http
+          .post<Raw<BackendFormOut>>(`${API_BASE_URL}/forms`, plan.form)
+          .pipe(switchMap(() => this.createSections(plan.form.id, plan.sections)));
+      }),
+      map(() => undefined)
+    );
+  }
+
   /** Remove um formulário existente. */
   deleteForm(id: string): Observable<void> {
     return this.http.delete<void>(`${API_BASE_URL}/forms/${id}`);
+  }
+
+  /** Mesma lógica de "pega o maior sufixo numérico existente e soma 1" usada
+   *  em createForm(), fatorada para ser reaproveitada por createFormWithSections(). */
+  private nextFormSequence(): Observable<number> {
+    return this.listForms().pipe(
+      map(existing => {
+        const sequences = existing
+          .map(f => /^form_(\d{3})$/.exec(f.id)?.[1])
+          .filter((seq): seq is string => !!seq)
+          .map(Number);
+        return sequences.length > 0 ? Math.max(...sequences) + 1 : 1;
+      })
+    );
+  }
+
+  /**
+   * O construtor de perguntas só se importa com rótulos digitados pelo
+   * usuário (section.name / question.label) — os ids locais em Section/
+   * QuestionField são só placeholders de tracking do Angular. Aqui eles são
+   * substituídos pelos ids reais que vão pro backend, derivados do rótulo.
+   *
+   * O prefixo com o sequence do form é necessário porque o backend exige id
+   * único em toda a coleção `sections`/`questions`, não só dentro deste form
+   * — sem isso, repetir um rótulo comum (ex.: "Nome") em dois formulários
+   * diferentes colidiria (400 "já existe") no segundo. O índice de posição
+   * garante unicidade mesmo entre perguntas com o mesmo rótulo dentro do
+   * próprio form sendo criado agora.
+   *
+   * Opções de checkbox_group não precisam desse cuidado: `QuestionOption.value`
+   * não tem unicidade exigida pelo backend (só usada como chave de resposta),
+   * então só recebem um slug legível + índice pra não colidirem entre si
+   * dentro da mesma pergunta.
+   */
+  private assignBackendIds(sections: Section[], sequence: number): Section[] {
+    return sections.map((section, sectionIndex) => ({
+      ...section,
+      id: `${sequence}_${sectionIndex}_${section.name}`,
+      questions: section.questions.map((question, questionIndex) => ({
+        ...question,
+        id: `${sequence}_${sectionIndex}_${questionIndex}_${question.label}`,
+        options: question.options?.map((option, optionIndex) => ({
+          ...option,
+          id: `${slugify(option.label)}_${optionIndex}`,
+        })),
+      })),
+    }));
+  }
+
+  private createSections(formId: string, sections: MappedSection[]): Observable<unknown> {
+    if (sections.length === 0) {
+      return of(undefined);
+    }
+
+    // Sequencial (não forkJoin): cada seção só é criada depois que a anterior
+    // termina. O backend guarda a ordem em que os POSTs chegam (via $addToSet
+    // em routers/forms.py) — em paralelo, a ordem de chegada das respostas HTTP
+    // não é garantida e embaralhava a ordem das seções no formulário.
+    return this.sequentially(sections.map(mapped => () => this.createSectionWithQuestions(formId, mapped)));
+  }
+
+  private createSectionWithQuestions(formId: string, mapped: MappedSection): Observable<unknown> {
+    // Cria a seção sem perguntas pré-listadas: cada POST de pergunta abaixo se
+    // auto-adiciona à seção via $addToSet no backend (routers/questions.py).
+    // Isso evita a seção referenciar, ainda que momentaneamente, ids de
+    // perguntas que ainda não existem como documento.
+    const sectionPayload: BackendSectionCreate = { ...mapped.section, questions: [] };
+    const questions = (mapped.questionsByOwnerId[mapped.section.id] ?? []).flatMap(q => [
+      q.primary,
+      ...q.extra,
+    ]);
+
+    return this.http.post(`${API_BASE_URL}/forms/${formId}/sections`, sectionPayload).pipe(
+      switchMap(() => {
+        if (questions.length === 0) {
+          return of(undefined);
+        }
+        // Mesmo motivo do comentário em createSections(): sequencial pra
+        // preservar a ordem em que as perguntas foram criadas no construtor.
+        return this.sequentially(
+          questions.map(
+            q => () => this.http.post(`${API_BASE_URL}/sections/${mapped.section.id}/questions`, q)
+          )
+        );
+      })
+    );
+  }
+
+  /** Executa os observables (lazy — uma factory por item, não o Observable já
+   *  inscrito) um de cada vez, só disparando o próximo depois que o anterior
+   *  emitir. Ao contrário de forkJoin (paralelo), garante que a ordem de
+   *  chegada no backend seja a mesma ordem da lista de entrada. */
+  private sequentially<T>(factories: Array<() => Observable<T>>): Observable<T[]> {
+    return factories.reduce(
+      (acc$, factory) => acc$.pipe(switchMap(results => factory().pipe(map(result => [...results, result])))),
+      of([] as T[])
+    );
   }
 
   private fetchQuestionsByOwnerId(
