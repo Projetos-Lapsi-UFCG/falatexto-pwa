@@ -3,3 +3,7 @@ uvicorn[standard]
 pymongo
 httpx
 python-multipart
+json-repair
+pypdf
+ollama
+pydantic

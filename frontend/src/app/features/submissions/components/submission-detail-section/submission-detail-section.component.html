@@ -3,7 +3,7 @@
     <h3 class="detail-section-title">{{ titleKey | translate }}</h3>
     <dl class="detail-grid">
       @for (entry of entries; track entry.key) {
-        <dt>{{ entry.label }}</dt>
+        <dt>{{ entry.labelKey ? (entry.labelKey | translate) : entry.label }}</dt>
         <dd>{{ entry.value | displayValue }}</dd>
       }
     </dl>
