@@ -126,6 +126,11 @@ export class FormApiService {
     );
   }
 
+  /** Remove um formulário existente. */
+  deleteForm(id: string): Observable<void> {
+    return this.http.delete<void>(`${API_BASE_URL}/forms/${id}`);
+  }
+
   private fetchQuestionsByOwnerId(
     sections: BackendSectionOut[]
   ): Observable<Record<string, BackendQuestionOut[]>> {

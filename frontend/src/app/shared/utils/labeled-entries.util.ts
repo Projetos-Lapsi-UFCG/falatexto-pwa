@@ -1,6 +1,12 @@
 export interface LabeledEntry {
   key: string;
   label: string;
+  /** Chave i18n para campos conhecidos (ex.: os campos fixos de dados do
+   *  paciente/encerramento). Quando presente, a UI deve traduzir por ela em
+   *  vez de usar `label` — assim o rótulo acompanha o idioma selecionado.
+   *  Perguntas dinâmicas de um formulário não têm equivalente i18n, então
+   *  ficam só com `label` (humanizado a partir da key). */
+  labelKey?: string;
   value: unknown;
 }
 
@@ -17,7 +23,21 @@ export function humanizeKey(key: string): string {
     .join(' ');
 }
 
-export function toLabeledEntries(source?: Record<string, unknown> | null): LabeledEntry[] {
+/**
+ * @param labelKeys mapa opcional de key -> chave i18n, para campos conhecidos
+ *   cujo rótulo deve ser traduzido (ex.: os campos fixos de dados do
+ *   paciente/encerramento). Chaves fora do mapa continuam só com o label
+ *   humanizado.
+ */
+export function toLabeledEntries(
+  source?: Record<string, unknown> | null,
+  labelKeys?: Record<string, string>
+): LabeledEntry[] {
   if (!source) return [];
-  return Object.entries(source).map(([key, value]) => ({ key, label: humanizeKey(key), value }));
+  return Object.entries(source).map(([key, value]) => ({
+    key,
+    label: humanizeKey(key),
+    labelKey: labelKeys?.[key],
+    value,
+  }));
 }

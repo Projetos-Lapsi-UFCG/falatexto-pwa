@@ -10,9 +10,10 @@
 
       <div class="header-right">
         <app-language-selector />
-        @if (form) {
-          <button mat-raised-button color="primary" (click)="openFillDialog()" class="fill-btn">
-            {{ 'FORM_DETAIL.FILL_BTN' | translate }}
+        @if (form && userType === 'admin') {
+          <button mat-raised-button (click)="goToSubmissions()" class="submissions-btn">
+            <ng-icon name="lucideClipboardList" size="16" />
+            {{ 'FORM_DETAIL.SUBMISSIONS_BTN' | translate }}
           </button>
         }
       </div>
@@ -98,9 +99,20 @@
 
         <!-- Fill CTA -->
         <div class="fill-cta">
-          <button mat-raised-button color="primary" (click)="openFillDialog()" class="fill-cta-btn">
-            {{ 'FORM_DETAIL.FILL_CTA' | translate }}
-          </button>
+          <div class="fill-cta-actions">
+            <button mat-raised-button color="primary" (click)="openFillDialog()" class="fill-cta-btn">
+              {{ 'FORM_DETAIL.FILL_CTA' | translate }}
+            </button>
+            <button
+              mat-raised-button
+              [disabled]="deleting"
+              (click)="deleteForm()"
+              class="delete-btn"
+            >
+              <ng-icon name="lucideTrash2" size="16" />
+              {{ 'FORM_DETAIL.DELETE_BTN' | translate }}
+            </button>
+          </div>
           <p class="fill-cta-hint">{{ 'FORM_DETAIL.FILL_CTA_HINT' | translate }}</p>
         </div>
 
