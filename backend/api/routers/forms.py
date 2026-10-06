@@ -19,6 +19,11 @@ FORM_NAO_ENCONTRADO = "Formulário não encontrado"
 def listar_forms():
     forms = list(db.forms.find({}, {"_id": 1, "name": 1, "metadata": 1, "sections": 1}))
 
+    # Ignora referências de seção fora do formato (ex.: objetos embutidos), para
+    # que um documento malformado não derrube a listagem inteira.
+    for form in forms:
+        form["sections"] = [sid for sid in form.get("sections", []) if isinstance(sid, str)]
+
     all_section_ids = {sid for form in forms for sid in form.get("sections", [])}
     sections = list(
         db.sections.find(

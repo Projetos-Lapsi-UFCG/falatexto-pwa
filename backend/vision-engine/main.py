@@ -16,6 +16,8 @@ from pydantic import BaseModel, Field, ValidationError, field_validator, ConfigD
 import uvicorn
 from pymongo import MongoClient
 
+from form_builder import persistir_formulario
+
 # ==============================================================================
 # INICIALIZAÇÃO DA APLICAÇÃO E SEGURANÇA
 # ==============================================================================
@@ -301,30 +303,17 @@ Output ONLY raw JSON. No markdown syntax, no ```json formatting, no commentary."
         dados_sanitizados = sanitizar_dicionario_recursivo(dados_brutos)
         dados_validados = ProntuarioUniversal.model_validate(dados_sanitizados)
 
-        # Converte o objeto Pydantic validado diretamente para o formato do MongoDB
         dados_prontuario = dados_validados.model_dump()
-        secoes_tratadas = dados_prontuario.get("secoes", [])
 
-        documento_mongo = {
-            "_id": id_sessao,  
-            "name": f"Prontuário Automático - {dados_prontuario.get('tipo_documento', 'Documento Clínico')}",
-            "metadata": {
-                "version": "1.0",
-                "active": True,
-                "origem": f"Vision Engine AI ({MODELO})"
-            },
-            "sections": secoes_tratadas,
-            "resumo_narrativo": dados_prontuario.get("resumo_narrativo", ""),
-            "criado_em": dados_prontuario.get("criado_em", datetime.utcnow())
-        }
-        
-        # Persiste o prontuário estruturado na coleção de formulários do MongoDB
-        db.forms.insert_one(documento_mongo)
+        # Persiste no modelo do backend principal: form_NNN + sections + questions
+        # (e os valores extraídos como submissão em rascunho)
+        documentos = persistir_formulario(db, dados_prontuario, id_sessao, MODELO)
 
         data_criacao = fila_de_sessoes.get(id_sessao, {}).get("criado_em", datetime.now())
         fila_de_sessoes[id_sessao] = {
             "status": "executed",
             "dados": dados_prontuario,
+            "form_id": documentos.form["_id"],
             "criado_em": data_criacao
         }
 
