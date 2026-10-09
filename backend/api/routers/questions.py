@@ -9,6 +9,137 @@ router = APIRouter(tags=["questions"])
 SECTION_NAO_ENCONTRADA = "Seção não encontrada"
 QUESTION_NAO_ENCONTRADA = "Pergunta não encontrada"
 
+def obter_formulario_da_secao(section_id: str) -> str:
+    visitadas = set()
+    atual = section_id
+
+    while atual.startswith("sec_"):
+
+        if atual in visitadas:
+            raise HTTPException(
+                status_code=400,
+                detail="Referência circular entre seções",
+            )
+
+        visitadas.add(atual)
+
+        section = db.sections.find_one({"_id": atual})
+
+        if section is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Seção inexistente: {atual}",
+            )
+
+        atual = section.get("parentItem", "")
+
+    if not atual.startswith("form_"):
+        raise HTTPException(
+            status_code=400,
+            detail="Não foi possível identificar o formulário da seção",
+        )
+
+    form = db.forms.find_one({"_id": atual})
+
+    if form is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Formulário inexistente: {atual}",
+        )
+
+    return atual
+
+
+def validar_composite_fields(
+    question_id: str,
+    composite_fields: list[str],
+):
+    if not composite_fields:
+        return
+
+    if question_id in composite_fields:
+        raise HTTPException(
+            status_code=400,
+            detail="Uma pergunta não pode referenciar a si mesma",
+        )
+
+    perguntas = {
+        pergunta["_id"]: pergunta
+        for pergunta in db.questions.find(
+            {"_id": {"$in": composite_fields}}
+        )
+    }
+
+    inexistentes = set(composite_fields) - set(perguntas)
+
+    if inexistentes:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Perguntas inexistentes em compositeFields: "
+                + ", ".join(sorted(inexistentes))
+            ),
+        )
+
+    def verificar_ciclo(atual: str, visitados: set[str]):
+        if atual == question_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Referência circular em compositeFields",
+            )
+
+        if atual in visitados:
+            return
+
+        visitados.add(atual)
+
+        pergunta = db.questions.find_one({"_id": atual})
+
+        if pergunta is None:
+            return
+
+        for campo in pergunta.get("compositeFields", []):
+            verificar_ciclo(campo, visitados)
+
+    visitados = set()
+
+    for campo in composite_fields:
+        verificar_ciclo(campo, visitados)
+
+
+def validar_formulario_composite_fields(
+    section_id: str,
+    composite_fields: list[str],
+):
+    if not composite_fields:
+        return
+
+    formulario_origem = obter_formulario_da_secao(section_id)
+
+    for question_id in composite_fields:
+
+        question = db.questions.find_one({"_id": question_id})
+
+        if question is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Pergunta inexistente: {question_id}",
+            )
+
+        secao_pergunta = question.get("parentItem", "")
+
+        formulario_pergunta = obter_formulario_da_secao(
+            secao_pergunta
+        )
+
+        if formulario_pergunta != formulario_origem:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"A pergunta {question_id} pertence a outro formulário"
+                ),
+            )
+
 QUESTION_EXAMPLES = {
     "aberta": {
         "summary": "Pergunta aberta",
@@ -146,6 +277,16 @@ def criar_question_na_section(
         raise HTTPException(
             status_code=400, detail="Já existe uma pergunta com esse id"
         )
+    
+    validar_composite_fields(
+        question_id=question.id,
+        composite_fields=question.compositeFields,
+    )
+
+    validar_formulario_composite_fields(
+        section_id=section_id,
+        composite_fields=question.compositeFields,
+    )
 
     nova_question = {
         "_id": question.id,
@@ -197,6 +338,16 @@ def atualizar_question(
 
     if question_existente is None:
         raise HTTPException(status_code=404, detail=QUESTION_NAO_ENCONTRADA)
+
+    validar_composite_fields(
+        question_id=question_id,
+        composite_fields=question.compositeFields,
+    )
+
+    validar_formulario_composite_fields(
+        section_id=question_existente["parentItem"],
+        composite_fields=question.compositeFields,
+    )
 
     dados_atualizados = {
         "title": question.title,

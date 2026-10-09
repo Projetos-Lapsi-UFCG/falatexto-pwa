@@ -121,13 +121,16 @@ def criar_form(form: FormCreate):
             status_code=400, detail="Já existe um formulário com esse id"
         )
 
+    agora = datetime.now(timezone.utc)
+
     novo_form = {
         "_id": form.id,
         "name": form.name,
         "sections": form.sections,
         "metadata": form.metadata.model_dump(),
+        "createdAt": agora,
+        "updatedAt": agora,
     }
-
     db.forms.insert_one(novo_form)
 
     return novo_form

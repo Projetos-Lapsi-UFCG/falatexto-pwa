@@ -19,6 +19,39 @@ router = APIRouter(prefix="/submissions", tags=["submissions"])
 
 SUBMISSION_NAO_ENCONTRADA = "Submissão não encontrada"
 
+def obter_perguntas_do_formulario(form_id: str) -> set[str]:
+    form = db.forms.find_one({"_id": form_id})
+
+    if form is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Formulário não encontrado",
+        )
+
+    perguntas = set()
+    secoes_visitadas = set()
+
+    def percorrer_secao(section_id: str):
+        if section_id in secoes_visitadas:
+            return
+
+        secoes_visitadas.add(section_id)
+
+        section = db.sections.find_one({"_id": section_id})
+
+        if section is None:
+            return
+
+        perguntas.update(section.get("questions", []))
+
+        for subsection_id in section.get("subSections", []):
+            percorrer_secao(subsection_id)
+
+    for section_id in form.get("sections", []):
+        percorrer_secao(section_id)
+
+    return perguntas
+
 
 @router.post(
     "",
@@ -33,6 +66,25 @@ SUBMISSION_NAO_ENCONTRADA = "Submissão não encontrada"
     ),
 )
 def criar_submission(submission: SubmissionCreate):
+
+    perguntas_validas = obter_perguntas_do_formulario(
+    submission.formId
+    )
+
+    perguntas_respondidas = set(submission.answers.keys())
+
+    perguntas_invalidas = (
+        perguntas_respondidas - perguntas_validas
+    )
+
+    if perguntas_invalidas:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Perguntas não pertencem ao formulário: "
+                + ", ".join(sorted(perguntas_invalidas))
+            ),
+        )
 
     agora = datetime.now(timezone.utc)
     nova_submission = submission.model_dump()

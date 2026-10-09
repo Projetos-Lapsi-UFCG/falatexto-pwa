@@ -115,9 +115,9 @@ class FormSummaryOut(BaseModel):
     name: str
     metadata: FormMetadata
     questionCount: int
-    deteledAt: Optional[datetime] = None
+    deletedAt: Optional[datetime] = None
     purgeAt: Optional[datetime] = None
-    updateAt: Optional[datetime] = None
+    updatedAt: Optional[datetime] = None
 
 
 class FormOut(BaseModel):
@@ -132,9 +132,9 @@ class FormOut(BaseModel):
     name: str
     sections: List[str]
     metadata: FormMetadata
-    deteledAt: Optional[datetime] = None
+    deletedAt: Optional[datetime] = None
     purgeAt: Optional[datetime] = None
-    updateAt: Optional[datetime] = None
+    updatedAt: Optional[datetime] = None
 
 
 

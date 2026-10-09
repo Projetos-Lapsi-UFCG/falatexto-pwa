@@ -15,11 +15,11 @@ def criar_indices():
     o campo purgeAt atingir a data/hora atual.
     """
 
-    db.forms.create_index(
-        [("purgeAt", 1)],
-        expireAfterSeconds=0,
-        name="forms_purgeAt_ttl",
-    )
+    #db.forms.create_index(
+    #    [("purgeAt", 1)],
+    #    expireAfterSeconds=0,
+    #    name="forms_purgeAt_ttl",
+    #)
 
     db.submissions.create_index(
         [("purgeAt", 1)],
