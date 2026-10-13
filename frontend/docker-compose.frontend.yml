@@ -7,6 +7,9 @@ services:
     restart: unless-stopped
     ports:
       - "4200:80"
+    environment:
+      VISION_API_SECRET_TOKEN: ${VISION_API_SECRET_TOKEN:?VISION_API_SECRET_TOKEN is required (see .env.example)}
+      ADMIN_PIN: ${ADMIN_PIN:?ADMIN_PIN is required (see .env.example)}
     networks:
       - falatexto-network
 
