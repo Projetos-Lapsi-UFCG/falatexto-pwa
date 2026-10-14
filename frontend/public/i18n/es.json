@@ -123,6 +123,37 @@
     },
     "SUCCESS": {
       "CREATED": "Formulario creado con éxito"
+    },
+    "BUILDER": {
+      "TITLE": "Preguntas del formulario",
+      "SUBTITLE": "Arma las secciones y preguntas que aparecerán al completar el formulario.",
+      "ADD_SECTION": "+ Agregar sección",
+      "ADD_QUESTION": "+ Agregar pregunta",
+      "ADD_OPTION": "+ Agregar opción",
+      "REMOVE_SECTION": "Quitar sección",
+      "REMOVE_QUESTION": "Quitar pregunta",
+      "REMOVE_OPTION": "Quitar opción",
+      "SECTION_NAME_LABEL": "Nombre de la sección",
+      "SECTION_NAME_PLACEHOLDER": "ej.: Datos Preoperatorios",
+      "QUESTION_LABEL_LABEL": "Pregunta",
+      "QUESTION_LABEL_PLACEHOLDER": "ej.: ¿El paciente tiene alguna alergia?",
+      "QUESTION_TYPE_LABEL": "Tipo de respuesta",
+      "OPTION_LABEL": "Opción",
+      "TYPES": {
+        "TEXT": "Texto libre",
+        "DATE": "Fecha",
+        "NUMBER": "Número",
+        "BOOLEAN": "Sí / No",
+        "BOOLEAN_NA": "Sí / No / No aplica",
+        "RADIO_GROUP": "Opción única (opciones)",
+        "CHECKBOX_GROUP": "Casillas de verificación (opción múltiple)"
+      },
+      "ERRORS": {
+        "SECTION_NAME_REQUIRED": "Toda sección necesita un nombre (mín. 3 caracteres)",
+        "SECTION_EMPTY": "Agrega al menos una pregunta en cada sección, o quita la sección",
+        "QUESTION_LABEL_REQUIRED": "Toda pregunta necesita un texto (mín. 3 caracteres)",
+        "OPTION_REQUIRED": "Las preguntas de casillas necesitan al menos una opción completada"
+      }
     }
   },
   "FORM_DETAIL": {
@@ -140,7 +171,7 @@
     "LABEL_CREATED_AT": "Creado el",
     "LABEL_INPUT_METHOD": "Método de entrada",
     "FILL_CTA": "Llenar este formulario",
-    "FILL_CTA_HINT": "Se solicitará el nombre del paciente.",
+    "FILL_CTA_HINT": "Vas a completar las preguntas de este formulario.",
     "DELETE_BTN": "Eliminar formulario",
     "DELETE_CONFIRM": "¿Estás seguro de que deseas eliminar el formulario \"{{name}}\"? Esta acción no se puede deshacer.",
     "DELETE_SUCCESS": "Formulario eliminado con éxito.",
