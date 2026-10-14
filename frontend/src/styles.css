@@ -144,3 +144,13 @@ h1, h2, h3, h4, h5, h6 {
 span.mdc-button__label > ng-icon > svg {
   margin-top: 2px !important;
 }
+
+/* Animação para o ícone de rotação (carregamento da IA) */
+.spin-icon {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
