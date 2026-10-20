@@ -10,3 +10,7 @@ librosa
 openai-whisper
 soundfile
 json-repair
+python-multipart
+ollama
+json-repair
+pillow

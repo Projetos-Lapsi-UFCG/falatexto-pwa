@@ -46,6 +46,7 @@ services:
       dockerfile: Dockerfile
     container_name: assis_vision_engine
     restart: unless-stopped
+    working_dir: /app
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -58,11 +59,13 @@ services:
     environment:
       MONGO_URI: mongodb://database:27017
       OLLAMA_HOST: http://ollama:11434
-      OLLAMA_MODEL: gemma2:9b
+      OLLAMA_MODEL: qwen2.5vl:7b
       VISION_API_SECRET_TOKEN: "0000"
     networks:
       - falatexto-network
-
+    volumes:
+      - ./backend/vision-engine:/app
+      
   api:
     build:
       context: ./backend
@@ -79,7 +82,7 @@ services:
       MONGO_URI: mongodb://database:27017
       MONGO_DB_NAME: assis_db
       OLLAMA_HOST: http://ollama:11434
-      OLLAMA_MODEL: llama3.1:8b
+      OLLAMA_MODEL: qwen2.5vl:7b
       VISION_ENGINE_URL: http://vision-engine:8001
       VISION_API_SECRET_TOKEN: "0000"
     networks:

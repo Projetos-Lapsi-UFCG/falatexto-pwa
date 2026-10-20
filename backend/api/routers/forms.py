@@ -1,4 +1,14 @@
-from fastapi import APIRouter, HTTPException, status
+import base64
+import io
+import json
+import os
+import re
+from typing import List
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+import ollama
+from json_repair import repair_json
+from PIL import Image
 
 from ..database import db
 from ..models import MessageOut
@@ -9,12 +19,30 @@ router = APIRouter(prefix="/forms", tags=["forms"])
 
 FORM_NAO_ENCONTRADO = "Formulário não encontrado"
 
+# Configurações da LLM Multimodal
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://ollama:11434")
+MODELO_VISION = os.getenv("OLLAMA_MODEL", "qwen2.5vl:7b")
+client_ollama = ollama.Client(host=OLLAMA_HOST)
+
 
 def _extract_id(item):
     """Extrai o ID caso o item seja um dicionário ou o retorna caso já seja uma string/ID."""
     if isinstance(item, dict):
         return item.get("_id") or item.get("id")
     return item
+
+
+def _gerar_proximo_id_form() -> str:
+    """Gera o próximo ID no padrão 'form_001', 'form_002', etc."""
+    forms = list(db.forms.find({}, {"_id": 1}))
+    max_num = 0
+    for f in forms:
+        f_id = str(f["_id"])
+        if f_id.startswith("form_") and f_id[5:].isdigit():
+            num = int(f_id[5:])
+            if num > max_num:
+                max_num = num
+    return f"form_{max_num + 1:03d}"
 
 
 @router.get(
@@ -97,6 +125,177 @@ def listar_forms():
         form["_id"] = str(form["_id"])
 
     return {"forms": forms}
+
+
+@router.post(
+    "/processar-imagem",
+    response_model=FormOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Cria um formulário extraindo perguntas de qualquer imagem via LLM Vision",
+)
+async def criar_form_por_imagem(
+    name: str = Form(..., min_length=3, max_length=120, description="Nome do formulário"),
+    file: UploadFile = File(..., description="Imagem contendo qualquer formulário ou folha de papel"),
+):
+    conteudo_imagem = await file.read()
+    if not conteudo_imagem:
+        raise HTTPException(status_code=400, detail="O arquivo de imagem enviado está vazio.")
+
+    try:
+        imagem_pil = Image.open(io.BytesIO(conteudo_imagem))
+        imagem_pil.thumbnail((1024, 1024)) 
+
+        if imagem_pil.mode in ("RGBA", "P"):
+            imagem_pil = imagem_pil.convert("RGB")
+
+        buffer = io.BytesIO()
+        imagem_pil.save(buffer, format="JPEG", quality=85)
+        imagem_b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    except Exception as e:
+        raise HTTPException(
+            status_code=400, detail=f"Erro ao processar o arquivo de imagem: {str(e)}"
+        )
+
+    prompt_sistema = """
+You are a highly precise, literal multimodal OCR extractor specialized in converting handwritten and printed form sketches into structured JSON.
+
+CRITICAL EXTRACTION RULES (STRICT LITERAL OCR):
+
+1. STRICT LITERAL OCR (ZERO HALLUCINATION):
+   - Extract text EXACTLY as written in the image.
+   - NEVER invent, assume, or add choices that are not drawn in the image (e.g., do NOT add "Vermelho" if it is not written).
+   - NEVER drop visible options. If there are 4 drawn options, extract all 4.
+   - NEVER rephrase labels or titles (e.g., do NOT convert "cor escolhida:" into "¿Qual é a cor escolhida?").
+   - NEVER insert foreign characters or non-existent symbols (e.g., inverted question marks '¿').
+
+2. LAYOUT & DIVIDING LINES:
+   - Vertical or horizontal lines on the paper represent visual column dividers or layout sections within the SAME form page.
+   - Do NOT treat multi-column layouts or separated boxes as distinct pages or multi-step screens. All elements in a single image belong to ONE single form page.
+
+3. FIELD TYPE IDENTIFICATION:
+   - ESTIMULADA (Selection / Checkbox / Radio):
+     * Trigger: Checkboxes [ ], circles ( ), square boxes, bullets, or options grouped next to a label.
+     * Set "type": "ESTIMULADA".
+     * Extract EVERY VISIBLE choice into the "options" list:
+       "options": [
+         {"label": "Exact Text 1", "value": "exact_text_1"},
+         {"label": "Exact Text 2", "value": "exact_text_2"}
+       ]
+   - ABERTA (Open Text Input):
+     * Trigger: Underlined lines (___), empty rectangular boxes, or blank space reserved for freeform text next to a label.
+     * Set "type": "ABERTA".
+     * Set "options": [].
+
+4. FIELD LABELS ("title"):
+   - Fill "title" with the EXACT string extracted from the image (e.g., "cor escolhida:", "Nome:", "idade:").
+
+MANDATORY JSON FORMAT:
+Return ONLY raw JSON with no explanatory text or markdown wrappers.
+
+{
+  "title": "Exact Form Title or 'Formulário'",
+  "sections": [
+    {
+      "id": "sec_1",
+      "title": "Exact Section Title or 'Geral'",
+      "questions": [
+        {
+          "id": "q_1",
+          "title": "Exact Label Text",
+          "type": "ESTIMULADA",
+          "options": [
+            {"label": "Option Label 1", "value": "option_label_1"},
+            {"label": "Option Label 2", "value": "option_label_2"}
+          ],
+          "compositeFields": []
+        }
+      ]
+    }
+  ]
+}
+"""
+
+    try:
+        response = client_ollama.chat(
+            model=MODELO_VISION,
+            format="json",
+            options={"temperature": 0.0},
+            messages=[
+                {"role": "system", "content": prompt_sistema},
+                {
+                    "role": "user",
+                    "content": f"Extraia todas as perguntas e campos da imagem do formulário '{name}'.",
+                    "images": [imagem_b64],
+                },
+            ],
+        )
+
+        resposta_bruta = response["message"]["content"]
+        print("--- RESPOSTA BRUTA DA LLM ---")
+        print(resposta_bruta)
+        print("------------------------------")
+
+        resposta_limpa = re.sub(r"^```json\s*", "", resposta_bruta.strip(), flags=re.MULTILINE)
+        resposta_limpa = re.sub(r"^```\s*", "", resposta_limpa, flags=re.MULTILINE)
+
+        try:
+            dados_extraidos = json.loads(resposta_limpa)
+        except json.JSONDecodeError:
+            dados_extraidos = json.loads(repair_json(resposta_limpa))
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao processar a imagem na LLM Vision: {str(e)}"
+        )
+
+    secoes_brutas = dados_extraidos.get("sections", [])
+    if not secoes_brutas:
+        raise HTTPException(
+            status_code=422, detail="Nenhuma pergunta pôde ser identificada na imagem enviada."
+        )
+
+    novo_form_id = _gerar_proximo_id_form()
+    ids_secoes_criadas = []
+
+    for idx_sec, sec_data in enumerate(secoes_brutas):
+        sec_id = f"sec_{novo_form_id}_{idx_sec + 1}"
+        ids_perguntas_criadas = []
+
+        for idx_q, q_data in enumerate(sec_data.get("questions", [])):
+            q_id = f"q_{sec_id}_{idx_q + 1}"
+            label_texto = q_data.get("title") or q_data.get("label") or f"Campo {idx_q + 1}"
+            doc_questao = {
+                "_id": q_id,
+                "label": label_texto,
+                "type": q_data.get("type", "texto"),
+                "required": bool(q_data.get("required", False)),
+                "placeholder": "",
+                "options": q_data.get("options", []),
+            }
+            db.questions.insert_one(doc_questao)
+            ids_perguntas_criadas.append(q_id)
+
+        doc_secao = {
+            "_id": sec_id,
+            "title": sec_data.get("title", "Dados Gerais"),
+            "parentItem": novo_form_id,
+            "subSections": [],
+            "questions": ids_perguntas_criadas,
+            "tags": [],
+        }
+        db.sections.insert_one(doc_secao)
+        ids_secoes_criadas.append(sec_id)
+
+    novo_form = {
+        "_id": novo_form_id,
+        "name": name.strip(),
+        "sections": ids_secoes_criadas,
+        "metadata": {"version": "1.0", "active": True},
+    }
+    db.forms.insert_one(novo_form)
+
+    novo_form["_id"] = str(novo_form["_id"])
+    return novo_form
 
 
 @router.get(

@@ -113,7 +113,8 @@ export class CreateFormComponent {
       next: (response: any) => {
         this.visionLoading = false;
 
-        const formId = response?.id_sessao || response?.id || response?.form_id || response?.sessao_id;
+        // Adicionado response?._id para capturar o ID do MongoDB ('form_001', etc.)
+        const formId = response?._id || response?.id || response?.form_id || response?.id_sessao;
 
         if (!formId) {
           this.toastr.error('Erro: ID do formulário não retornado pela IA.');
@@ -122,11 +123,12 @@ export class CreateFormComponent {
 
         this.toastr.success('Formulário extraído com sucesso!');
         
-        // Navegação ajustada para o padrão correto 'forms/:id/fill'
-        this.router.navigate(['/forms', formId, 'fill']);
+        // Redireciona para o Dashboard ou para a página do formulário criado
+        this.router.navigate(['/dashboard']);
       },
-      error: () => {
+      error: (err) => {
         this.visionLoading = false;
+        console.error('Erro no processamento da imagem:', err);
         this.toastr.error(this.translate.instant('CREATE_FORM.VISION.ERRORS.PROCESS_FAILED'));
         this.cdr.markForCheck();
       },

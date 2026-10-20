@@ -9,6 +9,39 @@ router = APIRouter(tags=["questions"])
 SECTION_NAO_ENCONTRADA = "Seção não encontrada"
 QUESTION_NAO_ENCONTRADA = "Pergunta não encontrada"
 
+
+def _sanitizar_question(question: dict, default_parent: str = None) -> dict:
+    q = dict(question)
+    q["_id"] = str(q["_id"])
+    q["title"] = q.get("title") or q.get("label", "Pergunta sem título")
+    q["parentItem"] = q.get("parentItem") or default_parent
+    
+    raw_type = str(q.get("type", "")).lower().strip()
+    if raw_type in ["checkbox", "multipla", "multiple"]:
+        q["type"] = "MULTIPLA"
+    elif raw_type in ["radio", "select", "estimulada", "single"]:
+        q["type"] = "ESTIMULADA"
+    elif raw_type in ["composta", "composite"]:
+        q["type"] = "COMPOSTA"
+    else:
+        q["type"] = "ABERTA"
+        
+    if not q.get("compositeFields"):
+        q["compositeFields"] = []
+
+    raw_options = q.get("options", [])
+    norm_options = []
+    if isinstance(raw_options, list):
+        for opt in raw_options:
+            if isinstance(opt, str):
+                norm_options.append({"label": opt, "value": opt})
+            elif isinstance(opt, dict):
+                norm_options.append(opt)
+    q["options"] = norm_options
+        
+    return q
+
+
 QUESTION_EXAMPLES = {
     "aberta": {
         "summary": "Pergunta aberta",
@@ -110,8 +143,7 @@ def listar_questions_da_section(section_id: str):
     for question_id in question_ids:
         if question_id in questions_por_id:
             question = questions_por_id[question_id]
-            question["_id"] = str(question["_id"])
-            questions_ordenadas.append(question)
+            questions_ordenadas.append(_sanitizar_question(question, default_parent=section_id))
 
     return {"section_id": section_id, "questions": questions_ordenadas}
 
@@ -163,8 +195,7 @@ def criar_question_na_section(
         {"_id": section_id}, {"$addToSet": {"questions": question.id}}
     )
 
-    nova_question["_id"] = str(nova_question["_id"])
-    return nova_question
+    return _sanitizar_question(nova_question, default_parent=section_id)
 
 
 @router.get(
@@ -179,8 +210,7 @@ def buscar_question_por_id(question_id: str):
     if question is None:
         raise HTTPException(status_code=404, detail=QUESTION_NAO_ENCONTRADA)
 
-    question["_id"] = str(question["_id"])
-    return question
+    return _sanitizar_question(question)
 
 
 @router.put(
@@ -209,9 +239,8 @@ def atualizar_question(
     db.questions.update_one({"_id": question_id}, {"$set": dados_atualizados})
 
     question_atualizada = db.questions.find_one({"_id": question_id})
-    question_atualizada["_id"] = str(question_atualizada["_id"])
 
-    return question_atualizada
+    return _sanitizar_question(question_atualizada)
 
 
 @router.delete(
