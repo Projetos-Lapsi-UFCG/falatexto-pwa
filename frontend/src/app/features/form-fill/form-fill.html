@@ -6,11 +6,28 @@
       <ng-icon name="lucideArrowLeft" size="16" />
       Voltar
     </button>
+    
     <span class="fill-title">{{ form?.name }}</span>
+
+    <!-- Componente de Ditado Contínuo no topo -->
+    <div class="dictation-header-action">
+      <app-voice-input 
+        (textReceived)="onVoiceTextReceived($event)">
+      </app-voice-input>
+      <span class="dictation-label">Gravar Consulta (IA)</span>
+    </div>
+
     @if (form) {
       <span class="fill-step">{{ currentStep + 1 }} / {{ totalSteps }}</span>
     }
   </header>
+
+  <!-- Feedback visual quando a LLM está processando o lote -->
+  @if (processandoIaSobreDitado) {
+    <div class="ai-processing-banner">
+      <p>🤖 A IA está analisando a transcrição e preenchendo todos os campos...</p>
+    </div>
+  }
 
   @if (loading) {
     <div class="fill-content">
@@ -51,21 +68,19 @@
     </div>
   }
 
-  <!-- Etapas das seções -->
+  <!-- Etapas das seções dinâmicas -->
   @if (currentStep > 0 && currentStep <= (form?.sections?.length ?? 0)) {
     <div class="fill-content">
       <h2>{{ form?.sections?.[currentStep - 1]?.name }}</h2>
 
       @for (question of form?.sections?.[currentStep - 1]?.questions ?? []; track question.id) {
 
-        <!-- divider: título separador de seção -->
         @if (question.type === 'divider') {
           <div class="section-divider">
             <h3 class="section-divider-title">{{ question.label }}</h3>
           </div>
         }
 
-        <!-- card normal para todos os outros tipos -->
         @if (question.type !== 'divider') {
           <div class="question-card">
             <p class="question-label">{{ question.label }}</p>
@@ -102,35 +117,6 @@
               </mat-radio-group>
             }
 
-            <!-- radio_with_fields -->
-            @if (question.type === 'radio_with_fields') {
-              <div class="radio-with-fields">
-                <div class="bool-options">
-                  @for (option of question.options ?? []; track option.id) {
-                    @if (!option.hasComplement) {
-                      <button mat-stroked-button
-                        [class.selected]="answers[question.id] === option.id"
-                        (click)="setAnswer(question.id, option.id)">
-                        {{ option.label }}
-                      </button>
-                    }
-                  }
-                </div>
-                <div class="fields-row">
-                  @for (option of question.options ?? []; track option.id) {
-                    @if (option.hasComplement) {
-                      <mat-form-field appearance="outline" class="field-inline">
-                        <mat-label>{{ option.complementLabel }}</mat-label>
-                        <input matInput
-                          [type]="option.complementType ?? 'text'"
-                          [(ngModel)]="answers[option.id]" />
-                      </mat-form-field>
-                    }
-                  }
-                </div>
-              </div>
-            }
-
             <!-- text_group -->
             @if (question.type === 'text_group') {
               <div class="text-group">
@@ -155,25 +141,10 @@
               </div>
             }
 
-            <!-- boolean_na -->
-            @if (question.type === 'boolean_na') {
-              <div class="bool-options">
-                <button mat-stroked-button
-                  [class.selected]="answers[question.id] === 'sim'"
-                  (click)="setAnswer(question.id, 'sim')">Sim</button>
-                <button mat-stroked-button
-                  [class.selected]="answers[question.id] === 'nao'"
-                  (click)="setAnswer(question.id, 'nao')">Não</button>
-                <button mat-stroked-button
-                  [class.selected]="answers[question.id] === 'na'"
-                  (click)="setAnswer(question.id, 'na')">Não se Aplica</button>
-              </div>
-            }
-
             <!-- text -->
             @if (question.type === 'text') {
               <mat-form-field appearance="outline" class="full-width">
-                <input matInput [(ngModel)]="answers[question.id]" placeholder="Digite sua resposta" />
+                <input matInput [(ngModel)]="answers[question.id]" placeholder="Resposta do campo" />
               </mat-form-field>
             }
 
@@ -189,12 +160,13 @@
           Próximo
         </button>
       } @else {
-        <button mat-raised-button color="primary" (click)="finalizar()" class="next-btn" [disabled]="enviando">
+        <button mat-raised-button color="primary" (click)="finalizar()" class="next-btn" [disabled]="enviando || processandoIaSobreDitado">
           {{ enviando ? 'Enviando...' : 'Finalizar' }}
         </button>
       }
     </div>
   }
+
   <!-- Etapa final — Data e Responsável -->
   @if (!loading && form && currentStep === totalSteps - 1) {
     <div class="fill-content">
@@ -212,7 +184,7 @@
     </div>
 
     <div class="fill-footer">
-      <button mat-raised-button color="primary" (click)="finalizar()" class="next-btn" [disabled]="enviando">
+      <button mat-raised-button color="primary" (click)="finalizar()" class="next-btn" [disabled]="enviando || processandoIaSobreDitado">
         {{ enviando ? 'Enviando...' : 'Finalizar' }}
       </button>
     </div>

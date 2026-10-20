@@ -1,25 +1,20 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_BASE_URL, VISION_API_TOKEN } from '../config/api.config';
-import { VisionProcessarClinicaResponse } from '../models/vision.model';
+import { API_BASE_URL } from '../config/api.config';
 
-/** Comunicação com o endpoint /vision do backend (proxy para o Vision Engine). */
 @Injectable({ providedIn: 'root' })
 export class VisionApiService {
   private readonly http = inject(HttpClient);
 
-  processarClinica(textoClinico: string, file: File | null): Observable<VisionProcessarClinicaResponse> {
+  processarClinica(nomeFormulario: string, file: File): Observable<any> {
     const formData = new FormData();
-    formData.append('texto_clinico', textoClinico);
-    if (file) {
-      formData.append('file', file);
-    }
+    formData.append('name', nomeFormulario);
+    formData.append('file', file);
 
-    return this.http.post<VisionProcessarClinicaResponse>(
-      `${API_BASE_URL}/vision/processar-clinica`,
-      formData,
-      { headers: { Authorization: `Bearer ${VISION_API_TOKEN}` } }
+    return this.http.post<any>(
+      `${API_BASE_URL}/forms/processar-imagem`,
+      formData
     );
   }
 }

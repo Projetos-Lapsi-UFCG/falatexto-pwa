@@ -23,12 +23,22 @@ services:
     image: ollama/ollama:0.24.0
     container_name: assis_ollama
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     networks:
       - falatexto-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   vision-engine:
     build:
@@ -36,6 +46,10 @@ services:
       dockerfile: Dockerfile
     container_name: assis_vision_engine
     restart: unless-stopped
+    working_dir: /app
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     command: uvicorn main:app --host 0.0.0.0 --port 8001
     ports:
       - "8001:8001"
@@ -45,11 +59,13 @@ services:
     environment:
       MONGO_URI: mongodb://database:27017
       OLLAMA_HOST: http://ollama:11434
-      OLLAMA_MODEL: gemma2:9b
+      OLLAMA_MODEL: qwen2.5vl:7b
       VISION_API_SECRET_TOKEN: "0000"
     networks:
       - falatexto-network
-
+    volumes:
+      - ./backend/vision-engine:/app
+      
   api:
     build:
       context: ./backend
@@ -66,7 +82,7 @@ services:
       MONGO_URI: mongodb://database:27017
       MONGO_DB_NAME: assis_db
       OLLAMA_HOST: http://ollama:11434
-      OLLAMA_MODEL: llama3.1:8b
+      OLLAMA_MODEL: qwen2.5vl:7b
       VISION_ENGINE_URL: http://vision-engine:8001
       VISION_API_SECRET_TOKEN: "0000"
     networks:
@@ -90,7 +106,7 @@ services:
     container_name: assis_proxy
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8085:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - proxy_logs:/var/log/nginx
