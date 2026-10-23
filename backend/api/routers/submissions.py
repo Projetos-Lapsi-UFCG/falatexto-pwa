@@ -19,7 +19,7 @@ router = APIRouter(prefix="/submissions", tags=["submissions"])
 
 SUBMISSION_NAO_ENCONTRADA = "Submissão não encontrada"
 
-def obter_perguntas_do_formulario(form_id: str) -> set[str]:
+def obter_campos_validos_do_formulario(form_id: str):
     form = db.forms.find_one({"_id": form_id})
 
     if form is None:
@@ -50,7 +50,71 @@ def obter_perguntas_do_formulario(form_id: str) -> set[str]:
     for section_id in form.get("sections", []):
         percorrer_secao(section_id)
 
-    return perguntas
+    opcoes_checkbox = set()
+    complementos = set()
+
+    documentos_perguntas = db.questions.find(
+        {"_id": {"$in": list(perguntas)}}
+    )
+
+    for pergunta in documentos_perguntas:
+        tipo = pergunta.get("type")
+
+        for opcao in pergunta.get("options", []):
+            valor = opcao.get("value")
+
+            if not valor:
+                continue
+
+            if tipo == "MULTIPLA":
+                opcoes_checkbox.add(valor)
+
+            if opcao.get("hasComplement"):
+                complementos.add(f"{valor}_complement")
+
+    return perguntas, opcoes_checkbox, complementos
+
+def validar_respostas_do_formulario(
+    form_id: str,
+    answers: dict,
+    checkbox_answers: dict,
+):
+    (
+        perguntas_validas,
+        opcoes_checkbox_validas,
+        complementos_validos,
+    ) = obter_campos_validos_do_formulario(form_id)
+
+    chaves_answers_validas = (
+        perguntas_validas | complementos_validos
+    )
+
+    answers_invalidos = (
+        set(answers.keys()) - chaves_answers_validas
+    )
+
+    if answers_invalidos:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Respostas não pertencem ao formulário: "
+                + ", ".join(sorted(answers_invalidos))
+            ),
+        )
+
+    checkbox_invalidos = (
+        set(checkbox_answers.keys())
+        - opcoes_checkbox_validas
+    )
+
+    if checkbox_invalidos:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Opções de checkbox não pertencem ao formulário: "
+                + ", ".join(sorted(checkbox_invalidos))
+            ),
+        )
 
 
 @router.post(
@@ -67,24 +131,11 @@ def obter_perguntas_do_formulario(form_id: str) -> set[str]:
 )
 def criar_submission(submission: SubmissionCreate):
 
-    perguntas_validas = obter_perguntas_do_formulario(
-    submission.formId
-    )
-
-    perguntas_respondidas = set(submission.answers.keys())
-
-    perguntas_invalidas = (
-        perguntas_respondidas - perguntas_validas
-    )
-
-    if perguntas_invalidas:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Perguntas não pertencem ao formulário: "
-                + ", ".join(sorted(perguntas_invalidas))
-            ),
-        )
+    validar_respostas_do_formulario(
+    form_id=submission.formId,
+    answers=submission.answers,
+    checkbox_answers=submission.checkboxAnswers,
+)
 
     agora = datetime.now(timezone.utc)
     nova_submission = submission.model_dump()
@@ -259,6 +310,26 @@ def atualizar_submission(
     dados_atualizados = submission.model_dump(
         exclude_unset=True
     )
+
+    if (
+        "answers" in dados_atualizados
+        or "checkboxAnswers" in dados_atualizados
+    ):
+        answers_para_validar = dados_atualizados.get(
+            "answers",
+            existente.get("answers", {}),
+        )
+
+        checkbox_para_validar = dados_atualizados.get(
+            "checkboxAnswers",
+            existente.get("checkboxAnswers", {}),
+        )
+
+        validar_respostas_do_formulario(
+            form_id=existente["formId"],
+            answers=answers_para_validar or {},
+            checkbox_answers=checkbox_para_validar or {},
+        )
 
     dados_atualizados["updatedAt"] = datetime.now(timezone.utc)
 

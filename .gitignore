@@ -19,3 +19,6 @@ nohup.out
 *.prod.yaml
 
 CONTEXT.md
+
+# Backups locais do MongoDB
+/backups/
