@@ -18,45 +18,12 @@
     </div>
   }
 
-  <!-- Etapa 0 — Dados do paciente -->
-  @if (!loading && form && currentStep === 0) {
-    <div class="fill-content">
-      <h2>Dados do Paciente</h2>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Nome do paciente</mat-label>
-        <input matInput [(ngModel)]="patientData.name" placeholder="Ex.: João da Silva" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Data de nascimento</mat-label>
-        <input matInput type="date" [(ngModel)]="patientData.birthDate" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Prontuário</mat-label>
-        <input matInput [(ngModel)]="patientData.record" placeholder="Número do prontuário" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Sala</mat-label>
-        <input matInput [(ngModel)]="patientData.room" placeholder="Ex.: Sala 3" />
-      </mat-form-field>
-    </div>
-
-    <div class="fill-footer">
-      <button mat-raised-button color="primary" (click)="nextStep()" class="next-btn">
-        Próximo
-      </button>
-    </div>
-  }
-
   <!-- Etapas das seções -->
-  @if (currentStep > 0 && currentStep <= (form?.sections?.length ?? 0)) {
+  @if (currentStep < (form?.sections?.length ?? 0)) {
     <div class="fill-content">
-      <h2>{{ form?.sections?.[currentStep - 1]?.name }}</h2>
+      <h2>{{ form?.sections?.[currentStep]?.name }}</h2>
 
-      @for (question of form?.sections?.[currentStep - 1]?.questions ?? []; track question.id) {
+      @for (question of form?.sections?.[currentStep]?.questions ?? []; track question.id) {
 
         <!-- divider: título separador de seção -->
         @if (question.type === 'divider') {
@@ -174,6 +141,20 @@
             @if (question.type === 'text') {
               <mat-form-field appearance="outline" class="full-width">
                 <input matInput [(ngModel)]="answers[question.id]" placeholder="Digite sua resposta" />
+              </mat-form-field>
+            }
+
+            <!-- date -->
+            @if (question.type === 'date') {
+              <mat-form-field appearance="outline" class="full-width">
+                <input matInput type="date" [(ngModel)]="answers[question.id]" />
+              </mat-form-field>
+            }
+
+            <!-- number -->
+            @if (question.type === 'number') {
+              <mat-form-field appearance="outline" class="full-width">
+                <input matInput type="number" [(ngModel)]="answers[question.id]" placeholder="Digite um número" />
               </mat-form-field>
             }
 

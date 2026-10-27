@@ -24,6 +24,113 @@
           }
         </mat-form-field>
 
+        <!-- Construtor de perguntas -->
+        <div class="builder-section">
+          <div class="builder-header">
+            <h3 class="builder-title">{{ 'CREATE_FORM.BUILDER.TITLE' | translate }}</h3>
+            <p class="builder-subtitle">{{ 'CREATE_FORM.BUILDER.SUBTITLE' | translate }}</p>
+          </div>
+
+          @for (section of sections; track section.id; let sectionIndex = $index) {
+            <div class="section-card">
+              <div class="section-card-header">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>{{ 'CREATE_FORM.BUILDER.SECTION_NAME_LABEL' | translate }}</mat-label>
+                  <input
+                    matInput
+                    [(ngModel)]="section.name"
+                    [ngModelOptions]="{ standalone: true }"
+                    [placeholder]="'CREATE_FORM.BUILDER.SECTION_NAME_PLACEHOLDER' | translate"
+                  />
+                </mat-form-field>
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="remove-btn"
+                  (click)="removeSection(sectionIndex)"
+                  [attr.aria-label]="'CREATE_FORM.BUILDER.REMOVE_SECTION' | translate"
+                >
+                  <ng-icon name="lucideTrash2" size="18" />
+                </button>
+              </div>
+
+              @for (question of section.questions; track question.id; let questionIndex = $index) {
+                <div class="question-card">
+                  <div class="question-card-row">
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>{{ 'CREATE_FORM.BUILDER.QUESTION_LABEL_LABEL' | translate }}</mat-label>
+                      <input
+                        matInput
+                        [(ngModel)]="question.label"
+                        [ngModelOptions]="{ standalone: true }"
+                        [placeholder]="'CREATE_FORM.BUILDER.QUESTION_LABEL_PLACEHOLDER' | translate"
+                      />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="type-field">
+                      <mat-label>{{ 'CREATE_FORM.BUILDER.QUESTION_TYPE_LABEL' | translate }}</mat-label>
+                      <mat-select
+                        [(ngModel)]="question.type"
+                        [ngModelOptions]="{ standalone: true }"
+                        (selectionChange)="onQuestionTypeChange(question)"
+                      >
+                        @for (choice of questionTypeChoices; track choice.value) {
+                          <mat-option [value]="choice.value">{{ choice.labelKey | translate }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="remove-btn"
+                      (click)="removeQuestion(section, questionIndex)"
+                      [attr.aria-label]="'CREATE_FORM.BUILDER.REMOVE_QUESTION' | translate"
+                    >
+                      <ng-icon name="lucideTrash2" size="18" />
+                    </button>
+                  </div>
+
+                  @if (question.type === 'checkbox_group' || question.type === 'radio_group') {
+                    <div class="options-list">
+                      @for (option of question.options ?? []; track option.id; let optionIndex = $index) {
+                        <div class="option-row">
+                          <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>
+                              {{ 'CREATE_FORM.BUILDER.OPTION_LABEL' | translate }} {{ optionIndex + 1 }}
+                            </mat-label>
+                            <input matInput [(ngModel)]="option.label" [ngModelOptions]="{ standalone: true }" />
+                          </mat-form-field>
+                          <button
+                            mat-icon-button
+                            type="button"
+                            class="remove-btn"
+                            (click)="removeOption(question, optionIndex)"
+                            [attr.aria-label]="'CREATE_FORM.BUILDER.REMOVE_OPTION' | translate"
+                          >
+                            <ng-icon name="lucideTrash2" size="16" />
+                          </button>
+                        </div>
+                      }
+                      <button mat-stroked-button type="button" class="add-option-btn" (click)="addOption(question)">
+                        {{ 'CREATE_FORM.BUILDER.ADD_OPTION' | translate }}
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+
+              <button mat-stroked-button type="button" class="add-question-btn" (click)="addQuestion(section)">
+                {{ 'CREATE_FORM.BUILDER.ADD_QUESTION' | translate }}
+              </button>
+            </div>
+          }
+
+          <button mat-stroked-button type="button" class="add-section-btn" (click)="addSection()">
+            {{ 'CREATE_FORM.BUILDER.ADD_SECTION' | translate }}
+          </button>
+        </div>
+
         <div class="form-actions">
           <button mat-stroked-button type="button" (click)="goBack()" class="cancel-btn" [disabled]="loading">
             {{ 'CREATE_FORM.CANCEL' | translate }}
