@@ -19,7 +19,13 @@ from pymongo import MongoClient
 # ==============================================================================
 # INICIALIZAÇÃO DA APLICAÇÃO E SEGURANÇA
 # ==============================================================================
-API_SECRET_TOKEN = os.getenv("VISION_API_SECRET_TOKEN", "0000")
+# Segredo obrigatório: sem fallback para não subir o serviço com um token inseguro.
+try:
+    API_SECRET_TOKEN = os.environ["VISION_API_SECRET_TOKEN"]
+except KeyError as exc:
+    raise RuntimeError(
+        "A variável de ambiente VISION_API_SECRET_TOKEN é obrigatória e não foi definida."
+    ) from exc
 security = HTTPBearer(auto_error=False)
 
 app = FastAPI(

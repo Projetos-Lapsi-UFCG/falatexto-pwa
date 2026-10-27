@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { StorageService } from './storage.service';
 import { UserType } from '../models/user.model';
+import { getAdminPin } from '../config/runtime-config';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -20,14 +21,27 @@ export class AuthService {
   readonly userType$: Observable<UserType | null> = this.userTypeSubject.asObservable();
 
   login(userType: UserType, pin: string): boolean {
-    if (pin.length === 4) {
-      this.storage.setItem('isLoggedIn', true);
-      this.storage.setItem('userType', userType);
-      this.isLoggedInSubject.next(true);
-      this.userTypeSubject.next(userType);
-      return true;
+    if (!this.isValidPin(userType, pin)) {
+      return false;
     }
-    return false;
+    this.storage.setItem('isLoggedIn', true);
+    this.storage.setItem('userType', userType);
+    this.isLoggedInSubject.next(true);
+    this.userTypeSubject.next(userType);
+    return true;
+  }
+
+  /**
+   * Admin exige o PIN definido em ADMIN_PIN (variável de ambiente injetada via
+   * /config.js). PIN de admin vazio => login de admin desabilitado. Guest mantém
+   * a regra atual: qualquer PIN de 4 dígitos.
+   */
+  private isValidPin(userType: UserType, pin: string): boolean {
+    if (userType === 'admin') {
+      const adminPin = getAdminPin();
+      return adminPin.length > 0 && pin === adminPin;
+    }
+    return pin.length === 4;
   }
 
   logout(): void {
