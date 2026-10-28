@@ -35,13 +35,12 @@
   "LOGIN": {
     "TITLE": "FalaTexto",
     "SUBTITLE": "Sign in to continue",
-    "USER_TYPE_LABEL": "User type",
+    "CHOOSE_ROLE": "How do you want to sign in?",
     "USER_TYPE_ADMIN": "Administrator",
     "USER_TYPE_GUEST": "Guest",
     "PIN_LABEL": "Enter your 4-digit PIN",
     "SIGN_IN": "Sign In",
     "ERRORS": {
-      "SELECT_USER_TYPE": "Please select a user type",
       "ENTER_PIN": "Please enter a 4-digit PIN",
       "INVALID_CREDENTIALS": "Invalid credentials"
     },

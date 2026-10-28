@@ -5,25 +5,37 @@
       <p class="login-subtitle">{{ 'LOGIN.SUBTITLE' | translate }}</p>
     </div>
 
-    <form [formGroup]="loginForm" (ngSubmit)="handleLogin()" class="login-form">
+    <div class="login-form">
 
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>{{ 'LOGIN.USER_TYPE_LABEL' | translate }}</mat-label>
-        <mat-select formControlName="userType">
-          <mat-option value="admin">{{ 'LOGIN.USER_TYPE_ADMIN' | translate }}</mat-option>
-          <mat-option value="guest">{{ 'LOGIN.USER_TYPE_GUEST' | translate }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <div class="pin-section">
-        <p class="pin-label">{{ 'LOGIN.PIN_LABEL' | translate }}</p>
-        <app-pin-input (pinChange)="onPinChange($event)" />
+      <p class="role-label">{{ 'LOGIN.CHOOSE_ROLE' | translate }}</p>
+      <div class="role-buttons">
+        <button mat-stroked-button type="button" class="role-btn" (click)="loginAsGuest()">
+          {{ 'LOGIN.USER_TYPE_GUEST' | translate }}
+        </button>
+        @if (showPin) {
+          <button mat-raised-button color="primary" type="button" class="role-btn" (click)="selectAdmin()">
+            {{ 'LOGIN.USER_TYPE_ADMIN' | translate }}
+          </button>
+        } @else {
+          <button mat-stroked-button type="button" class="role-btn" (click)="selectAdmin()">
+            {{ 'LOGIN.USER_TYPE_ADMIN' | translate }}
+          </button>
+        }
       </div>
 
-      <button mat-raised-button color="primary" type="submit" class="login-btn">
-        {{ 'LOGIN.SIGN_IN' | translate }}
-      </button>
+      @if (showPin) {
+        <form [@scaleIn] (ngSubmit)="handleLogin()" class="admin-form">
+          <div class="pin-section">
+            <p class="pin-label">{{ 'LOGIN.PIN_LABEL' | translate }}</p>
+            <app-pin-input (pinChange)="onPinChange($event)" />
+          </div>
 
-    </form>
+          <button mat-raised-button color="primary" type="submit" class="login-btn">
+            {{ 'LOGIN.SIGN_IN' | translate }}
+          </button>
+        </form>
+      }
+
+    </div>
   </div>
 </div>

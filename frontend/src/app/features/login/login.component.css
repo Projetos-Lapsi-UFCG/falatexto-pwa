@@ -35,8 +35,30 @@
   gap: 1.5rem;
 }
 
-.full-width {
-  width: 100%;
+.role-label {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-primary-700);
+  font-weight: 500;
+  margin-bottom: -0.75rem;
+}
+
+.role-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.role-btn {
+  height: 3rem !important;
+  font-size: 1rem !important;
+  font-family: var(--font-sans) !important;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .pin-section {

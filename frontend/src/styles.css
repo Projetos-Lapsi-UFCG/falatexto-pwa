@@ -127,18 +127,23 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 99999 !important;
 }
 
-#toast-container.toast-top-center {
-  top: 0 !important;
-  width: 100% !important;
-  max-width: 100%;
-  padding: 0;
+#toast-container.toast-bottom-right {
+  bottom: 1rem !important;
+  right: 1rem !important;
 }
 
-#toast-container.toast-top-center > div {
-  border-radius: 0 !important;
-  margin: 0 auto;
-  max-width: 480px;
-  width: 100%;
+#toast-container > div {
+  width: auto !important;
+  min-width: 180px;
+  max-width: 280px;
+  padding: 8px 12px 8px 36px !important;
+  background-position: 10px center !important;
+  background-size: 16px !important;
+  border-radius: 10px !important;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  box-shadow: var(--shadow-lg) !important;
+  opacity: 0.95;
 }
 
 span.mdc-button__label > ng-icon > svg {

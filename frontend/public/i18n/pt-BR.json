@@ -35,13 +35,12 @@
   "LOGIN": {
     "TITLE": "FalaTexto",
     "SUBTITLE": "Entre para continuar",
-    "USER_TYPE_LABEL": "Tipo de usuário",
+    "CHOOSE_ROLE": "Como deseja entrar?",
     "USER_TYPE_ADMIN": "Administrador",
     "USER_TYPE_GUEST": "Visitante",
     "PIN_LABEL": "Digite seu PIN de 4 dígitos",
     "SIGN_IN": "Entrar",
     "ERRORS": {
-      "SELECT_USER_TYPE": "Por favor, selecione um tipo de usuário",
       "ENTER_PIN": "Por favor, insira um PIN de 4 dígitos",
       "INVALID_CREDENTIALS": "Credenciais inválidas"
     },
