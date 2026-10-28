@@ -40,6 +40,22 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'create/assis',
+    loadComponent: () =>
+      import('./features/create-form/assis/create-assis.component').then(
+        m => m.CreateAssisComponent
+      ),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'create/manually',
+    loadComponent: () =>
+      import('./features/create-form/manual/create-manual.component').then(
+        m => m.CreateManualComponent
+      ),
+    canActivate: [authGuard],
+  },
+  {
     path: 'forms/:id',
     loadComponent: () =>
       import('./features/form-detail/form-detail.component').then(

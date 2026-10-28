@@ -108,6 +108,15 @@
     "QUESTIONS_SUFFIX": "perguntas"
   },
   "CREATE_FORM": {
+    "BACK_TO_OPTIONS": "Voltar",
+    "CHOOSER": {
+      "TITLE": "Como deseja criar o formulário?",
+      "SUBTITLE": "Escolha entre criar com a ajuda do assistente de IA ou montar manualmente.",
+      "ASSIS_TITLE": "Criar com o Assis",
+      "ASSIS_DESCRIPTION": "Envie um texto clínico ou um arquivo e deixe o assistente de IA fazer o trabalho.",
+      "MANUAL_TITLE": "Preenchimento/Criação Manual",
+      "MANUAL_DESCRIPTION": "Monte o formulário você mesmo, definindo seções e perguntas."
+    },
     "BACK": "Voltar ao Dashboard",
     "TITLE": "Criar Novo Formulário",
     "SUBTITLE": "Preencha os detalhes para adicionar um novo formulário à sua biblioteca.",

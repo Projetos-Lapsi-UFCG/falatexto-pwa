@@ -108,6 +108,15 @@
     "QUESTIONS_SUFFIX": "questions"
   },
   "CREATE_FORM": {
+    "BACK_TO_OPTIONS": "Back",
+    "CHOOSER": {
+      "TITLE": "How do you want to create the form?",
+      "SUBTITLE": "Choose between creating it with the AI assistant or building it manually.",
+      "ASSIS_TITLE": "Create with Assis",
+      "ASSIS_DESCRIPTION": "Send a clinical text or a file and let the AI assistant do the work.",
+      "MANUAL_TITLE": "Manual Creation",
+      "MANUAL_DESCRIPTION": "Build the form yourself by defining sections and questions."
+    },
     "BACK": "Back to Dashboard",
     "TITLE": "Create New Form",
     "SUBTITLE": "Fill in the details to add a new form to your library.",
