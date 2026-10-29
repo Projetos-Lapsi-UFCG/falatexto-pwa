@@ -47,6 +47,8 @@ services:
       OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: gemma2:9b
       VISION_API_SECRET_TOKEN: "0000"
+    volumes:
+      - whisper_cache:/root/.cache/whisper
     networks:
       - falatexto-network
 
@@ -104,6 +106,7 @@ volumes:
   mongo_data:
   proxy_logs:
   ollama_data:
+  whisper_cache:
 
 networks:
   falatexto-network:

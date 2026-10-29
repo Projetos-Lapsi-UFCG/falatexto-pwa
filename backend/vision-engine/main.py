@@ -16,6 +16,8 @@ from pydantic import BaseModel, Field, ValidationError, field_validator, ConfigD
 import uvicorn
 from pymongo import MongoClient
 
+import transcription
+
 # ==============================================================================
 # INICIALIZAÇÃO DA APLICAÇÃO E SEGURANÇA
 # ==============================================================================
@@ -196,7 +198,8 @@ def processar_llm_em_segundo_plano(
     id_sessao: str, 
     texto_clinico: str, 
     conteudo_arquivo: bytes = None, 
-    nome_arquivo: str = None
+    nome_arquivo: str = None,
+    nome_formulario: Optional[str] = None
 ):
     prompt_sistema = """You are an expert Medical Vision AI engine. Your job is to perform OCR on medical forms/documents and map the extracted data into JSON.
 
@@ -307,7 +310,7 @@ Output ONLY raw JSON. No markdown syntax, no ```json formatting, no commentary."
 
         documento_mongo = {
             "_id": id_sessao,  
-            "name": f"Prontuário Automático - {dados_prontuario.get('tipo_documento', 'Documento Clínico')}",
+            "name": nome_formulario or f"Prontuário Automático - {dados_prontuario.get('tipo_documento', 'Documento Clínico')}",
             "metadata": {
                 "version": "1.0",
                 "active": True,
@@ -353,10 +356,17 @@ Output ONLY raw JSON. No markdown syntax, no ```json formatting, no commentary."
 # ENDPOINTS REST DA API (Protegidos por Token)
 # ==============================================================================
 
+app.include_router(
+    transcription.router,
+    prefix="/api/v1",
+    dependencies=[Depends(validar_token_bearer)]
+)
+
 @app.post("/api/v1/processar-clinica")
 async def empilhar_processamento_clinico(
     background_tasks: BackgroundTasks,
-    texto_clinico: str = Form(...),
+    texto_clinico: str = Form(""),
+    nome: Optional[str] = Form(None),
     arquivo: UploadFile = File(None),
     token: str = Depends(validar_token_bearer)
 ):
@@ -380,7 +390,8 @@ async def empilhar_processamento_clinico(
         id_sessao, 
         texto_clinico, 
         conteudo_arquivo, 
-        nome_arquivo
+        nome_arquivo,
+        nome.strip() if nome and nome.strip() else None
     )
 
     return {

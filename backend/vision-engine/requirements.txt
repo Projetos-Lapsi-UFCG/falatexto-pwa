@@ -6,3 +6,7 @@ pymongo==4.8.0
 pydantic==2.7.1
 pypdf==4.2.0
 json-repair
+openai-whisper
+librosa
+numpy
+soundfile

@@ -39,3 +39,13 @@ class VisionStatusOut(BaseModel):
     dados: Optional[Dict[str, Any]] = None
     erro: Optional[str] = None
     detalhes: Optional[List[Dict[str, Any]]] = None
+
+
+class VisionTranscricaoOut(BaseModel):
+    """Texto transcrito (Whisper) de um áudio curto ditado pelo usuário."""
+
+    model_config = ConfigDict(extra="allow")
+
+    sucesso: bool
+    texto: str
+    analise_acustica: Optional[str] = None
