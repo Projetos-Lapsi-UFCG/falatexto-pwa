@@ -14,3 +14,7 @@ python-multipart
 ollama
 json-repair
 pillow
+openai-whisper
+librosa
+numpy
+soundfile

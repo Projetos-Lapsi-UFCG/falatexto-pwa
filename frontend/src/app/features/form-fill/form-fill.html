@@ -35,6 +35,7 @@
     </div>
   }
 
+<<<<<<< HEAD
   <!-- Etapa 0 — Dados do paciente -->
   @if (!loading && form && currentStep === 0) {
     <div class="fill-content">
@@ -70,10 +71,14 @@
 
   <!-- Etapas das seções dinâmicas -->
   @if (currentStep > 0 && currentStep <= (form?.sections?.length ?? 0)) {
+=======
+  <!-- Etapas das seções -->
+  @if (currentStep < (form?.sections?.length ?? 0)) {
+>>>>>>> origin/main
     <div class="fill-content">
-      <h2>{{ form?.sections?.[currentStep - 1]?.name }}</h2>
+      <h2>{{ form?.sections?.[currentStep]?.name }}</h2>
 
-      @for (question of form?.sections?.[currentStep - 1]?.questions ?? []; track question.id) {
+      @for (question of form?.sections?.[currentStep]?.questions ?? []; track question.id) {
 
         @if (question.type === 'divider') {
           <div class="section-divider">
@@ -145,6 +150,20 @@
             @if (question.type === 'text') {
               <mat-form-field appearance="outline" class="full-width">
                 <input matInput [(ngModel)]="answers[question.id]" placeholder="Resposta do campo" />
+              </mat-form-field>
+            }
+
+            <!-- date -->
+            @if (question.type === 'date') {
+              <mat-form-field appearance="outline" class="full-width">
+                <input matInput type="date" [(ngModel)]="answers[question.id]" />
+              </mat-form-field>
+            }
+
+            <!-- number -->
+            @if (question.type === 'number') {
+              <mat-form-field appearance="outline" class="full-width">
+                <input matInput type="number" [(ngModel)]="answers[question.id]" placeholder="Digite um número" />
               </mat-form-field>
             }
 

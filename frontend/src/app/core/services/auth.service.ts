@@ -19,8 +19,8 @@ export class AuthService {
   );
   readonly userType$: Observable<UserType | null> = this.userTypeSubject.asObservable();
 
-  login(userType: UserType, pin: string): boolean {
-    if (pin.length === 4) {
+  login(userType: UserType, pin = ''): boolean {
+    if (userType === 'guest' || pin.length === 4) {
       this.storage.setItem('isLoggedIn', true);
       this.storage.setItem('userType', userType);
       this.isLoggedInSubject.next(true);

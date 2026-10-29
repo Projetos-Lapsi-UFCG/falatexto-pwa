@@ -7,6 +7,7 @@
       {{ 'CREATE_FORM.BACK' | translate }}
     </button>
 
+<<<<<<< HEAD
     <!-- Form card -->
     <div [@scaleIn] class="create-card">
       <div class="create-header">
@@ -47,15 +48,26 @@
         </div>
 
       </form>
+=======
+    <div class="create-header">
+      <h2 class="create-title">{{ 'CREATE_FORM.CHOOSER.TITLE' | translate }}</h2>
+      <p class="create-subtitle">{{ 'CREATE_FORM.CHOOSER.SUBTITLE' | translate }}</p>
+>>>>>>> origin/main
     </div>
 
-    <!-- AI processing card -->
-    <div [@scaleIn] class="create-card vision-card">
-      <div class="create-header">
-        <h2 class="create-title">{{ 'CREATE_FORM.VISION.TITLE' | translate }}</h2>
-        <p class="create-subtitle">{{ 'CREATE_FORM.VISION.SUBTITLE' | translate }}</p>
-      </div>
+    <div class="option-cards">
+      <a [@scaleIn] routerLink="/create/assis" class="option-card">
+        <span class="option-icon">
+          <ng-icon name="lucideSparkles" size="24" />
+        </span>
+        <span class="option-text">
+          <span class="option-title">{{ 'CREATE_FORM.CHOOSER.ASSIS_TITLE' | translate }}</span>
+          <span class="option-description">{{ 'CREATE_FORM.CHOOSER.ASSIS_DESCRIPTION' | translate }}</span>
+        </span>
+        <ng-icon name="lucideChevronRight" size="20" class="option-chevron" />
+      </a>
 
+<<<<<<< HEAD
       <form [formGroup]="visionForm" (ngSubmit)="handleProcessWithAI()" class="create-form">
 
         <mat-form-field appearance="outline" class="full-width">
@@ -124,6 +136,18 @@
         </div>
 
       </form>
+=======
+      <a [@scaleIn] routerLink="/create/manually" class="option-card">
+        <span class="option-icon">
+          <ng-icon name="lucidePencilLine" size="24" />
+        </span>
+        <span class="option-text">
+          <span class="option-title">{{ 'CREATE_FORM.CHOOSER.MANUAL_TITLE' | translate }}</span>
+          <span class="option-description">{{ 'CREATE_FORM.CHOOSER.MANUAL_DESCRIPTION' | translate }}</span>
+        </span>
+        <ng-icon name="lucideChevronRight" size="20" class="option-chevron" />
+      </a>
+>>>>>>> origin/main
     </div>
 
   </div>

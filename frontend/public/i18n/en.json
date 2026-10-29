@@ -35,13 +35,12 @@
   "LOGIN": {
     "TITLE": "FalaTexto",
     "SUBTITLE": "Sign in to continue",
-    "USER_TYPE_LABEL": "User type",
+    "CHOOSE_ROLE": "How do you want to sign in?",
     "USER_TYPE_ADMIN": "Administrator",
     "USER_TYPE_GUEST": "Guest",
     "PIN_LABEL": "Enter your 4-digit PIN",
     "SIGN_IN": "Sign In",
     "ERRORS": {
-      "SELECT_USER_TYPE": "Please select a user type",
       "ENTER_PIN": "Please enter a 4-digit PIN",
       "INVALID_CREDENTIALS": "Invalid credentials"
     },
@@ -109,6 +108,15 @@
     "QUESTIONS_SUFFIX": "questions"
   },
   "CREATE_FORM": {
+    "BACK_TO_OPTIONS": "Back",
+    "CHOOSER": {
+      "TITLE": "How do you want to create the form?",
+      "SUBTITLE": "Choose between creating it with the AI assistant or building it manually.",
+      "ASSIS_TITLE": "Create with Assis",
+      "ASSIS_DESCRIPTION": "Send a clinical text or a file and let the AI assistant do the work.",
+      "MANUAL_TITLE": "Manual Creation",
+      "MANUAL_DESCRIPTION": "Build the form yourself by defining sections and questions."
+    },
     "BACK": "Back to Dashboard",
     "TITLE": "Create New Form",
     "SUBTITLE": "Fill in the details to add a new form to your library.",
@@ -124,12 +132,40 @@
     "SUCCESS": {
       "CREATED": "Form created successfully"
     },
+    "BUILDER": {
+      "TITLE": "Form questions",
+      "SUBTITLE": "Build the sections and questions that will appear when filling out the form.",
+      "ADD_SECTION": "+ Add section",
+      "ADD_QUESTION": "+ Add question",
+      "ADD_OPTION": "+ Add option",
+      "REMOVE_SECTION": "Remove section",
+      "REMOVE_QUESTION": "Remove question",
+      "REMOVE_OPTION": "Remove option",
+      "SECTION_NAME_LABEL": "Section name",
+      "SECTION_NAME_PLACEHOLDER": "e.g. Pre-Operative Data",
+      "QUESTION_LABEL_LABEL": "Question",
+      "QUESTION_LABEL_PLACEHOLDER": "e.g. Does the patient have any allergies?",
+      "QUESTION_TYPE_LABEL": "Answer type",
+      "OPTION_LABEL": "Option",
+      "TYPES": {
+        "TEXT": "Free text",
+        "DATE": "Date",
+        "NUMBER": "Number",
+        "BOOLEAN": "Yes / No",
+        "BOOLEAN_NA": "Yes / No / Not applicable",
+        "RADIO_GROUP": "Single choice (options)",
+        "CHECKBOX_GROUP": "Checkboxes (multiple choice)"
+      },
+      "ERRORS": {
+        "SECTION_NAME_REQUIRED": "Every section needs a name (min 3 characters)",
+        "SECTION_EMPTY": "Add at least one question to each section, or remove the section",
+        "QUESTION_LABEL_REQUIRED": "Every question needs a label (min 3 characters)",
+        "OPTION_REQUIRED": "Checkbox questions need at least one filled-in option"
+      }
+    },
     "VISION": {
       "TITLE": "Process with AI",
-      "SUBTITLE": "Submit a clinical text and, optionally, a file (image or PDF) for automatic processing.",
-      "TEXT_LABEL": "Clinical text",
-      "TEXT_PLACEHOLDER": "Describe the clinical case...",
-      "TEXT_ERROR": "Clinical text is required",
+      "SUBTITLE": "Enter the form name and, optionally, attach a file (image or PDF) for automatic processing.",
       "FILE_LABEL": "File (optional)",
       "FILE_ATTACH": "Attach file",
       "FILE_REMOVE": "Remove file",
@@ -158,7 +194,7 @@
     "LABEL_CREATED_AT": "Created on",
     "LABEL_INPUT_METHOD": "Input Method",
     "FILL_CTA": "Fill this form",
-    "FILL_CTA_HINT": "You will be asked for the patient / client name.",
+    "FILL_CTA_HINT": "You will fill in this form's questions.",
     "DELETE_BTN": "Delete form",
     "DELETE_CONFIRM": "Are you sure you want to delete the form \"{{name}}\"? This action cannot be undone.",
     "DELETE_SUCCESS": "Form deleted successfully.",
@@ -177,6 +213,15 @@
     "CONFIRM": "Confirm",
     "SUCCESS": {
       "STARTED": "Form started successfully"
+    }
+  },
+  "DICTATION": {
+    "START": "Dictate",
+    "STOP": "Stop and transcribe",
+    "PROCESSING": "Transcribing...",
+    "ERRORS": {
+      "MIC_DENIED": "Microphone permission denied or not supported.",
+      "TRANSCRIPTION_FAILED": "Could not transcribe the audio. Please try again."
     }
   }
 }

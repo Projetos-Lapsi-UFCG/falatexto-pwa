@@ -1,26 +1,26 @@
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+<<<<<<< HEAD
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { FormApiService } from '../../core/services/form-api.service';
 import { VisionApiService } from '../../core/services/vision-api.service';
 import { VoiceInputComponent } from '../../shared/components/voice-input/voice-input';
+=======
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideArrowLeft, lucideChevronRight, lucidePencilLine, lucideSparkles } from '@ng-icons/lucide';
+import { TranslateModule } from '@ngx-translate/core';
+>>>>>>> origin/main
 import { scaleIn, fadeIn } from '../../shared/animations/fade.animation';
 
-const ACCEPTED_VISION_FILE_TYPES = ['application/pdf', 'image/'];
-
+/** Tela de escolha do modo de criação: com o Assis (IA) em /create/assis ou
+ *  manual em /create/manually. */
 @Component({
   selector: 'app-create-form',
   standalone: true,
+<<<<<<< HEAD
   imports: [
     ReactiveFormsModule,
     MatFormFieldModule,
@@ -30,15 +30,17 @@ const ACCEPTED_VISION_FILE_TYPES = ['application/pdf', 'image/'];
     TranslateModule,
     VoiceInputComponent,
   ],
+=======
+  imports: [RouterLink, MatButtonModule, NgIcon, TranslateModule],
+  providers: [provideIcons({ lucideArrowLeft, lucideChevronRight, lucidePencilLine, lucideSparkles })],
+>>>>>>> origin/main
   templateUrl: './create-form.component.html',
   styleUrl: './create-form.component.css',
   animations: [scaleIn, fadeIn],
 })
 export class CreateFormComponent {
-  private readonly fb = inject(FormBuilder);
-  private readonly formApiService = inject(FormApiService);
-  private readonly visionApiService = inject(VisionApiService);
   private readonly router = inject(Router);
+<<<<<<< HEAD
   private readonly toastr = inject(ToastrService);
   private readonly translate = inject(TranslateService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -77,10 +79,13 @@ export class CreateFormComponent {
       },
     });
   }
+=======
+>>>>>>> origin/main
 
   goBack(): void {
     this.router.navigate(['/dashboard']);
   }
+<<<<<<< HEAD
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -146,3 +151,6 @@ export class CreateFormComponent {
     }
   }
 }
+=======
+}
+>>>>>>> origin/main

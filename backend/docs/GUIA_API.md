@@ -753,7 +753,15 @@ curl -X POST http://localhost:8000/api/v1/vision/processar-clinica \
   -H "Authorization: Bearer 0000" \
   -F "texto_clinico=Transcreva a ficha anexada" \
   -F "file=@/caminho/para/ficha.png"
+
+# nome do formulário + arquivo (é o que a tela "Processar com IA" envia)
+curl -X POST http://localhost:8000/api/v1/vision/processar-clinica \
+  -H "Authorization: Bearer 0000" \
+  -F "nome=Ficha de admissão" \
+  -F "file=@/caminho/para/ficha.pdf"
 ```
+
+> `texto_clinico` e `nome` são opcionais. Se `nome` vier preenchido, ele vira o nome do formulário salvo; senão o nome é gerado (`Prontuário Automático - <tipo_documento>`).
 
 ```json
 {
@@ -803,6 +811,23 @@ curl http://localhost:8000/api/v1/vision/sessoes -H "Authorization: Bearer 0000"
 ```
 
 > As sessões ficam **na memória** do Vision Engine por até 7 dias. Se o container reiniciar, elas somem e a consulta devolve `404`.
+
+### Ditado: transcrever um áudio curto
+
+Usado pelos botões de microfone do frontend (ex.: campo "Nome do formulário"). O Vision Engine transcreve com **Whisper** (português) e devolve o texto:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/vision/transcrever-campo \
+  -H "Authorization: Bearer 0000" \
+  -F "audio=@/caminho/para/ditado.webm"
+```
+
+```json
+{ "sucesso": true, "texto": "Ficha de admissão", "analise_acustica": "Qualidade OK" }
+```
+
+- `422` quando o áudio está muito baixo ou com muito ruído (`detail` explica o motivo).
+- A **primeira** chamada é lenta: o modelo Whisper `turbo` (~1,5 GB) é baixado e carregado na memória. O download fica no volume `whisper_cache`.
 
 ### Se o Vision Engine não estiver no ar
 
@@ -871,7 +896,8 @@ Base: `http://localhost:8000/api/v1`
 | GET | `/submissions?formId=&entity=&status=&limit=` | Lista/filtra submissões | 200 |
 | GET | `/submissions/{submission_id}` | Busca submissão | 200 |
 | DELETE | `/submissions/{submission_id}` | Remove submissão | 200 |
-| POST | `/vision/processar-clinica` 🔒 | Envia texto/arquivo pra LLM | 200 |
+| POST | `/vision/processar-clinica` 🔒 | Envia nome/texto/arquivo pra LLM | 200 |
+| POST | `/vision/transcrever-campo` 🔒 | Transcreve áudio (ditado) | 200 |
 | GET | `/vision/status/{id_sessao}` 🔒 | Consulta resultado da LLM | 200 |
 | GET | `/vision/sessoes` 🔒 | Lista sessões da LLM | 200 |
 
