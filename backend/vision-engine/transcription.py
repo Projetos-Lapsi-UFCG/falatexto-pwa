@@ -49,14 +49,6 @@ async def transcrever_campo(audio: UploadFile = File(...)):
         temp_file.write(conteudo)
 
     try:
-<<<<<<< HEAD
-        qualidade_ok, mensagem_acustica = validar_qualidade_audio(caminho_temp)
-        if not qualidade_ok:
-            raise HTTPException(status_code=422, detail=mensagem_acustica)
-
-        model = get_whisper_model()
-        resultado = model.transcribe(caminho_temp, language="pt", fp16=False)
-=======
         qualidade_ok, mensagem_acustica = await run_in_threadpool(validar_qualidade_audio, caminho_temp)
         if not qualidade_ok:
             raise HTTPException(status_code=422, detail=mensagem_acustica)
@@ -64,7 +56,6 @@ async def transcrever_campo(audio: UploadFile = File(...)):
         # Roda fora do event loop para não travar as demais rotas do engine
         model = await run_in_threadpool(get_whisper_model)
         resultado = await run_in_threadpool(model.transcribe, caminho_temp, language="pt", fp16=False)
->>>>>>> origin/main
         texto_transcrito = resultado.get("text", "").strip()
 
         return {
