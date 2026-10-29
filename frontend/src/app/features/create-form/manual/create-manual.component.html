@@ -19,6 +19,7 @@
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'CREATE_FORM.NAME_LABEL' | translate }}</mat-label>
           <input matInput formControlName="name" [placeholder]="'CREATE_FORM.NAME_PLACEHOLDER' | translate" />
+          <app-voice-input matSuffix (textReceived)="appendToName($event)" />
           @if (createForm.get('name')?.invalid && createForm.get('name')?.dirty) {
             <mat-error>{{ 'CREATE_FORM.NAME_ERROR' | translate }}</mat-error>
           }

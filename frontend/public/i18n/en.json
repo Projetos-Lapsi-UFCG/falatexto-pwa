@@ -165,10 +165,7 @@
     },
     "VISION": {
       "TITLE": "Process with AI",
-      "SUBTITLE": "Submit a clinical text and, optionally, a file (image or PDF) for automatic processing.",
-      "TEXT_LABEL": "Clinical text",
-      "TEXT_PLACEHOLDER": "Describe the clinical case...",
-      "TEXT_ERROR": "Clinical text is required",
+      "SUBTITLE": "Enter the form name and, optionally, attach a file (image or PDF) for automatic processing.",
       "FILE_LABEL": "File (optional)",
       "FILE_ATTACH": "Attach file",
       "FILE_REMOVE": "Remove file",
@@ -216,6 +213,15 @@
     "CONFIRM": "Confirm",
     "SUCCESS": {
       "STARTED": "Form started successfully"
+    }
+  },
+  "DICTATION": {
+    "START": "Dictate",
+    "STOP": "Stop and transcribe",
+    "PROCESSING": "Transcribing...",
+    "ERRORS": {
+      "MIC_DENIED": "Microphone permission denied or not supported.",
+      "TRANSCRIPTION_FAILED": "Could not transcribe the audio. Please try again."
     }
   }
 }

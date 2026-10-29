@@ -165,10 +165,7 @@
     },
     "VISION": {
       "TITLE": "Processar com IA",
-      "SUBTITLE": "Envie um texto clínico e, opcionalmente, um arquivo (imagem ou PDF) para processamento automático.",
-      "TEXT_LABEL": "Texto clínico",
-      "TEXT_PLACEHOLDER": "Descreva o caso clínico...",
-      "TEXT_ERROR": "Texto clínico é obrigatório",
+      "SUBTITLE": "Informe o nome do formulário e, opcionalmente, anexe um arquivo (imagem ou PDF) para processamento automático.",
       "FILE_LABEL": "Arquivo (opcional)",
       "FILE_ATTACH": "Anexar arquivo",
       "FILE_REMOVE": "Remover arquivo",
@@ -216,6 +213,15 @@
     "CONFIRM": "Confirmar",
     "SUCCESS": {
       "STARTED": "Formulário iniciado com sucesso"
+    }
+  },
+  "DICTATION": {
+    "START": "Ditar",
+    "STOP": "Parar e transcrever",
+    "PROCESSING": "Transcrevendo...",
+    "ERRORS": {
+      "MIC_DENIED": "Permissão de microfone negada ou não suportada.",
+      "TRANSCRIPTION_FAILED": "Não foi possível transcrever o áudio. Tente novamente."
     }
   }
 }

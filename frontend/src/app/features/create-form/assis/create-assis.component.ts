@@ -10,6 +10,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { VisionApiService } from '../../../core/services/vision-api.service';
 import { scaleIn, fadeIn } from '../../../shared/animations/fade.animation';
+import { VoiceInputComponent } from '../../../shared/components/voice-input/voice-input.component';
 
 const ACCEPTED_VISION_FILE_TYPES = ['application/pdf', 'image/'];
 
@@ -23,6 +24,7 @@ const ACCEPTED_VISION_FILE_TYPES = ['application/pdf', 'image/'];
     MatButtonModule,
     NgIcon,
     TranslateModule,
+    VoiceInputComponent,
   ],
   providers: [provideIcons({ lucideArrowLeft, lucidePaperclip, lucideFileX })],
   templateUrl: './create-assis.component.html',
@@ -41,8 +43,18 @@ export class CreateAssisComponent {
   selectedFile: File | null = null;
 
   readonly visionForm = this.fb.group({
-    textoClinico: ['', [Validators.required]],
+    nome: ['', [Validators.required, Validators.minLength(3)]],
   });
+
+  /** Ditado: acrescenta o texto transcrito ao nome (permite ditar em partes). */
+  appendToName(text: string): void {
+    const control = this.visionForm.controls.nome;
+    const current = control.value?.trim();
+    control.setValue(current ? `${current} ${text}` : text);
+    control.markAsDirty();
+    control.markAsTouched();
+    this.cdr.markForCheck();
+  }
 
   goBack(): void {
     this.router.navigate(['/create']);
@@ -72,9 +84,9 @@ export class CreateAssisComponent {
       return;
     }
 
-    const textoClinico = this.visionForm.value.textoClinico!;
+    const nome = this.visionForm.value.nome!.trim();
     this.visionLoading = true;
-    this.visionApiService.processarClinica(textoClinico, this.selectedFile).subscribe({
+    this.visionApiService.processarClinica(nome, this.selectedFile).subscribe({
       next: response => {
         this.visionLoading = false;
         this.toastr.success(

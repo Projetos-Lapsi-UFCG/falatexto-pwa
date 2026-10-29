@@ -17,6 +17,7 @@ import { ToastrService } from 'ngx-toastr';
 import { FormApiService } from '../../../core/services/form-api.service';
 import { Form, QuestionField, Section } from '../../../core/models/form.model';
 import { scaleIn, fadeIn } from '../../../shared/animations/fade.animation';
+import { VoiceInputComponent } from '../../../shared/components/voice-input/voice-input.component';
 
 /** Tipos de pergunta oferecidos no construtor (v1) — o modelo local
  *  (QuestionField.type) suporta mais tipos, usados por outros formulários já
@@ -62,6 +63,7 @@ const QUESTION_TYPE_CHOICES: QuestionTypeChoice[] = [
     MatSelectModule,
     NgIcon,
     TranslateModule,
+    VoiceInputComponent,
   ],
   providers: [provideIcons({ lucideArrowLeft, lucidePlus, lucideTrash2 })],
   templateUrl: './create-manual.component.html',
@@ -201,6 +203,16 @@ export class CreateManualComponent {
       }
     }
     return null;
+  }
+
+  /** Ditado: acrescenta o texto transcrito ao nome (permite ditar em partes). */
+  appendToName(text: string): void {
+    const control = this.createForm.controls.name;
+    const current = control.value?.trim();
+    control.setValue(current ? `${current} ${text}` : text);
+    control.markAsDirty();
+    control.markAsTouched();
+    this.cdr.markForCheck();
   }
 
   goBack(): void {

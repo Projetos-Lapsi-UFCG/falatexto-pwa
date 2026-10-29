@@ -9,9 +9,10 @@ import { VisionProcessarClinicaResponse } from '../models/vision.model';
 export class VisionApiService {
   private readonly http = inject(HttpClient);
 
-  processarClinica(textoClinico: string, file: File | null): Observable<VisionProcessarClinicaResponse> {
+  /** `nome` vira o nome do formulário gerado pela LLM a partir do arquivo. */
+  processarClinica(nome: string, file: File | null): Observable<VisionProcessarClinicaResponse> {
     const formData = new FormData();
-    formData.append('texto_clinico', textoClinico);
+    formData.append('nome', nome);
     if (file) {
       formData.append('file', file);
     }

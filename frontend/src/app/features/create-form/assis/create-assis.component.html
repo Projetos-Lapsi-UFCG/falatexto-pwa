@@ -17,15 +17,11 @@
       <form [formGroup]="visionForm" (ngSubmit)="handleProcessWithAI()" class="create-form">
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'CREATE_FORM.VISION.TEXT_LABEL' | translate }}</mat-label>
-          <textarea
-            matInput
-            rows="4"
-            formControlName="textoClinico"
-            [placeholder]="'CREATE_FORM.VISION.TEXT_PLACEHOLDER' | translate"
-          ></textarea>
-          @if (visionForm.get('textoClinico')?.invalid && visionForm.get('textoClinico')?.dirty) {
-            <mat-error>{{ 'CREATE_FORM.VISION.TEXT_ERROR' | translate }}</mat-error>
+          <mat-label>{{ 'CREATE_FORM.NAME_LABEL' | translate }}</mat-label>
+          <input matInput formControlName="nome" [placeholder]="'CREATE_FORM.NAME_PLACEHOLDER' | translate" />
+          <app-voice-input matSuffix (textReceived)="appendToName($event)" />
+          @if (visionForm.get('nome')?.invalid && visionForm.get('nome')?.dirty) {
+            <mat-error>{{ 'CREATE_FORM.NAME_ERROR' | translate }}</mat-error>
           }
         </mat-form-field>
 
