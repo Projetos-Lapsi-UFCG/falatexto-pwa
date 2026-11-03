@@ -217,11 +217,13 @@
   },
   "DICTATION": {
     "START": "Ditar",
+    "CONNECTING": "Conectando...",
     "STOP": "Parar e transcrever",
     "PROCESSING": "Transcrevendo...",
     "ERRORS": {
       "MIC_DENIED": "Permissão de microfone negada ou não suportada.",
-      "TRANSCRIPTION_FAILED": "Não foi possível transcrever o áudio. Tente novamente."
+      "TRANSCRIPTION_FAILED": "Não foi possível transcrever o áudio. Tente novamente.",
+      "NO_SPEECH": "Nenhuma fala detectada. Tente novamente."
     }
   }
 }

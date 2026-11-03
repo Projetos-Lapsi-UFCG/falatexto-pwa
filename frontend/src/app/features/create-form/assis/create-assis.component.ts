@@ -47,6 +47,9 @@ export class CreateAssisComponent {
   });
 
   /** Ditado: acrescenta o texto transcrito ao nome (permite ditar em partes). */
+  /** Texto provisório do ditado, exibido como dica sob o campo de nome. */
+  namePreview = '';
+
   appendToName(text: string): void {
     const control = this.visionForm.controls.nome;
     const current = control.value?.trim();

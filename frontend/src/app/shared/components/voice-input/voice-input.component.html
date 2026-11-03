@@ -2,8 +2,8 @@
   mat-icon-button
   type="button"
   [class.recording]="state === 'recording'"
-  [class.transcribing]="state === 'transcribing'"
-  [disabled]="state === 'transcribing'"
+  [class.transcribing]="state === 'transcribing' || state === 'connecting'"
+  [disabled]="state === 'transcribing' || state === 'connecting'"
   [matTooltip]="tooltipKey | translate"
   [attr.aria-label]="tooltipKey | translate"
   [attr.aria-pressed]="state === 'recording'"
@@ -12,6 +12,9 @@
   @switch (state) {
     @case ('recording') {
       <ng-icon name="lucideMicOff" size="18" />
+    }
+    @case ('connecting') {
+      <ng-icon name="lucideLoaderCircle" size="18" class="spin-icon" />
     }
     @case ('transcribing') {
       <ng-icon name="lucideLoaderCircle" size="18" class="spin-icon" />

@@ -109,3 +109,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Texto provisório do ditado em tempo real */
+.dictation-preview {
+  font-style: italic;
+  color: var(--color-neutral-600);
+}
