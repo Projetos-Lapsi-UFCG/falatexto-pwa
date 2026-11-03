@@ -17,6 +17,7 @@ import uvicorn
 from pymongo import MongoClient
 
 import transcription
+from transcription_stream import stream_app
 
 # ==============================================================================
 # INICIALIZAÇÃO DA APLICAÇÃO E SEGURANÇA
@@ -361,6 +362,15 @@ app.include_router(
     prefix="/api/v1",
     dependencies=[Depends(validar_token_bearer)]
 )
+
+# Ditado em tempo real (WebSocket); o token vai na primeira mensagem
+app.mount("/ws", stream_app)
+
+
+@app.on_event("startup")
+def carregar_whisper():
+    # Handler síncrono roda na thread principal (ver get_whisper_model)
+    transcription.get_whisper_model()
 
 @app.post("/api/v1/processar-clinica")
 async def empilhar_processamento_clinico(

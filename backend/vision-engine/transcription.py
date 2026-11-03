@@ -1,9 +1,11 @@
 import os
 import tempfile
+import threading
+from typing import Optional, Union
+
 import numpy as np
-import librosa
-import whisper
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from faster_whisper import WhisperModel
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
 router = APIRouter(
@@ -11,61 +13,101 @@ router = APIRouter(
     tags=["Transcrição"]
 )
 
-# Instância global para cache do modelo (carregamento preguiçoso)
-_model = None
+# Configuração do modelo (GPU: large-v3-turbo/cuda/float16; CPU: small/cpu/int8)
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
+WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
+WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 
-def get_whisper_model():
+# Contexto padrão: orienta vocabulário e pontuação do Whisper para o domínio clínico
+PROMPT_PADRAO = (
+    "Nome de formulário clínico, por exemplo: Anamnese, Avaliação Fisioterapêutica, "
+    "Ficha de Admissão, Evolução de Enfermagem."
+)
+
+SAMPLE_RATE = 16000
+
+# Segmentos com estes indicadores costumam ser alucinação sobre silêncio/ruído
+NO_SPEECH_PROB_MAX = 0.6
+AVG_LOGPROB_MIN = -1.0
+
+_model: Optional[WhisperModel] = None
+# Carregamento e inferência serializados: uma GPU/um stream do CTranslate2 por vez
+_model_lock = threading.Lock()
+
+
+def get_whisper_model() -> WhisperModel:
+    """Chamar no startup, na thread principal: criado numa thread secundária, o
+    CTranslate2 (CPU) fica ~3x mais lento em toda inferência seguinte."""
     global _model
-    if _model is None:
-        print("Carregando modelo Whisper turbo na memória...")
-        _model = whisper.load_model("turbo")
-    return _model
+    with _model_lock:
+        if _model is None:
+            print(f"Carregando Whisper {WHISPER_MODEL} ({WHISPER_DEVICE}/{WHISPER_COMPUTE_TYPE})...")
+            _model = WhisperModel(WHISPER_MODEL, device=WHISPER_DEVICE, compute_type=WHISPER_COMPUTE_TYPE)
+            # Aquecimento: a primeira inferência inicializa kernels/cache
+            segmentos, _ = _model.transcribe(np.zeros(SAMPLE_RATE, dtype=np.float32), language="pt")
+            list(segmentos)
+            print("Whisper pronto.")
+        return _model
 
-def validar_qualidade_audio(caminho_audio: str):
-    try:
-        y, sr = librosa.load(caminho_audio, sr=None)
-        rms = librosa.feature.rms(y=y)[0]
-        rms_medio = float(np.mean(rms))
-        
-        sinal_pico = np.max(np.abs(y))
-        ruido_pico = np.percentile(np.abs(y), 10) + 1e-6
-        snr_db = float(20 * np.log10(sinal_pico / ruido_pico))
-        
-        if rms_medio < 0.005:
-            return False, f"Áudio muito baixo (RMS: {rms_medio:.4f})"
-        if snr_db < 10.0:
-            return False, f"Ruído elevado (SNR: {snr_db:.2f} dB)"
-            
-        return True, "Qualidade OK"
-    except Exception as e:
-        return True, f"Aviso na análise acústica: {str(e)}"
+
+def transcrever(
+    audio: Union[str, np.ndarray],
+    prompt: Optional[str] = None,
+    beam_size: int = 5,
+    word_timestamps: bool = False,
+) -> list:
+    """Transcreve um arquivo ou array float32 16 kHz e devolve os segmentos confiáveis."""
+    model = get_whisper_model()
+    with _model_lock:
+        segmentos, _ = model.transcribe(
+            audio,
+            language="pt",
+            beam_size=beam_size,
+            vad_filter=True,
+            vad_parameters={"min_silence_duration_ms": 300},
+            condition_on_previous_text=False,
+            initial_prompt=prompt or PROMPT_PADRAO,
+            word_timestamps=word_timestamps,
+        )
+        # O gerador é preguiçoso: precisa ser consumido dentro do lock
+        segmentos = list(segmentos)
+
+    return [
+        s for s in segmentos
+        if not (s.no_speech_prob > NO_SPEECH_PROB_MAX and s.avg_logprob < AVG_LOGPROB_MIN)
+    ]
+
+
+def texto_dos_segmentos(segmentos: list) -> str:
+    return " ".join(s.text.strip() for s in segmentos).strip()
+
 
 @router.post("")
-async def transcrever_campo(audio: UploadFile = File(...)):
-    extensao = os.path.splitext(audio.filename)[1] if audio.filename else ".mp3"
+async def transcrever_campo(
+    audio: UploadFile = File(...),
+    contexto: Optional[str] = Form(None),
+):
+    extensao = os.path.splitext(audio.filename)[1] if audio.filename else ".webm"
     with tempfile.NamedTemporaryFile(delete=False, suffix=extensao) as temp_file:
         caminho_temp = temp_file.name
-        conteudo = await audio.read()
-        temp_file.write(conteudo)
+        temp_file.write(await audio.read())
 
     try:
-        qualidade_ok, mensagem_acustica = await run_in_threadpool(validar_qualidade_audio, caminho_temp)
-        if not qualidade_ok:
-            raise HTTPException(status_code=422, detail=mensagem_acustica)
-
         # Roda fora do event loop para não travar as demais rotas do engine
-        model = await run_in_threadpool(get_whisper_model)
-        resultado = await run_in_threadpool(model.transcribe, caminho_temp, language="pt", fp16=False)
-        texto_transcrito = resultado.get("text", "").strip()
+        segmentos = await run_in_threadpool(transcrever, caminho_temp, contexto)
+        texto_transcrito = texto_dos_segmentos(segmentos)
+        if not texto_transcrito:
+            raise HTTPException(status_code=422, detail="Nenhuma fala detectada no áudio.")
 
+        duracao_fala = sum(s.end - s.start for s in segmentos)
         return {
             "sucesso": True,
             "texto": texto_transcrito,
-            "analise_acustica": mensagem_acustica
+            "analise_acustica": f"Fala detectada: {duracao_fala:.1f}s"
         }
 
-    except HTTPException as he:
-        raise he
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
 

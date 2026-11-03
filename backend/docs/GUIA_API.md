@@ -814,20 +814,30 @@ curl http://localhost:8000/api/v1/vision/sessoes -H "Authorization: Bearer 0000"
 
 ### Ditado: transcrever um áudio curto
 
-Usado pelos botões de microfone do frontend (ex.: campo "Nome do formulário"). O Vision Engine transcreve com **Whisper** (português) e devolve o texto:
+Usado pelos botões de microfone do frontend (ex.: campo "Nome do formulário"). O Vision Engine transcreve com **faster-whisper** (português) e devolve o texto:
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/vision/transcrever-campo \
   -H "Authorization: Bearer 0000" \
-  -F "audio=@/caminho/para/ditado.webm"
+  -F "audio=@/caminho/para/ditado.webm" \
+  -F "contexto=Nome de formulário clínico"   # opcional: orienta o vocabulário
 ```
 
 ```json
-{ "sucesso": true, "texto": "Ficha de admissão", "analise_acustica": "Qualidade OK" }
+{ "sucesso": true, "texto": "Ficha de admissão", "analise_acustica": "Fala detectada: 1.8s" }
 ```
 
-- `422` quando o áudio está muito baixo ou com muito ruído (`detail` explica o motivo).
-- A **primeira** chamada é lenta: o modelo Whisper `turbo` (~1,5 GB) é baixado e carregado na memória. O download fica no volume `whisper_cache`.
+- `422` quando nenhuma fala é detectada no áudio (silêncio/ruído).
+- O modelo é carregado no **startup** do Vision Engine (o primeiro boot baixa os pesos para o volume `whisper_cache`). Modelo, dispositivo e precisão vêm de `WHISPER_MODEL`, `WHISPER_DEVICE` e `WHISPER_COMPUTE_TYPE` (CPU: `small`/`cpu`/`int8`; GPU via `docker-compose.gpu.yml`: `large-v3-turbo`/`cuda`/`float16`).
+
+### Ditado em tempo real (WebSocket)
+
+O frontend usa por padrão o WebSocket `/api/v1/vision/transcrever-stream` (nginx → Vision Engine `ws://vision-engine:8001/ws/transcrever`; em dev, direto em `ws://localhost:8001/ws/transcrever`). Se ele não conectar, o botão cai no envio em lote acima.
+
+1. Cliente envia `{"type":"start","token":"0000","contexto":"..."}` (o token vai na mensagem para não aparecer em logs de URL).
+2. Cliente envia frames binários de PCM16 mono 16 kHz (~250 ms cada).
+3. Servidor responde `{"type":"partial","text":"..."}` conforme a fala é reconhecida.
+4. Cliente envia `{"type":"stop"}`; servidor responde `{"type":"final","text":"..."}` e fecha. Erros chegam como `{"type":"error","detail":"..."}`; token inválido fecha com código `1008`.
 
 ### Se o Vision Engine não estiver no ar
 
@@ -898,6 +908,7 @@ Base: `http://localhost:8000/api/v1`
 | DELETE | `/submissions/{submission_id}` | Remove submissão | 200 |
 | POST | `/vision/processar-clinica` 🔒 | Envia nome/texto/arquivo pra LLM | 200 |
 | POST | `/vision/transcrever-campo` 🔒 | Transcreve áudio (ditado) | 200 |
+| WS | `/vision/transcrever-stream` 🔒 | Ditado em tempo real (token na 1ª mensagem) | — |
 | GET | `/vision/status/{id_sessao}` 🔒 | Consulta resultado da LLM | 200 |
 | GET | `/vision/sessoes` 🔒 | Lista sessões da LLM | 200 |
 

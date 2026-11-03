@@ -47,8 +47,11 @@ services:
       OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: gemma2:9b
       VISION_API_SECRET_TOKEN: "0000"
+      WHISPER_MODEL: small
+      WHISPER_DEVICE: cpu
+      WHISPER_COMPUTE_TYPE: int8
     volumes:
-      - whisper_cache:/root/.cache/whisper
+      - whisper_cache:/root/.cache/huggingface
     networks:
       - falatexto-network
 
@@ -99,6 +102,7 @@ services:
     depends_on:
       - frontend
       - api
+      - vision-engine
     networks:
       - falatexto-network
 
