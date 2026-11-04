@@ -50,6 +50,11 @@
   margin-bottom: 1.5rem;
 }
 
+/* Impede o flexbox de encolher (e cortar) o ícone quando o título quebra linha no celular */
+.submissions-title ng-icon {
+  flex-shrink: 0;
+}
+
 .submissions-list-header {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
