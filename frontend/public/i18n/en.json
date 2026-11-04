@@ -96,7 +96,8 @@
         "BIRTH_DATE": "Birth Date",
         "RECORD": "Record",
         "ROOM": "Room",
-        "DATE": "Date"
+        "DATE": "Date",
+        "RESPONSIBLE": "Responsible"
       }
     },
     "ERRORS": {

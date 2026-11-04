@@ -146,6 +146,9 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 0.95;
 }
 
-span.mdc-button__label > ng-icon > svg {
-  margin-top: 2px !important;
+/* Desce o ícone 2px para alinhar com o texto do botão. O deslocamento é
+ * aplicado no <ng-icon> inteiro (e não no <svg> dentro dele) porque o ng-icon
+ * tem overflow: hidden — mover só o svg cortava a parte de baixo do desenho. */
+span.mdc-button__label > ng-icon {
+  transform: translateY(2px);
 }
