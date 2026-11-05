@@ -1,13 +1,16 @@
-from typing import List
+from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class FormMetadata(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     version: str = Field(..., min_length=1, max_length=20)
     active: bool
+    origem: Optional[str] = Field(
+        default=None, description="Origem da criação do formulário (ex: Vision Engine AI)"
+    )
 
     @field_validator("version")
     @classmethod
@@ -70,7 +73,11 @@ class FormCreate(FormBase):
                 "id": "form_001",
                 "name": "Anamnese Inicial",
                 "sections": [],
-                "metadata": {"version": "1.0", "active": True},
+                "metadata": {
+                    "version": "1.0",
+                    "active": True,
+                    "origem": "Vision Engine AI (qwen2.5vl:7b)",
+                },
             }
         },
     )

@@ -1,8 +1,8 @@
 import os
-import httpx
+from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from typing import Optional
+import httpx
 
 from ..config import VISION_ENGINE_URL
 from ..models.vision import (
@@ -15,7 +15,6 @@ from ..models.vision import (
 router = APIRouter(prefix="/vision", tags=["vision"])
 
 VISION_ENGINE_TIMEOUT = 120.0
-# A primeira transcrição carrega o modelo Whisper na memória (e pode baixá-lo).
 TRANSCRICAO_TIMEOUT = 600.0
 VISION_INDISPONIVEL = "Não foi possível conectar ao Motor de Visão"
 
@@ -71,12 +70,12 @@ async def _proxy_get(caminho: str, token: str):
     responses={503: {"description": VISION_INDISPONIVEL}},
 )
 async def processar_clinica(
-    texto_clinico: str = Form(""),
+    texto_clinico: Optional[str] = Form(None),
     nome: Optional[str] = Form(None),
-    file: UploadFile = File(None),
+    file: Optional[UploadFile] = File(None),
     token: str = Depends(validar_token_bearer),
 ):
-    dados_formulario = {"texto_clinico": texto_clinico}
+    dados_formulario = {"texto_clinico": texto_clinico or ""}
     if nome:
         dados_formulario["nome"] = nome
     arquivos = {}
@@ -110,11 +109,6 @@ async def processar_clinica(
     "/transcrever-campo",
     response_model=VisionTranscricaoOut,
     summary="Transcreve um áudio curto (ditado) para texto",
-    description=(
-        "Repassa o áudio (campo `audio`, ex.: webm/mp4/wav) para o Vision Engine, "
-        "que verifica a qualidade e transcreve com Whisper (pt). Devolve `422` "
-        "quando o áudio está baixo demais ou com muito ruído."
-    ),
     responses={
         422: {"description": "Áudio com volume baixo ou ruído elevado"},
         503: {"description": VISION_INDISPONIVEL},
@@ -141,7 +135,6 @@ async def transcrever_campo(
             ) from exc
 
     if response.status_code != 200:
-        # Repassa o `detail` do engine (ex.: "Áudio muito baixo") sem reembrulhar o JSON
         try:
             detalhe = response.json().get("detail", response.text)
         except ValueError:
@@ -165,10 +158,6 @@ async def listar_sessoes(token: str = Depends(validar_token_bearer)):
     "/status/{id_sessao}",
     response_model=VisionStatusOut,
     summary="Consulta o status/resultado de uma sessão de processamento",
-    description=(
-        "Retorna o estado da sessão (`pending`, `executed` ou `failed`). Em "
-        "`executed`, o campo `dados` traz o prontuário extraído pela LLM."
-    ),
     responses={
         404: {"description": "Sessão não encontrada ou expirada"},
         503: {"description": VISION_INDISPONIVEL},
