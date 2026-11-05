@@ -1,3 +1,4 @@
+from typing import Any
 from fastapi import APIRouter, HTTPException, status
 
 from ..database import db
@@ -10,6 +11,13 @@ router = APIRouter(prefix="/forms", tags=["forms"])
 FORM_NAO_ENCONTRADO = "Formulário não encontrado"
 
 
+def _extrair_id(item: Any) -> Any:
+    """Extrai com segurança o ID do item, seja ele uma string/ObjectId ou um dicionário."""
+    if isinstance(item, dict):
+        return item.get("_id") or item.get("id")
+    return item
+
+
 @router.get(
     "",
     response_model=FormListOut,
@@ -19,7 +27,14 @@ FORM_NAO_ENCONTRADO = "Formulário não encontrado"
 def listar_forms():
     forms = list(db.forms.find({}, {"_id": 1, "name": 1, "metadata": 1, "sections": 1}))
 
-    all_section_ids = {sid for form in forms for sid in form.get("sections", [])}
+    # Extração segura de IDs de seções
+    all_section_ids = {
+        _extrair_id(sid)
+        for form in forms
+        for sid in form.get("sections", [])
+        if _extrair_id(sid) is not None
+    }
+
     sections = list(
         db.sections.find(
             {"_id": {"$in": list(all_section_ids)}},
@@ -28,7 +43,14 @@ def listar_forms():
     )
     sections_by_id = {section["_id"]: section for section in sections}
 
-    all_subsection_ids = {sid for section in sections for sid in section.get("subSections", [])}
+    # Extração segura de IDs de subseções
+    all_subsection_ids = {
+        _extrair_id(sub)
+        for section in sections
+        for sub in section.get("subSections", [])
+        if _extrair_id(sub) is not None
+    }
+
     subsections = list(
         db.sections.find(
             {"_id": {"$in": list(all_subsection_ids)}}, {"_id": 1, "questions": 1}
@@ -36,30 +58,49 @@ def listar_forms():
     )
     subsections_by_id = {subsection["_id"]: subsection for subsection in subsections}
 
+    # Extração segura de IDs de questões
     all_question_ids = set()
     for section in sections + subsections:
-        all_question_ids.update(section.get("questions", []))
+        for q in section.get("questions", []):
+            qid = _extrair_id(q)
+            if qid is not None:
+                all_question_ids.add(qid)
 
     questions = list(
         db.questions.find(
             {"_id": {"$in": list(all_question_ids)}}, {"_id": 1, "compositeFields": 1}
         )
     )
+
+    # Extração segura de campos compostos filhos
     composite_child_ids = {
-        child_id for question in questions for child_id in question.get("compositeFields", [])
+        _extrair_id(child)
+        for question in questions
+        for child in question.get("compositeFields", [])
+        if _extrair_id(child) is not None
     }
 
     for form in forms:
         question_ids = set()
-        for section_id in form.get("sections", []):
+        for raw_sid in form.get("sections", []):
+            section_id = _extrair_id(raw_sid)
             section = sections_by_id.get(section_id)
             if not section:
                 continue
-            question_ids.update(section.get("questions", []))
-            for sub_id in section.get("subSections", []):
+
+            for q in section.get("questions", []):
+                qid = _extrair_id(q)
+                if qid is not None:
+                    question_ids.add(qid)
+
+            for raw_subid in section.get("subSections", []):
+                sub_id = _extrair_id(raw_subid)
                 subsection = subsections_by_id.get(sub_id)
                 if subsection:
-                    question_ids.update(subsection.get("questions", []))
+                    for q in subsection.get("questions", []):
+                        qid = _extrair_id(q)
+                        if qid is not None:
+                            question_ids.add(qid)
 
         form["questionCount"] = len(question_ids - composite_child_ids)
         form["_id"] = str(form["_id"])
@@ -164,7 +205,10 @@ def listar_sections_do_form(form_id: str):
     if form is None:
         raise HTTPException(status_code=404, detail=FORM_NAO_ENCONTRADO)
 
-    section_ids = form.get("sections", [])
+    raw_section_ids = form.get("sections", [])
+    section_ids = [
+        _extrair_id(s) for s in raw_section_ids if _extrair_id(s) is not None
+    ]
 
     sections_encontradas = list(db.sections.find({"_id": {"$in": section_ids}}))
 
