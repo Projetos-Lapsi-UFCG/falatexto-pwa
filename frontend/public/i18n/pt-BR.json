@@ -96,7 +96,8 @@
         "BIRTH_DATE": "Data de Nascimento",
         "RECORD": "Prontuário",
         "ROOM": "Sala",
-        "DATE": "Data"
+        "DATE": "Data",
+        "RESPONSIBLE": "Responsável"
       }
     },
     "ERRORS": {

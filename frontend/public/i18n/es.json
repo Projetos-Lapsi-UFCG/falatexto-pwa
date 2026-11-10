@@ -96,7 +96,8 @@
         "BIRTH_DATE": "Fecha de Nacimiento",
         "RECORD": "Historia Clínica",
         "ROOM": "Sala",
-        "DATE": "Fecha"
+        "DATE": "Fecha",
+        "RESPONSIBLE": "Responsable"
       }
     },
     "ERRORS": {

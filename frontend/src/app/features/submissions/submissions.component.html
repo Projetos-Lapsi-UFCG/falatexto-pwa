@@ -39,7 +39,7 @@
         @for (submission of submissions; track submission._id) {
           <app-submission-row
             [submission]="submission"
-            [questionLabels]="questionLabels"
+            [form]="form"
             (deleted)="onSubmissionDeleted($event)"
           />
         }

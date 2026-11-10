@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideTranslateService } from '@ngx-translate/core';
+import { provideToastr } from 'ngx-toastr';
 import { SubmissionRowComponent } from './submission-row.component';
 import { SubmissionOut } from '../../../../core/models/backend-form.model';
 
@@ -31,6 +32,7 @@ describe('SubmissionRowComponent', () => {
         provideHttpClientTesting(),
         provideNoopAnimations(),
         provideTranslateService({ defaultLanguage: 'pt-BR' }),
+        provideToastr(),
       ],
     }).compileComponents();
 
@@ -98,10 +100,12 @@ describe('SubmissionRowComponent', () => {
     expect(text).toContain('fever');
   });
 
-  it('excludes responsible from the closing data section (already shown in the header)', async () => {
+  it('includes responsible in the closing data section', async () => {
     await render();
-    expect(component.closingDataEntries.map(e => e.key)).not.toContain('responsible');
-    expect(component.closingDataEntries.map(e => e.key)).toContain('date');
+    expect(component.closingDataEntries.map(e => e.key)).toEqual(['responsible', 'date']);
+    expect(component.closingDataEntries.find(e => e.key === 'responsible')?.labelKey).toBe(
+      'SUBMISSIONS.DETAIL.FIELDS.RESPONSIBLE'
+    );
   });
 
   it('falls back to the translated placeholder when responsible is missing', async () => {
@@ -109,8 +113,8 @@ describe('SubmissionRowComponent', () => {
     expect(component.responsible).toBeUndefined();
   });
 
-  it('does not render a detail section for an empty data group', async () => {
-    await render({ ...baseSubmission, checkboxAnswers: {} });
-    expect(component.checkboxEntries).toEqual([]);
+  it('merges checkbox answers into the answers list (no separate section)', async () => {
+    await render();
+    expect(component.answerEntries.map(e => e.key)).toEqual(['q1_symptom', 'consentGiven']);
   });
 });

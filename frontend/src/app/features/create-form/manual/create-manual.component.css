@@ -49,6 +49,8 @@
 
 .full-width {
   width: 100%;
+  /* Permite que o campo encolha dentro de linhas flex (ao lado da lixeira) */
+  min-width: 0;
 }
 
 .form-actions {
@@ -133,9 +135,19 @@
   flex-shrink: 0;
 }
 
+/*
+ * O mat-icon-button força todo <svg> interno a 24px (--mat-icon-button-icon-size),
+ * mas o <ng-icon> tem 18px e overflow: hidden — o que cortava a lixeira.
+ * Alinhamos o tamanho do svg ao do ng-icon.
+ */
 .remove-btn {
   color: indianred !important;
   flex-shrink: 0;
+  --mat-icon-button-icon-size: 18px;
+}
+
+.option-row .remove-btn {
+  --mat-icon-button-icon-size: 16px;
 }
 
 .options-list {
@@ -167,8 +179,47 @@
   align-self: flex-start;
 }
 
-/* Texto provisório do ditado em tempo real */
-.dictation-preview {
-  font-style: italic;
-  color: var(--color-neutral-600);
+/* ───────────── Celular (até 640px) ───────────── */
+@media (max-width: 640px) {
+  /* Menos margem nas bordas da tela e fundo branco (mais contraste) */
+  .create-wrapper {
+    padding: 1rem;
+    background: var(--color-white);
+  }
+
+  /* Remove o cartão branco: o conteúdo fica direto sobre o fundo da tela */
+  .create-card {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  .create-header {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Seções (caixas cinzas) e perguntas (caixas brancas) com espaçamento menor */
+  .section-card {
+    padding: 1rem;
+  }
+
+  .question-card {
+    padding: 0.75rem;
+  }
+
+  /* Pergunta sozinha na 1ª linha; tipo de resposta + lixeira na 2ª */
+  .question-card-row {
+    flex-wrap: wrap;
+  }
+
+  .question-card-row > .full-width {
+    flex-basis: 100%;
+  }
+
+  .type-field {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
 }

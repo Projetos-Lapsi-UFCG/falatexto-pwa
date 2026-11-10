@@ -8,9 +8,9 @@ import { ToastrService } from 'ngx-toastr';
 import { SubmissionService } from '../../core/services/submission';
 import { FormApiService } from '../../core/services/form-api.service';
 import { SubmissionOut } from '../../core/models/backend-form.model';
+import { Form } from '../../core/models/form.model';
 import { LanguageSelectorComponent } from '../../shared/components/language-selector/language-selector.component';
 import { SubmissionRowComponent } from './components/submission-row/submission-row.component';
-import { buildQuestionLabelMap } from './utils/question-label-map.util';
 import { fadeIn, staggerFade } from '../../shared/animations/fade.animation';
 
 @Component({
@@ -41,7 +41,7 @@ export class SubmissionsComponent implements OnInit {
   loading = true;
   formId: string | null = null;
   formName: string | null = null;
-  questionLabels: Record<string, string> = {};
+  form: Form | null = null;
 
   ngOnInit(): void {
     this.formId = this.route.snapshot.paramMap.get('id');
@@ -49,7 +49,7 @@ export class SubmissionsComponent implements OnInit {
       this.formApiService.getFormById(this.formId).subscribe({
         next: form => {
           this.formName = form.name;
-          this.questionLabels = buildQuestionLabelMap(form);
+          this.form = form;
           this.cdr.markForCheck();
         },
         // Se o form não puder ser carregado (ex.: 404), a lista de submissões
