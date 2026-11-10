@@ -334,19 +334,21 @@ def criar_question_na_section(
     obter_formulario_da_secao(section_id)
 
     question_existente = db.questions.find_one({
-        "_id": question_id,
-        "$or": [
-            {"deletedAt": None},
-            {"deletedAt": {"$exists": False}},
-        ],
+        "_id": question.id
     })
 
     if question_existente is not None:
+        if question_existente.get("deletedAt") is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="Essa pergunta está excluída. Restaure-a antes de reutilizar o ID."
+            )
+
         raise HTTPException(
-            status_code=400, detail="Já existe uma pergunta com esse id"
+            status_code=400,
+            detail="Já existe uma pergunta com esse id"
         )
-    obter_formulario_da_secao(question_existente["parentItem"])
-    
+
     validar_composite_fields(
         question_id=question.id,
         composite_fields=question.compositeFields,
