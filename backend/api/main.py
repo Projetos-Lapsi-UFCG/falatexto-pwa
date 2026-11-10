@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import CORS_ORIGINS
 from .routers import forms, sections, questions, submissions, vision
 
 from .database import criar_indices
+from .security import validar_codigo_api
 
 DESCRIPTION = """
 API do **Fala-Texto**, sistema de documentação clínica.
@@ -67,10 +68,31 @@ app.add_middleware(
 
 API_V1_PREFIX = "/api/v1"
 
-app.include_router(forms.router, prefix=API_V1_PREFIX)
-app.include_router(sections.router, prefix=API_V1_PREFIX)
-app.include_router(questions.router, prefix=API_V1_PREFIX)
-app.include_router(submissions.router, prefix=API_V1_PREFIX)
+app.include_router(
+    forms.router,
+    prefix=API_V1_PREFIX,
+    dependencies=[Depends(validar_codigo_api)]
+)
+
+app.include_router(
+    sections.router,
+    prefix=API_V1_PREFIX,
+    dependencies=[Depends(validar_codigo_api)]
+)
+
+app.include_router(
+    questions.router,
+    prefix=API_V1_PREFIX,
+    dependencies=[Depends(validar_codigo_api)]
+)
+
+app.include_router(
+    submissions.router,
+    prefix=API_V1_PREFIX,
+    dependencies=[Depends(validar_codigo_api)]
+)
+
+# Mantém a autenticação própria do Vision Engine
 app.include_router(vision.router, prefix=API_V1_PREFIX)
 
 @app.on_event("startup")
