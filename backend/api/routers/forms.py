@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 
-from ..database import db
+from ..database import db, client
 from ..models import MessageOut
 from ..models.form import FormCreate, FormListOut, FormOut, FormUpdate
 from ..models.section import SectionCreate, SectionListOut, SectionOut
@@ -179,73 +179,94 @@ def atualizar_form(form_id: str, form: FormUpdate):
 
 def deletar_form(form_id: str):
 
-    form = db.forms.find_one({"_id": form_id})
+    with client.start_session() as session:
+        with session.start_transaction():
 
-    if form is None:
-        raise HTTPException(
-            status_code=404,
-            detail=FORM_NAO_ENCONTRADO
-        )
+            form = db.forms.find_one(
+                {"_id": form_id},
+                session=session
+            )
 
-    # Mantém o DELETE idempotente
-    if form.get("deletedAt") is not None:
-        return {
-            "mensagem": "Formulário removido com sucesso",
-            "id": form_id
-        }
+            if form is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail=FORM_NAO_ENCONTRADO
+                )
 
-    # Identifica e valida todas as dependências
-    dependencias = coletar_dependencias_formulario(form_id)
+            # DELETE idempotente
+            if form.get("deletedAt") is not None:
+                return {
+                    "mensagem": "Formulário removido com sucesso",
+                    "id": form_id
+                }
 
-    agora = datetime.now(timezone.utc)
+            # Identifica dependências na mesma transação
+            dependencias = coletar_dependencias_formulario(
+                form_id,
+                session=session
+            )
 
-    purge_at = agora + timedelta(
-        days=SOFT_DELETE_RETENTION_DAYS
-    )
+            agora = datetime.now(timezone.utc)
 
-    # Marca perguntas ativas como excluídas
-    db.questions.update_many(
-        {
-            "_id": {"$in": dependencias["questions"]},
-            "deletedAt": None
-        },
-        {
-            "$set": {
-                "deletedAt": agora,
-                "purgeAt": purge_at,
-                "deletedByCascade": form_id,
-                "updatedAt": agora
-            }
-        }
-    )
+            purge_at = agora + timedelta(
+                days=SOFT_DELETE_RETENTION_DAYS
+            )
 
-    # Marca seções e subseções ativas como excluídas
-    db.sections.update_many(
-        {
-            "_id": {"$in": dependencias["sections"]},
-            "deletedAt": None
-        },
-        {
-            "$set": {
-                "deletedAt": agora,
-                "purgeAt": purge_at,
-                "deletedByCascade": form_id,
-                "updatedAt": agora
-            }
-        }
-    )
+            # Exclusão lógica das perguntas ativas
+            db.questions.update_many(
+                {
+                    "_id": {"$in": dependencias["questions"]},
+                    "deletedAt": None
+                },
+                {
+                    "$set": {
+                        "deletedAt": agora,
+                        "purgeAt": purge_at,
+                        "deletedByCascade": form_id,
+                        "updatedAt": agora
+                    }
+                },
+                session=session
+            )
 
-    # Marca o formulário como excluído
-    db.forms.update_one(
-        {"_id": form_id},
-        {
-            "$set": {
-                "deletedAt": agora,
-                "purgeAt": purge_at,
-                "updatedAt": agora
-            }
-        }
-    )
+            # Exclusão lógica das seções e subseções ativas
+            db.sections.update_many(
+                {
+                    "_id": {"$in": dependencias["sections"]},
+                    "deletedAt": None
+                },
+                {
+                    "$set": {
+                        "deletedAt": agora,
+                        "purgeAt": purge_at,
+                        "deletedByCascade": form_id,
+                        "updatedAt": agora
+                    }
+                },
+                session=session
+            )
+
+            # Exclusão lógica do formulário
+            resultado = db.forms.update_one(
+                {
+                    "_id": form_id,
+                    "deletedAt": None
+                },
+                {
+                    "$set": {
+                        "deletedAt": agora,
+                        "purgeAt": purge_at,
+                        "updatedAt": agora
+                    }
+                },
+                session=session
+            )
+
+            if resultado.matched_count != 1:
+                raise HTTPException(
+                    status_code=409,
+                    detail="O formulário foi alterado durante a exclusão"
+                )
 
     return {
         "mensagem": "Formulário removido com sucesso",
@@ -260,49 +281,121 @@ def deletar_form(form_id: str):
 )
 def restaurar_form(form_id: str):
 
-    form = db.forms.find_one({"_id": form_id})
+    with client.start_session() as session:
+        with session.start_transaction():
 
-    if form is None:
-        raise HTTPException(
-            status_code=404,
-            detail=FORM_NAO_ENCONTRADO
-        )
-
-    # Se já está ativo, não faz nada
-    if form.get("deletedAt") is None:
-        return {
-            "mensagem": "Formulário já está ativo",
-            "id": form_id
-        }
-
-    agora = datetime.now(timezone.utc)
-
-    # Verifica se ainda está dentro da janela de retenção
-    if form.get("purgeAt"):
-        purge_at = form["purgeAt"].replace(tzinfo=timezone.utc)
-
-        if purge_at < agora:
-            raise HTTPException(
-                status_code=404,
-                detail=FORM_NAO_ENCONTRADO
+            form = db.forms.find_one(
+                {"_id": form_id},
+                session=session
             )
 
-    db.forms.update_one(
-        {"_id": form_id},
-        {
-            "$set": {
-                "deletedAt": None,
-                "purgeAt": None,
-                "updatedAt": agora
-            }
-        }
-    )
+            if form is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail=FORM_NAO_ENCONTRADO
+                )
+
+            # Se o formulário já está ativo
+            if form.get("deletedAt") is None:
+                return {
+                    "mensagem": "Formulário já está ativo",
+                    "id": form_id
+                }
+
+            agora = datetime.now(timezone.utc)
+
+            # Verifica o prazo de restauração
+            purge_at = form.get("purgeAt")
+
+            if not isinstance(purge_at, datetime):
+                raise HTTPException(
+                    status_code=409,
+                    detail="Prazo de restauração não encontrado"
+                )
+
+            if purge_at.tzinfo is None:
+                purge_at = purge_at.replace(tzinfo=timezone.utc)
+
+            if purge_at < agora:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Prazo de restauração expirado"
+                )
+
+            # Identifica dependências na mesma transação
+            dependencias = coletar_dependencias_formulario(
+                form_id,
+                session=session
+            )
+
+            # Restaura somente perguntas excluídas
+            # pela cascata deste formulário
+            db.questions.update_many(
+                {
+                    "_id": {"$in": dependencias["questions"]},
+                    "deletedByCascade": form_id,
+                    "deletedAt": {"$ne": None}
+                },
+                {
+                    "$set": {
+                        "deletedAt": None,
+                        "purgeAt": None,
+                        "updatedAt": agora
+                    },
+                    "$unset": {
+                        "deletedByCascade": ""
+                    }
+                },
+                session=session
+            )
+
+            # Restaura seções e subseções
+            # excluídas pela mesma cascata
+            db.sections.update_many(
+                {
+                    "_id": {"$in": dependencias["sections"]},
+                    "deletedByCascade": form_id,
+                    "deletedAt": {"$ne": None}
+                },
+                {
+                    "$set": {
+                        "deletedAt": None,
+                        "purgeAt": None,
+                        "updatedAt": agora
+                    },
+                    "$unset": {
+                        "deletedByCascade": ""
+                    }
+                },
+                session=session
+            )
+
+            # Restaura o formulário
+            resultado = db.forms.update_one(
+                {
+                    "_id": form_id,
+                    "deletedAt": form["deletedAt"]
+                },
+                {
+                    "$set": {
+                        "deletedAt": None,
+                        "purgeAt": None,
+                        "updatedAt": agora
+                    }
+                },
+                session=session
+            )
+
+            if resultado.matched_count != 1:
+                raise HTTPException(
+                    status_code=409,
+                    detail="O formulário foi alterado durante a restauração"
+                )
 
     return {
         "mensagem": "Formulário restaurado com sucesso",
         "id": form_id
     }
-
 
 @router.get(
     "/{form_id}/sections",
@@ -312,14 +405,14 @@ def restaurar_form(form_id: str):
     responses={404: {"description": FORM_NAO_ENCONTRADO}},
 )
 def listar_sections_do_form(form_id: str):
-    form = db.forms.find_one({"_id": form_id})
+    form = db.forms.find_one({"_id": form_id, "deletedAt": None})
 
     if form is None:
         raise HTTPException(status_code=404, detail=FORM_NAO_ENCONTRADO)
 
     section_ids = form.get("sections", [])
 
-    sections_encontradas = list(db.sections.find({"_id": {"$in": section_ids}}))
+    sections_encontradas = list(db.sections.find({"_id": {"$in": section_ids}, "deletedAt": None}))
 
     sections_por_id = {section["_id"]: section for section in sections_encontradas}
 

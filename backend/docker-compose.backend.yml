@@ -1,9 +1,11 @@
+
 services:
   database:
     image: mongo:latest
     container_name: assis_mongo
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     environment:
       MONGO_INITDB_DATABASE: assis_db
     volumes:
@@ -11,6 +13,12 @@ services:
       - mongo_data:/data/db
     networks:
       - falatexto-network
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
   api:
     build: .
@@ -18,9 +26,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     environment:
-      MONGO_URI: mongodb://database:27017
+      MONGO_URI: mongodb://database:27017/?replicaSet=rs0
       MONGO_DB_NAME: assis_db
       SOFT_DELETE_RETENTION_DAYS: ${SOFT_DELETE_RETENTION_DAYS:-90}
     networks:

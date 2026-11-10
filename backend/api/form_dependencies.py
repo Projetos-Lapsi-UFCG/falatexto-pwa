@@ -3,8 +3,8 @@ from fastapi import HTTPException
 from .database import db
 
 
-def coletar_dependencias_formulario(form_id: str):
-    form = db.forms.find_one({"_id": form_id})
+def coletar_dependencias_formulario(form_id: str, session = None):
+    form = db.forms.find_one({"_id": form_id}, session=session)
 
     if form is None:
         raise HTTPException(
@@ -29,7 +29,7 @@ def coletar_dependencias_formulario(form_id: str):
                 detail=f"Seção repetida ou circular: {section_id}",
             )
 
-        section = db.sections.find_one({"_id": section_id})
+        section = db.sections.find_one({"_id": section_id}, session=session)
 
         if section is None:
             raise HTTPException(
@@ -46,7 +46,7 @@ def coletar_dependencias_formulario(form_id: str):
         secoes.add(section_id)
 
         for question_id in section.get("questions", []):
-            question = db.questions.find_one({"_id": question_id})
+            question = db.questions.find_one({"_id": question_id}, session=session)
 
             if question is None:
                 raise HTTPException(
@@ -70,12 +70,12 @@ def coletar_dependencias_formulario(form_id: str):
         outro_form = db.forms.find_one({
             "_id": {"$ne": form_id},
             "sections": section_id
-        })
+        }, session=session)
 
         outra_secao = db.sections.find_one({
             "_id": {"$nin": list(secoes)},
             "subSections": section_id
-        })
+        }, session=session)
 
         if outro_form or outra_secao:
             raise HTTPException(
@@ -88,12 +88,12 @@ def coletar_dependencias_formulario(form_id: str):
         outra_secao = db.sections.find_one({
             "_id": {"$nin": list(secoes)},
             "questions": question_id
-        })
+        }, session=session)
 
         pergunta_externa = db.questions.find_one({
             "_id": {"$nin": list(perguntas)},
             "compositeFields": question_id
-        })
+        }, session=session)
 
         if outra_secao or pergunta_externa:
             raise HTTPException(
