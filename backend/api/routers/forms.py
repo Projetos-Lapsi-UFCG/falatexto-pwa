@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 from ..config import SOFT_DELETE_RETENTION_DAYS
 from fastapi import Query
+from ..form_dependencies import coletar_dependencias_formulario
 
 router = APIRouter(prefix="/forms", tags=["forms"])
 
@@ -186,13 +187,15 @@ def deletar_form(form_id: str):
             detail=FORM_NAO_ENCONTRADO
         )
 
-    # DELETE idempotente:
-    # se já estiver deletado, não altera purgeAt
+    # Mantém o DELETE idempotente
     if form.get("deletedAt") is not None:
         return {
             "mensagem": "Formulário removido com sucesso",
             "id": form_id
         }
+
+    # Identifica e valida todas as dependências
+    dependencias = coletar_dependencias_formulario(form_id)
 
     agora = datetime.now(timezone.utc)
 
@@ -200,6 +203,39 @@ def deletar_form(form_id: str):
         days=SOFT_DELETE_RETENTION_DAYS
     )
 
+    # Marca perguntas ativas como excluídas
+    db.questions.update_many(
+        {
+            "_id": {"$in": dependencias["questions"]},
+            "deletedAt": None
+        },
+        {
+            "$set": {
+                "deletedAt": agora,
+                "purgeAt": purge_at,
+                "deletedByCascade": form_id,
+                "updatedAt": agora
+            }
+        }
+    )
+
+    # Marca seções e subseções ativas como excluídas
+    db.sections.update_many(
+        {
+            "_id": {"$in": dependencias["sections"]},
+            "deletedAt": None
+        },
+        {
+            "$set": {
+                "deletedAt": agora,
+                "purgeAt": purge_at,
+                "deletedByCascade": form_id,
+                "updatedAt": agora
+            }
+        }
+    )
+
+    # Marca o formulário como excluído
     db.forms.update_one(
         {"_id": form_id},
         {

@@ -3,6 +3,8 @@ from fastapi import APIRouter, HTTPException
 from ..database import db
 from ..models import MessageOut
 from ..models.section import  SectionCreate, SectionUpdate, SectionOut
+from datetime import datetime, timedelta, timezone
+from ..config import SOFT_DELETE_RETENTION_DAYS
 
 router = APIRouter(tags=["sections"])
 
@@ -32,12 +34,24 @@ def atualizar_section(section_id: str, section: SectionUpdate):
             detail=SECTION_NAO_ENCONTRADA,
         )
 
+    if section_existente.get("deletedAt") is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Não é possível atualizar uma seção excluída",
+        )
+    
     # Verifica se as perguntas informadas existem
     if section.questions:
         perguntas_existentes = {
             pergunta["_id"]
             for pergunta in db.questions.find(
-                {"_id": {"$in": section.questions}},
+                {
+        "_id": {"$in": section.questions},
+        "$or": [
+            {"deletedAt": None},
+            {"deletedAt": {"$exists": False}},
+        ],
+    },
                 {"_id": 1},
             )
         }
@@ -58,7 +72,13 @@ def atualizar_section(section_id: str, section: SectionUpdate):
         subsecoes_existentes = {
             sub["_id"]
             for sub in db.sections.find(
-                {"_id": {"$in": section.subSections}},
+                {
+                    "_id": {"$in": section.subSections},
+                    "$or": [
+                        {"deletedAt": None},
+                        {"deletedAt": {"$exists": False}},
+                    ],
+                },
                 {"_id": 1},
             )
         }
@@ -106,6 +126,11 @@ def criar_subsection(section_id: str, subsection: SectionCreate):
             status_code=404,
             detail=SECTION_NAO_ENCONTRADA,
         )
+    if section_pai.get("deletedAt") is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Não é possível criar subseções em uma seção excluída",
+    )
 
     # 2. Verifica se o ID da nova subseção já existe
     section_existente = db.sections.find_one({"_id": subsection.id})
@@ -121,7 +146,13 @@ def criar_subsection(section_id: str, subsection: SectionCreate):
         perguntas_existentes = {
             pergunta["_id"]
             for pergunta in db.questions.find(
-                {"_id": {"$in": subsection.questions}},
+                {
+                    "_id": {"$in": subsection.questions},
+                    "$or": [
+                        {"deletedAt": None},
+                        {"deletedAt": {"$exists": False}},
+                    ],
+                },
                 {"_id": 1},
             )
         }
@@ -144,7 +175,13 @@ def criar_subsection(section_id: str, subsection: SectionCreate):
         subsecoes_existentes = {
             sub["_id"]
             for sub in db.sections.find(
-                {"_id": {"$in": subsection.subSections}},
+                {
+                    "_id": {"$in": subsection.subSections},
+                    "$or": [
+                        {"deletedAt": None},
+                        {"deletedAt": {"$exists": False}},
+                    ],
+                },
                 {"_id": 1},
             )
         }
@@ -190,8 +227,9 @@ def criar_subsection(section_id: str, subsection: SectionCreate):
     response_model=MessageOut,
     summary="Remove uma seção",
     description=(
-        "Remove a seção e o vínculo com seu formulário ou seção pai. "
-        "Falha se a seção ainda possuir perguntas ou subseções associadas."
+        "Marca a seção como excluída logicamente, preservando "
+        "seus dados e vínculos com o elemento pai. "
+        "Não permite excluir seções com perguntas ou subseções associadas."
     ),
     responses={
         404: {"description": SECTION_NAO_ENCONTRADA},
@@ -206,8 +244,19 @@ def deletar_section(section_id: str):
     section = db.sections.find_one({"_id": section_id})
 
     if section is None:
-        raise HTTPException(status_code=404, detail=SECTION_NAO_ENCONTRADA)
+        raise HTTPException(
+            status_code=404,
+            detail=SECTION_NAO_ENCONTRADA
+        )
 
+    # DELETE idempotente
+    if section.get("deletedAt") is not None:
+        return {
+            "mensagem": "Seção removida com sucesso",
+            "id": section_id
+        }
+
+    # Mantém a regra de não excluir seções com dependências
     if section.get("questions"):
         raise HTTPException(
             status_code=400,
@@ -220,21 +269,179 @@ def deletar_section(section_id: str):
             detail="Não é possível remover a seção porque ela possui subseções associadas",
         )
 
+    # Verifica se o elemento pai existe e está ativo
     parent_item = section.get("parentItem")
 
-    resultado = db.sections.delete_one({"_id": section_id})
+    if not parent_item:
+        raise HTTPException(
+            status_code=409,
+            detail="Seção sem elemento pai"
+        )
 
-    if resultado.deleted_count == 0:
-        raise HTTPException(status_code=404, detail=SECTION_NAO_ENCONTRADA)
+    if parent_item.startswith("form_"):
+        parent = db.forms.find_one({"_id": parent_item})
 
-    if parent_item:
-        if str(parent_item).startswith("form_"):
-            db.forms.update_one(
-                {"_id": parent_item}, {"$pull": {"sections": section_id}}
-            )
-        elif str(parent_item).startswith("sec_"):
-            db.sections.update_one(
-                {"_id": parent_item}, {"$pull": {"subSections": section_id}}
-            )
+    elif parent_item.startswith("sec_"):
+        parent = db.sections.find_one({"_id": parent_item})
 
-    return {"mensagem": "Seção removida com sucesso", "id": section_id}
+    else:
+        raise HTTPException(
+            status_code=409,
+            detail="Tipo de elemento pai inválido"
+        )
+
+    if parent is None or parent.get("deletedAt") is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Não é possível remover uma seção cujo elemento pai está ausente ou excluído"
+        )
+
+    agora = datetime.now(timezone.utc)
+
+    purge_at = agora + timedelta(
+        days=SOFT_DELETE_RETENTION_DAYS
+    )
+
+    resultado = db.sections.update_one(
+        {
+            "_id": section_id,
+            "$or": [
+                {"deletedAt": None},
+                {"deletedAt": {"$exists": False}},
+            ],
+        },
+        {
+            "$set": {
+                "deletedAt": agora,
+                "purgeAt": purge_at,
+                "updatedAt": agora
+            }
+        }
+    )
+
+    if resultado.matched_count == 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Não foi possível remover a seção"
+        )
+
+    return {
+        "mensagem": "Seção removida com sucesso",
+        "id": section_id
+    }
+
+@router.post(
+    "/sections/{section_id}/restore",
+    response_model=MessageOut,
+    summary="Restaura uma seção removida",
+    responses={404: {"description": SECTION_NAO_ENCONTRADA}},
+)
+def restaurar_section(section_id: str):
+
+    section = db.sections.find_one({"_id": section_id})
+
+    if section is None:
+        raise HTTPException(
+            status_code=404,
+            detail=SECTION_NAO_ENCONTRADA
+        )
+
+    # Se já estiver ativa, não altera nada
+    if section.get("deletedAt") is None:
+        return {
+            "mensagem": "Seção já está ativa",
+            "id": section_id
+        }
+
+    # Se foi excluída por cascata, deve ser restaurada pelo formulário
+    if section.get("deletedByCascade"):
+        raise HTTPException(
+            status_code=409,
+            detail="Restaure a seção pela restauração do formulário"
+        )
+
+    agora = datetime.now(timezone.utc)
+
+    # Verifica o prazo de retenção
+    purge_at = section.get("purgeAt")
+
+    if not isinstance(purge_at, datetime):
+        raise HTTPException(
+            status_code=409,
+            detail="Prazo de restauração não encontrado"
+        )
+
+    if purge_at.tzinfo is None:
+        purge_at = purge_at.replace(tzinfo=timezone.utc)
+
+    if purge_at < agora:
+        raise HTTPException(
+            status_code=409,
+            detail="Prazo de restauração expirado"
+        )
+
+    # Verifica o elemento pai
+    parent_item = section.get("parentItem")
+
+    if not parent_item:
+        raise HTTPException(
+            status_code=409,
+            detail="Seção sem elemento pai"
+        )
+
+    if parent_item.startswith("form_"):
+        parent = db.forms.find_one({"_id": parent_item})
+        campo_vinculo = "sections"
+
+    elif parent_item.startswith("sec_"):
+        parent = db.sections.find_one({"_id": parent_item})
+        campo_vinculo = "subSections"
+
+    else:
+        raise HTTPException(
+            status_code=409,
+            detail="Tipo de elemento pai inválido"
+        )
+
+    if parent is None or parent.get("deletedAt") is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="O elemento pai está ausente ou excluído"
+        )
+
+    # Confirma que o vínculo original continua existindo
+    if section_id not in parent.get(campo_vinculo, []):
+        raise HTTPException(
+            status_code=409,
+            detail="Vínculo original da seção não encontrado"
+        )
+
+    # Restaura a seção
+    resultado = db.sections.update_one(
+        {
+            "_id": section_id,
+            "deletedAt": section["deletedAt"],
+            "$or": [
+                {"deletedByCascade": None},
+                {"deletedByCascade": {"$exists": False}},
+            ],
+        },
+        {
+            "$set": {
+                "deletedAt": None,
+                "purgeAt": None,
+                "updatedAt": agora
+            }
+        }
+    )
+
+    if resultado.matched_count == 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Não foi possível restaurar a seção"
+        )
+
+    return {
+        "mensagem": "Seção restaurada com sucesso",
+        "id": section_id
+    }
