@@ -41,3 +41,11 @@ def criar_indices():
         [("formId", 1)],
         name="submissions_formId",
     )
+    db.submissions.create_index(
+        [("visionSessionId", 1)],
+        unique=True,
+        partialFilterExpression={
+            "visionSessionId": {"$type": "string"}
+        },
+        name="uniq_vision_session_id",
+    )

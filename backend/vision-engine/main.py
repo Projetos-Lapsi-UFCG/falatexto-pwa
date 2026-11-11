@@ -16,6 +16,11 @@ from pydantic import BaseModel, Field, ValidationError, field_validator, ConfigD
 import uvicorn
 from pymongo import MongoClient
 
+from form_persistence import (
+    construir_documentos_vision,
+    persistir_documentos_vision,
+)
+
 # ==============================================================================
 # INICIALIZAÇÃO DA APLICAÇÃO E SEGURANÇA
 # ==============================================================================
@@ -91,26 +96,40 @@ db = mongo_client["assis_db"]
 # ==============================================================================
 # SCHEMAS PYDANTIC DE VALIDAÇÃO DOS DADOS
 # ==============================================================================
+
 class CampoDinamico(BaseModel):
-    campo_id: str = Field(description="Identificador único no formato snake_case")
-    label: str = Field(description="Rótulo legível para apresentação na UI")
-    valor: Any = Field(None, description="Conteúdo extraído do documento/áudio/texto")
-    tipo_componente: Literal["checkbox", "texto", "numero", "Texto", "Numero", "Checkbox", "data", "Data"] = Field(
-        default="texto",
-        description="Tipo do componente de formulário na UI"
+    campo_id: str = Field(
+        description="Identificador interno do campo"
     )
 
-    @field_validator("tipo_componente", mode="before")
-    @classmethod
-    def padronizar_tipo_componente(cls, v):
-        """
-        Garante a normalização do tipo_componente para caixa baixa antes da validação.
-        """
-        if isinstance(v, str):
-            v_lower = v.lower()
-            if v_lower in ["checkbox", "texto", "numero", "data"]:
-                return v_lower
-        return "texto"
+    # Identificador presente no JSON produzido pela IA
+    id: Optional[str] = None
+
+    title: str = "Pergunta sem título"
+    label: str = "Pergunta sem título"
+    valor: Any = None
+
+    type: Literal[
+        "ABERTA",
+        "ESTIMULADA",
+        "MULTIPLA",
+        "COMPOSTA",
+    ] = "ABERTA"
+
+    tipo_componente: str = "aberta"
+    required: bool = False
+    placeholder: str = ""
+    inputFormat: str = "texto"
+
+    options: list[dict[str, Any]] = Field(
+        default_factory=list
+    )
+
+    parentItem: Optional[str] = ""
+    compositeFields: list[Any] = Field(
+        default_factory=list
+    )
+
 
 class SecaoDinamica(BaseModel):
     titulo_secao: str = Field(description="Título do agrupamento de campos")
@@ -154,22 +173,92 @@ def sanitizar_dicionario_recursivo(dado: Any) -> Any:
                         if isinstance(valor_bruto, dict):
                             item_sanitizado["valor"] = next(iter(valor_bruto.values()), None) if valor_bruto else None
 
-                        if "campo_id" not in item_sanitizado or not item_sanitizado["campo_id"]:
-                            label_ref = str(item_sanitizado.get("label", "")).strip()
-                            if label_ref:
-                                item_sanitizado["campo_id"] = re.sub(r'[^a-zA-Z0-9_]', '', label_ref.lower().replace(" ", "_")) or f"campo_{idx}"
-                            else:
-                                item_sanitizado["campo_id"] = f"campo_{idx}"
-                        else:
-                            item_sanitizado["campo_id"] = str(item_sanitizado["campo_id"]).strip()
+                        # 1. Preservar o ID original da pergunta
+                        id_original = (
+                            item_sanitizado.get("campo_id")
+                            or item_sanitizado.get("id")
+                        )
 
-                        if "label" not in item_sanitizado or not item_sanitizado["label"]:
-                            item_sanitizado["label"] = item_sanitizado["campo_id"].replace("_", " ").title()
+                        if id_original:
+                            item_sanitizado["campo_id"] = str(id_original).strip()
                         else:
-                            item_sanitizado["label"] = str(item_sanitizado["label"]).strip()
+                            referencia = str(
+                                item_sanitizado.get("title")
+                                or item_sanitizado.get("label")
+                                or f"campo_{idx}"
+                            ).strip()
 
-                        if "tipo_componente" not in item_sanitizado or not item_sanitizado["tipo_componente"]:
-                            item_sanitizado["tipo_componente"] = "texto"
+                            item_sanitizado["campo_id"] = (
+                                re.sub(
+                                    r"[^a-zA-Z0-9_]",
+                                    "",
+                                    referencia.lower().replace(" ", "_")
+                                )
+                                or f"campo_{idx}"
+                            )
+
+                        # 2. Padronizar titulo e label
+                        titulo = str(
+                            item_sanitizado.get("title")
+                            or item_sanitizado.get("label")
+                            or item_sanitizado["campo_id"]
+                        ).strip()
+
+                        item_sanitizado["title"] = titulo
+                        item_sanitizado["label"] = titulo
+
+                        # 3. Normalizar o tipo da pergunta
+                        tipo_original = str(
+                            item_sanitizado.get("type")
+                            or item_sanitizado.get("tipo_componente")
+                            or "ABERTA"
+                        ).strip().upper()
+
+                        tipos_equivalentes = {
+                            "TEXTO": "ABERTA",
+                            "TEXT": "ABERTA",
+                            "TEXTAREA": "ABERTA",
+                            "NUMERO": "ABERTA",
+                            "NUMBER": "ABERTA",
+                            "DATA": "ABERTA",
+                            "DATE": "ABERTA",
+                            "CHECKBOX": "MULTIPLA",
+                            "MULTIPLE": "MULTIPLA",
+                            "RADIO": "ESTIMULADA",
+                            "SELECT": "ESTIMULADA",
+                            "SINGLE": "ESTIMULADA",
+                            "COMPOSITE": "COMPOSTA",
+                        }
+
+                        tipo_normalizado = tipos_equivalentes.get(
+                            tipo_original, tipo_original
+                        )
+
+                        tipos_validos = {
+                            "ABERTA",
+                            "ESTIMULADA",
+                            "MULTIPLA",
+                            "COMPOSTA",
+                        }
+
+                        if tipo_normalizado not in tipos_validos:
+                            raise ValueError(
+                                f"Tipo de pergunta desconhecido: {tipo_original}"
+                            )
+
+                        item_sanitizado["type"] = tipo_normalizado
+                        item_sanitizado["tipo_componente"] = (
+                            tipo_normalizado.lower()
+                        )
+
+                        # 4. Preencher atributos opcionais
+                        item_sanitizado.setdefault("required", False)
+                        item_sanitizado.setdefault("placeholder", "")
+                        item_sanitizado.setdefault("inputFormat", "texto")
+                        item_sanitizado.setdefault("options", [])
+                        item_sanitizado.setdefault("parentItem", "")
+                        item_sanitizado.setdefault("compositeFields", [])
+
 
                         campos_limpos.append(item_sanitizado)
                 novo_dict[chave_limpa] = campos_limpos
@@ -301,25 +390,22 @@ Output ONLY raw JSON. No markdown syntax, no ```json formatting, no commentary."
         dados_sanitizados = sanitizar_dicionario_recursivo(dados_brutos)
         dados_validados = ProntuarioUniversal.model_validate(dados_sanitizados)
 
-        # Converte o objeto Pydantic validado diretamente para o formato do MongoDB
-        dados_prontuario = dados_validados.model_dump()
-        secoes_tratadas = dados_prontuario.get("secoes", [])
 
-        documento_mongo = {
-            "_id": id_sessao,  
-            "name": f"Prontuário Automático - {dados_prontuario.get('tipo_documento', 'Documento Clínico')}",
-            "metadata": {
-                "version": "1.0",
-                "active": True,
-                "origem": f"Vision Engine AI ({MODELO})"
-            },
-            "sections": secoes_tratadas,
-            "resumo_narrativo": dados_prontuario.get("resumo_narrativo", ""),
-            "criado_em": dados_prontuario.get("criado_em", datetime.utcnow())
-        }
-        
-        # Persiste o prontuário estruturado na coleção de formulários do MongoDB
-        db.forms.insert_one(documento_mongo)
+        # Converte os dados validados para o schema do backend.
+        dados_prontuario = dados_validados.model_dump()
+
+        formulario, secoes, perguntas = construir_documentos_vision(
+            prontuario=dados_prontuario,
+            id_sessao=id_sessao,
+        )
+
+        # Grava formulario, secoes e perguntas em uma transacao.
+        persistir_documentos_vision(
+            db=db,
+            formulario=formulario,
+            secoes=secoes,
+            perguntas=perguntas,
+        )
 
         data_criacao = fila_de_sessoes.get(id_sessao, {}).get("criado_em", datetime.now())
         fila_de_sessoes[id_sessao] = {

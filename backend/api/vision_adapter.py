@@ -3,12 +3,14 @@ from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from uuid import UUID
 
 
 class CampoVision(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     campo_id: str = Field(min_length=1)
+    id: str | None = None
     title: str = "Pergunta sem título"
     label: str = "Pergunta sem título"
     valor: Any = None
@@ -23,6 +25,7 @@ class CampoVision(BaseModel):
     tipo_componente: str = "aberta"
     required: bool = False
     placeholder: str = ""
+    inputFormat: str = "texto"
     options: list[dict[str, Any]] = Field(default_factory=list)
     parentItem: str | None = ""
     compositeFields: list[Any] = Field(default_factory=list)
@@ -89,7 +92,7 @@ def preparar_submission_vision(
     for indice, (campo, pergunta) in enumerate(
         zip(campos, perguntas_persistidas), start=1
     ):
-        id_esperado = f"q_{form_id}_{indice}"
+        id_esperado = f"q_{UUID(form_id).hex}_{indice}"
 
         if pergunta.get("_id") != id_esperado:
             raise ValueError(
@@ -139,21 +142,60 @@ def preparar_submission_vision(
             continue
 
         if campo.type == "MULTIPLA":
-            selecionadas = (
-                valor if isinstance(valor, list) else [valor]
-            )
+            if isinstance(valor, bool):
+                identificador_checkbox = (
+                    f"vision_checkbox_{pergunta_id.rsplit('_', 1)[-1]}"
+                )
 
-            for opcao in selecionadas:
+                opcoes = pergunta.get("options", [])
+
                 if (
-                    not isinstance(opcao, str)
-                    or opcoes_proprietarias.get(opcao)
-                    != pergunta_id
+                    len(opcoes) != 1
+                    or opcoes[0].get("value") != identificador_checkbox
+                    or opcoes_proprietarias.get(
+                        identificador_checkbox
+                    ) != pergunta_id
                 ):
                     raise ValueError(
-                        f"Opcao desconhecida: {pergunta_id}"
+                        f"Checkbox booleano incompatível: {pergunta_id}"
                     )
 
-                checkbox_answers[opcao] = True
+                checkbox_answers[identificador_checkbox] = valor
+
+            else:
+                selecionadas = (
+                    valor if isinstance(valor, list) else [valor]
+                )
+
+                for opcao in selecionadas:
+                    if (
+                        not isinstance(opcao, str)
+                        or opcoes_proprietarias.get(opcao)
+                        != pergunta_id
+                    ):
+                        raise ValueError(
+                            f"Opcao desconhecida: {pergunta_id}"
+                        )
+
+                    checkbox_answers[opcao] = True
+
+        elif campo.type == "ESTIMULADA":
+            opcoes_validas = {
+                opcao["value"]
+                for opcao in pergunta.get("options", [])
+                if isinstance(opcao, dict)
+                and isinstance(opcao.get("value"), str)
+            }
+
+            if (
+                not isinstance(valor, str)
+                or valor not in opcoes_validas
+            ):
+                raise ValueError(
+                    f"Opcao desconhecida: {pergunta_id}"
+                )
+
+            answers[pergunta_id] = valor
 
         elif campo.type == "COMPOSTA":
             raise ValueError(

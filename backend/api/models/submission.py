@@ -66,6 +66,7 @@ class SubmissionOut(SubmissionBase):
     deletedAt: Optional[datetime] = None
     purgeAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
+    visionSessionId: str | None = None
 
 class SubmissionListOut(BaseModel):
     submissions: List[SubmissionOut]

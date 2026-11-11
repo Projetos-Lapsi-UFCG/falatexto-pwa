@@ -3,6 +3,20 @@ import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from typing import Optional
+from datetime import datetime, timezone
+from uuid import UUID
+
+from pydantic import ValidationError
+from pymongo.errors import DuplicateKeyError
+
+from ..database import db
+from ..models.form import FormOut
+from ..models.section import SectionOut
+from ..models.question import QuestionOut
+from ..models.submission import SubmissionOut
+from ..security import validar_codigo_api
+from ..vision_adapter import preparar_submission_vision
+from .submissions import validar_respostas_do_formulario
 
 from ..config import VISION_ENGINE_URL
 from ..models.vision import (
@@ -123,3 +137,180 @@ async def listar_sessoes(token: str = Depends(validar_token_bearer)):
 )
 async def consultar_status(id_sessao: str, token: str = Depends(validar_token_bearer)):
     return await _proxy_get(f"/api/v1/status/{id_sessao}", token)
+
+
+
+@router.post(
+    "/status/{id_sessao}/submission",
+    response_model=SubmissionOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Importa respostas do Vision Engine como rascunho",
+)
+async def importar_submission_vision(
+    id_sessao: str,
+    _: None = Depends(validar_codigo_api),
+):
+    # 1. Validar a identificacao da sessao.
+    try:
+        sessao_uuid = UUID(id_sessao)
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail="ID de sessao invalido.",
+        )
+
+    if str(sessao_uuid) != id_sessao:
+        raise HTTPException(
+            status_code=422,
+            detail="ID de sessao nao canonico.",
+        )
+
+    # 2. Exigir o indice que impede importacoes duplicadas.
+    indice = db.submissions.index_information().get(
+        "uniq_vision_session_id", {}
+    )
+
+    if indice.get("unique") is not True:
+        raise HTTPException(
+            status_code=503,
+            detail="Indice de unicidade nao configurado.",
+        )
+
+    if db.submissions.find_one(
+        {"visionSessionId": id_sessao},
+        {"_id": 1},
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Esta sessao ja foi importada.",
+        )
+
+    # 3. Consultar o Vision Engine com credencial interna.
+    token_interno = os.getenv("VISION_API_SECRET_TOKEN")
+
+    if not token_interno or token_interno == "0000":
+        raise HTTPException(
+            status_code=503,
+            detail="Token interno do Vision Engine nao configurado.",
+        )
+
+    resultado_vision = await _proxy_get(
+        f"/api/v1/status/{id_sessao}",
+        token_interno,
+    )
+
+    if resultado_vision.get("status") != "executed":
+        raise HTTPException(
+            status_code=409,
+            detail="Sessao do Vision Engine nao concluida.",
+        )
+
+    dados = resultado_vision.get("dados")
+
+    if not isinstance(dados, dict):
+        raise HTTPException(
+            status_code=502,
+            detail="Resultado do Vision Engine invalido.",
+        )
+
+    # 4. Recuperar o formulario salvo no MongoDB.
+    formulario = db.forms.find_one({
+        "_id": id_sessao,
+        "deletedAt": None,
+    })
+
+    if formulario is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Formulario da sessao nao encontrado.",
+        )
+
+    # 5. Validar a arvore de secoes e perguntas.
+    perguntas = []
+    ids_visitados = set()
+
+    try:
+        FormOut.model_validate(formulario)
+
+        for secao_id in formulario["sections"]:
+            secao = db.sections.find_one({"_id": secao_id})
+
+            if secao is None:
+                raise ValueError("Secao nao encontrada")
+
+            SectionOut.model_validate(secao)
+
+            if secao["parentItem"] != id_sessao:
+                raise ValueError("Vinculo de secao incorreto")
+
+            if secao["subSections"]:
+                raise ValueError(
+                    "Subsecoes ainda nao suportadas na importacao"
+                )
+
+            for pergunta_id in secao["questions"]:
+                if pergunta_id in ids_visitados:
+                    raise ValueError("Pergunta referenciada duas vezes")
+
+                ids_visitados.add(pergunta_id)
+
+                pergunta = db.questions.find_one({
+                    "_id": pergunta_id
+                })
+
+                if pergunta is None:
+                    raise ValueError("Pergunta nao encontrada")
+
+                QuestionOut.model_validate(pergunta)
+
+                if pergunta["parentItem"] != secao_id:
+                    raise ValueError("Vinculo de pergunta incorreto")
+
+                perguntas.append(pergunta)
+
+        if not perguntas:
+            raise ValueError("Formulario sem perguntas")
+
+        # 6. Converter respostas e validar seus identificadores.
+        submission = preparar_submission_vision(
+            dados=dados,
+            form_id=id_sessao,
+            perguntas_persistidas=perguntas,
+        )
+
+        validar_respostas_do_formulario(
+            form_id=submission.formId,
+            answers=submission.answers,
+            checkbox_answers=submission.checkboxAnswers,
+        )
+
+    except (ValueError, KeyError, TypeError, ValidationError):
+        raise HTTPException(
+            status_code=409,
+            detail="Formulario incompatível com o resultado do Vision Engine.",
+        )
+
+    # 7. Gravar uma submissao como rascunho.
+    agora = datetime.now(timezone.utc)
+
+    documento = submission.model_dump()
+    documento.update({
+        "visionSessionId": id_sessao,
+        "submittedAt": agora,
+        "updatedAt": agora,
+        "deletedAt": None,
+        "purgeAt": None,
+    })
+
+    try:
+        insercao = db.submissions.insert_one(documento)
+    except DuplicateKeyError:
+        raise HTTPException(
+            status_code=409,
+            detail="Esta sessao ja foi importada.",
+        )
+
+    documento["_id"] = str(insercao.inserted_id)
+
+    return SubmissionOut.model_validate(documento)
+

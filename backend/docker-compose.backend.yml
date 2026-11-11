@@ -33,8 +33,29 @@ services:
       MONGO_DB_NAME: assis_db
       SOFT_DELETE_RETENTION_DAYS: ${SOFT_DELETE_RETENTION_DAYS:-90}
       API_ACCESS_CODE: ${API_ACCESS_CODE:?Configure API_ACCESS_CODE no arquivo backend/.env}
+      VISION_ENGINE_URL: http://vision-engine:8001
+      VISION_API_SECRET_TOKEN: ${VISION_API_SECRET_TOKEN:?Configure VISION_API_SECRET_TOKEN no backend/.env}
     networks:
       - falatexto-network
+
+  vision-engine:
+    build:
+      context: ./vision-engine
+      dockerfile: Dockerfile
+    container_name: assis_vision_engine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8001:8001"
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+        MONGO_URI: mongodb://database:27017/?replicaSet=rs0
+        OLLAMA_HOST: http://ollama:11434
+        OLLAMA_MODEL: gemma2:9b
+        VISION_API_SECRET_TOKEN: ${VISION_API_SECRET_TOKEN:?Configure VISION_API_SECRET_TOKEN no backend/.env}
+    networks:
+        - falatexto-network
 
 volumes:
   mongo_data:
