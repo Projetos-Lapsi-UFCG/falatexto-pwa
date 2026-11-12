@@ -6,11 +6,13 @@ import { lucideChevronDown, lucideTrash2 } from '@ng-icons/lucide';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { SubmissionOut } from '../../../../core/models/backend-form.model';
+import { Form } from '../../../../core/models/form.model';
 import { LanguageService } from '../../../../core/services/language.service';
 import { SubmissionService } from '../../../../core/services/submission';
 import { LabeledEntry, toLabeledEntries } from '../../../../shared/utils/labeled-entries.util';
 import { expandCollapse } from '../../../../shared/animations/fade.animation';
 import { SubmissionDetailSectionComponent } from '../submission-detail-section/submission-detail-section.component';
+import { buildAnswerEntries } from '../../utils/answer-entries.util';
 
 @Component({
   selector: 'app-submission-row',
@@ -23,10 +25,10 @@ import { SubmissionDetailSectionComponent } from '../submission-detail-section/s
 })
 export class SubmissionRowComponent {
   @Input({ required: true }) submission!: SubmissionOut;
-  /** Mapa id da pergunta/opção -> texto real da pergunta, montado pelo pai a
-   *  partir do formulário. Usado para trocar as chaves brutas de answers/
-   *  checkboxAnswers (ex.: "q_201") pela pergunta de verdade. */
-  @Input() questionLabels: Record<string, string> = {};
+  /** Formulário da submissão, carregado pelo pai. Usado para exibir o texto
+   *  real das perguntas e das opções escolhidas (em vez dos ids brutos como
+   *  "q_201" ou "solteiro_1"). Pode ser null se o form não carregar. */
+  @Input() form: Form | null = null;
   @Output() deleted = new EventEmitter<string>();
 
   private readonly languageService = inject(LanguageService);
@@ -82,6 +84,7 @@ export class SubmissionRowComponent {
 
   private static readonly CLOSING_DATA_LABEL_KEYS: Record<string, string> = {
     date: 'SUBMISSIONS.DETAIL.FIELDS.DATE',
+    responsible: 'SUBMISSIONS.DETAIL.FIELDS.RESPONSIBLE',
   };
 
   get responsible(): string | undefined {
@@ -92,25 +95,13 @@ export class SubmissionRowComponent {
     return toLabeledEntries(this.submission.patientData, SubmissionRowComponent.PATIENT_DATA_LABEL_KEYS);
   }
 
+  /** Respostas comuns e de caixas de seleção juntas, na ordem do formulário,
+   *  com o texto da pergunta e o rótulo das opções escolhidas. */
   get answerEntries(): LabeledEntry[] {
-    return this.withQuestionLabels(toLabeledEntries(this.submission.answers));
-  }
-
-  get checkboxEntries(): LabeledEntry[] {
-    return this.withQuestionLabels(toLabeledEntries(this.submission.checkboxAnswers));
-  }
-
-  /** Troca o label humanizado (ex.: "Q 201") pelo texto real da pergunta,
-   *  quando disponível em questionLabels. */
-  private withQuestionLabels(entries: LabeledEntry[]): LabeledEntry[] {
-    return entries.map(entry => ({
-      ...entry,
-      label: this.questionLabels[entry.key] ?? entry.label,
-    }));
+    return buildAnswerEntries(this.form, this.submission.answers, this.submission.checkboxAnswers);
   }
 
   get closingDataEntries(): LabeledEntry[] {
-    const { responsible: _responsible, ...rest } = this.submission.closingData ?? {};
-    return toLabeledEntries(rest, SubmissionRowComponent.CLOSING_DATA_LABEL_KEYS);
+    return toLabeledEntries(this.submission.closingData, SubmissionRowComponent.CLOSING_DATA_LABEL_KEYS);
   }
 }

@@ -96,7 +96,8 @@
         "BIRTH_DATE": "Fecha de Nacimiento",
         "RECORD": "Historia Clínica",
         "ROOM": "Sala",
-        "DATE": "Fecha"
+        "DATE": "Fecha",
+        "RESPONSIBLE": "Responsable"
       }
     },
     "ERRORS": {
@@ -217,11 +218,13 @@
   },
   "DICTATION": {
     "START": "Dictar",
+    "CONNECTING": "Conectando...",
     "STOP": "Detener y transcribir",
     "PROCESSING": "Transcribiendo...",
     "ERRORS": {
       "MIC_DENIED": "Permiso de micrófono denegado o no compatible.",
-      "TRANSCRIPTION_FAILED": "No se pudo transcribir el audio. Inténtalo de nuevo."
+      "TRANSCRIPTION_FAILED": "No se pudo transcribir el audio. Inténtalo de nuevo.",
+      "NO_SPEECH": "No se detectó voz. Inténtalo de nuevo."
     }
   }
 }

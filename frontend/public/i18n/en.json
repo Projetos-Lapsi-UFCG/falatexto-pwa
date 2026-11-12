@@ -96,7 +96,8 @@
         "BIRTH_DATE": "Birth Date",
         "RECORD": "Record",
         "ROOM": "Room",
-        "DATE": "Date"
+        "DATE": "Date",
+        "RESPONSIBLE": "Responsible"
       }
     },
     "ERRORS": {
@@ -217,11 +218,13 @@
   },
   "DICTATION": {
     "START": "Dictate",
+    "CONNECTING": "Connecting...",
     "STOP": "Stop and transcribe",
     "PROCESSING": "Transcribing...",
     "ERRORS": {
       "MIC_DENIED": "Microphone permission denied or not supported.",
-      "TRANSCRIPTION_FAILED": "Could not transcribe the audio. Please try again."
+      "TRANSCRIPTION_FAILED": "Could not transcribe the audio. Please try again.",
+      "NO_SPEECH": "No speech detected. Please try again."
     }
   }
 }

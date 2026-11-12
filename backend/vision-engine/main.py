@@ -1,4 +1,3 @@
-import transcription
 import os
 import uuid
 import base64
@@ -19,6 +18,9 @@ from pydantic import BaseModel, Field, ValidationError, field_validator, ConfigD
 import uvicorn
 from pymongo import MongoClient
 
+import transcription
+from transcription_stream import stream_app
+
 # ==============================================================================
 # INICIALIZAÇÃO DA APLICAÇÃO E SEGURANÇA
 # ==============================================================================
@@ -30,7 +32,6 @@ app = FastAPI(
     description="Motor de extração clínica estruturada utilizando LLMs Multimodais e MongoDB.",
     dependencies=[Depends(security)]
 )
-app.include_router(transcription.router, prefix="/api/v1")
 
 def validar_token_bearer(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
     if not credentials or not credentials.credentials:
@@ -601,6 +602,21 @@ Respond ONLY with a single valid, raw JSON object matching this structure. Do NO
 # ==============================================================================
 # ENDPOINTS REST DA API
 # ==============================================================================
+
+app.include_router(
+    transcription.router,
+    prefix="/api/v1",
+    dependencies=[Depends(validar_token_bearer)]
+)
+
+# Ditado em tempo real (WebSocket); o token vai na primeira mensagem
+app.mount("/ws", stream_app)
+
+
+@app.on_event("startup")
+def carregar_whisper():
+    # Handler síncrono roda na thread principal (ver get_whisper_model)
+    transcription.get_whisper_model()
 
 @app.post("/api/v1/processar-clinica")
 @app.post("/api/v1/vision/processar-clinica")

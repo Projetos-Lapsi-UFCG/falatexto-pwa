@@ -1,0 +1,28 @@
+# NVIDIA GPU override for Linux/WSL2 hosts with the NVIDIA Container Toolkit.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  vision-engine:
+    build:
+      args:
+        WITH_CUDA: "true"
+    environment:
+      WHISPER_MODEL: large-v3-turbo
+      WHISPER_DEVICE: cuda
+      # int8_float16 se faltar VRAM ao dividir a GPU com o Ollama
+      WHISPER_COMPUTE_TYPE: float16
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

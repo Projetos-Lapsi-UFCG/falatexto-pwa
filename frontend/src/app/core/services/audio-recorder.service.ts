@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MIC_CONSTRAINTS } from './streaming-dictation.service';
 
 /** Grava áudio do microfone (MediaRecorder). Singleton: uma gravação por vez no app. */
 @Injectable({ providedIn: 'root' })
@@ -16,7 +17,7 @@ export class AudioRecorderService {
       throw new Error('Já existe uma gravação em andamento.');
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
     // Safari/iOS não suporta webm: cai no formato padrão do navegador (mp4)
     const options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : undefined;
 

@@ -1,13 +1,15 @@
 fastapi==0.110.0
 uvicorn==0.28.0
+websockets
 python-multipart==0.0.9
 ollama==0.1.6
 pymongo==4.8.0
 pydantic==2.7.1
 pypdf==4.2.0
 json-repair
-openai-whisper
-librosa
+faster-whisper==1.2.1
+requests
+# faster-whisper ainda usa av.open(metadata_errors=...), removido no PyAV 14
+av<14
 numpy
-soundfile
 pillow
