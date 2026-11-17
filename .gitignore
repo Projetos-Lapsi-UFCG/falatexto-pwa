@@ -22,3 +22,16 @@ CONTEXT.md
 
 # Backups locais do MongoDB
 /backups/
+
+# Ambientes virtuais Python
+venv/
+.venv/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Cache de testes
+.pytest_cache/
+.mypy_cache/
