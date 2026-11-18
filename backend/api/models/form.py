@@ -69,7 +69,6 @@ class FormCreate(FormBase):
         extra="forbid",
         json_schema_extra={
             "example": {
-                "id": "form_001",
                 "name": "Anamnese Inicial",
                 "sections": [],
                 "metadata": {"version": "1.0", "active": True},
@@ -77,11 +76,18 @@ class FormCreate(FormBase):
         },
     )
 
-    id: str = Field(..., pattern=r"^form_\d{3}$")
+    id: str | None = Field(
+    default=None,
+    pattern=r"^form_\d{3,}$"
+    )
 
+    
     @field_validator("id")
     @classmethod
-    def validar_id(cls, value: str) -> str:
+    def validar_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
         value = value.strip()
 
         if value.lower() == "string":

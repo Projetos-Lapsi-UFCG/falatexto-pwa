@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { FormApiService } from './form-api.service';
-import { API_BASE_URL } from '../config/api.config';
+import { API_BASE_URL,API_ACCESS_CODE } from '../config/api.config';
 
 describe('FormApiService', () => {
   let service: FormApiService;
@@ -110,45 +110,31 @@ describe('FormApiService', () => {
     expect(result.sections).toEqual([]);
   });
 
-  it('createForm() picks the next form_NNN id after the existing max', () => {
+  it('createForm() envia os dados sem ID e utiliza o ID gerado pelo backend', () => {
     let result: any;
+
     service.createForm('Novo Formulário').subscribe(form => (result = form));
 
-    httpMock.expectOne(`${API_BASE_URL}/forms`).flush({
-      forms: [
-        { _id: 'form_001', name: 'A', metadata: { version: '1.0', active: true } },
-        { _id: 'form_003', name: 'B', metadata: { version: '1.0', active: true } },
-      ],
-    });
-
     const postReq = httpMock.expectOne(`${API_BASE_URL}/forms`);
+
     expect(postReq.request.method).toBe('POST');
+
     expect(postReq.request.body).toEqual({
-      id: 'form_004',
       name: 'Novo Formulário',
       sections: [],
       metadata: { version: '1.0', active: true },
     });
-    postReq.flush({ _id: 'form_004', name: 'Novo Formulário', sections: [], metadata: { version: '1.0', active: true } });
 
-    expect(result.id).toBe('form_004');
-  });
+    expect(postReq.request.headers.get('Authorization'))
+      .toBe(`Bearer ${API_ACCESS_CODE}`);
 
-  it('createForm() starts at form_001 when no forms exist yet', () => {
-    let result: any;
-    service.createForm('Primeiro').subscribe(form => (result = form));
-
-    httpMock.expectOne(`${API_BASE_URL}/forms`).flush({ forms: [] });
-
-    const postReq = httpMock.expectOne(`${API_BASE_URL}/forms`);
-    expect(postReq.request.body).toEqual({
-      id: 'form_001',
-      name: 'Primeiro',
+    postReq.flush({
+      _id: 'form_004',
+      name: 'Novo Formulário',
       sections: [],
       metadata: { version: '1.0', active: true },
     });
-    postReq.flush({ _id: 'form_001', name: 'Primeiro', sections: [], metadata: { version: '1.0', active: true } });
 
-    expect(result.id).toBe('form_001');
+    expect(result.id).toBe('form_004');
   });
 });

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { API_BASE_URL } from '../config/api.config';
+import { API_BASE_URL, API_ACCESS_CODE } from '../config/api.config';
 import { SubmissionCreate, SubmissionListOut, SubmissionOut } from '../models/backend-form.model';
 
 /**
@@ -21,7 +21,15 @@ export class SubmissionService {
    * Endpoint: /api/v1/submissions
    */
   salvarRespostas(dados: SubmissionCreate): Observable<SubmissionOut> {
-    return this.http.post<SubmissionOut>(`${API_BASE_URL}/submissions`, dados);
+    return this.http.post<SubmissionOut>(
+      `${API_BASE_URL}/submissions`,
+      dados,
+      {
+        headers: {
+          Authorization: `Bearer ${API_ACCESS_CODE}`
+        }
+      }
+    );
   }
 
   /**
@@ -34,7 +42,12 @@ export class SubmissionService {
   listSubmissions(formId?: string): Observable<SubmissionOut[]> {
     const params = formId ? new HttpParams().set('formId', formId) : undefined;
     return this.http
-      .get<SubmissionListOut>(`${API_BASE_URL}/submissions`, { params })
+      .get<SubmissionListOut>(`${API_BASE_URL}/submissions`, {
+        params,
+        headers: {
+          Authorization: `Bearer ${API_ACCESS_CODE}`
+        }
+      })
       .pipe(map(res => res.submissions));
   }
 
@@ -44,6 +57,13 @@ export class SubmissionService {
    * Endpoint: /api/v1/submissions/{id}
    */
   deleteSubmission(id: string): Observable<void> {
-    return this.http.delete<void>(`${API_BASE_URL}/submissions/${id}`);
+    return this.http.delete<void>(
+      `${API_BASE_URL}/submissions/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${API_ACCESS_CODE}`
+        }
+      }
+    );
   }
 }

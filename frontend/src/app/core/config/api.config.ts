@@ -5,3 +5,6 @@ export const API_BASE_URL = environment.apiBaseUrl;
 
 /** Token compartilhado exigido pelos endpoints /vision (ver VISION_API_SECRET_TOKEN no backend). */
 export const VISION_API_TOKEN = environment.visionApiToken;
+
+/** Código de acesso aos endpoints gerais do backend. */
+export const API_ACCESS_CODE = environment.apiAccessCode;

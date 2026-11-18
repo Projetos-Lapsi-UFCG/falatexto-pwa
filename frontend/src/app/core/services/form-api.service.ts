@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-import { API_BASE_URL } from '../config/api.config';
+import { API_BASE_URL, API_ACCESS_CODE } from '../config/api.config';
 import { Form } from '../models/form.model';
 import {
   BackendFormCreate,
@@ -11,7 +11,7 @@ import {
   BackendQuestionOut,
   BackendSectionOut,
 } from '../models/backend-form.model';
-import { mapFormFromBackend, toBackendFormId } from './form-mapper';
+import { mapFormFromBackend } from './form-mapper';
 
 /** Forma crua de um DTO `*Out` como o backend realmente serializa: id como `_id`
  *  (FastAPI serializa por alias por padrão — ver nota no topo de backend-form.model.ts). */
@@ -53,7 +53,11 @@ export class FormApiService {
   /** Lista resumida de forms (GET /forms não retorna sections/questions). */
   listForms(): Observable<Form[]> {
     return this.http
-      .get<FormListResponse>(`${API_BASE_URL}/forms`)
+      .get<FormListResponse>(`${API_BASE_URL}/forms`, {
+        headers: {
+          Authorization: `Bearer ${API_ACCESS_CODE}`
+        }
+      })
       .pipe(map(res => res.forms.map(f => this.summaryToForm(normalizeId<BackendFormSummary>(f)))));
   }
 
@@ -74,27 +78,40 @@ export class FormApiService {
    * subSection isoladamente — só dá para resolvê-las se/quando esse endpoint
    * existir no backend (ver nota em form-mapper.ts sobre a mesma lacuna).
    */
-  getFormById(id: string): Observable<Form> {
-    return this.http.get<Raw<BackendFormOut>>(`${API_BASE_URL}/forms/${id}`).pipe(
-      map(normalizeId<BackendFormOut>),
-      switchMap(form =>
-        this.http.get<SectionListResponse>(`${API_BASE_URL}/forms/${id}/sections`).pipe(
-          map(res => res.sections.map(normalizeId<BackendSectionOut>)),
-          switchMap(sections =>
-            this.fetchQuestionsByOwnerId(sections).pipe(
-              map(questionsByOwnerId =>
-                mapFormFromBackend(form, sections, {}, questionsByOwnerId, {
-                  entity: '',
-                  createdAt: new Date().toISOString(),
-                })
+    getFormById(id: string): Observable<Form> {
+      return this.http.get<Raw<BackendFormOut>>(
+        `${API_BASE_URL}/forms/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${API_ACCESS_CODE}`
+          }
+        }
+      ).pipe(
+        map(normalizeId<BackendFormOut>),
+        switchMap(form =>
+          this.http.get<SectionListResponse>(
+            `${API_BASE_URL}/forms/${id}/sections`,
+            {
+              headers: {
+                Authorization: `Bearer ${API_ACCESS_CODE}`
+              }
+            }
+          ).pipe(
+            map(res => res.sections.map(normalizeId<BackendSectionOut>)),
+            switchMap(sections =>
+              this.fetchQuestionsByOwnerId(sections).pipe(
+                map(questionsByOwnerId =>
+                  mapFormFromBackend(form, sections, {}, questionsByOwnerId, {
+                    entity: '',
+                    createdAt: new Date().toISOString(),
+                  })
+                )
               )
             )
           )
         )
-      )
-    );
-  }
-
+      );
+    }
   /**
    * Cria um form vazio (sem sections/questions — a UI de criação hoje só
    * coleta o nome). O id (`form_NNN`) é gerado no cliente: lista os forms
@@ -104,31 +121,39 @@ export class FormApiService {
    * autenticação nem qualquer outro controle de concorrência multiusuário.
    */
   createForm(name: string): Observable<Form> {
-    return this.listForms().pipe(
-      switchMap(existing => {
-        const sequences = existing
-          .map(f => /^form_(\d{3})$/.exec(f.id)?.[1])
-          .filter((seq): seq is string => !!seq)
-          .map(Number);
-        const nextSequence = sequences.length > 0 ? Math.max(...sequences) + 1 : 1;
+    const payload: Omit<BackendFormCreate, 'id'> = {
+      name,
+      sections: [],
+      metadata: { version: '1.0', active: true },
+    };
 
-        const payload: BackendFormCreate = {
-          id: toBackendFormId(nextSequence),
-          name,
-          sections: [],
-          metadata: { version: '1.0', active: true },
-        };
-
-        return this.http.post<Raw<BackendFormOut>>(`${API_BASE_URL}/forms`, payload);
-      }),
-      map(normalizeId<BackendFormOut>),
-      map(form => this.summaryToForm(form))
-    );
+    return this.http
+      .post<Raw<BackendFormOut>>(
+        `${API_BASE_URL}/forms`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${API_ACCESS_CODE}`
+          }
+        }
+      )
+      .pipe(
+        map(normalizeId<BackendFormOut>),
+        map(form => this.summaryToForm(form))
+      );
   }
 
   /** Remove um formulário existente. */
+  /** Remove um formulário existente. */
   deleteForm(id: string): Observable<void> {
-    return this.http.delete<void>(`${API_BASE_URL}/forms/${id}`);
+    return this.http.delete<void>(
+      `${API_BASE_URL}/forms/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${API_ACCESS_CODE}`
+        }
+      }
+    );
   }
 
   private fetchQuestionsByOwnerId(
@@ -142,7 +167,14 @@ export class FormApiService {
       sections.map(section => [
         section.id,
         this.http
-          .get<QuestionListResponse>(`${API_BASE_URL}/sections/${section.id}/questions`)
+          .get<QuestionListResponse>(
+            `${API_BASE_URL}/sections/${section.id}/questions`,
+            {
+              headers: {
+                Authorization: `Bearer ${API_ACCESS_CODE}`
+              }
+            }
+          )
           .pipe(map(res => res.questions.map(normalizeId<BackendQuestionOut>))),
       ])
     );

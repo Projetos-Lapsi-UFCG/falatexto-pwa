@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-
+from pymongo.errors import DuplicateKeyError
 from ..database import db, client
 from ..models import MessageOut
 from ..models.form import FormCreate, FormListOut, FormOut, FormUpdate
@@ -114,27 +114,52 @@ def buscar_form_por_id(form_id: str):
     summary="Cria um novo formulário",
     responses={400: {"description": "Já existe um formulário com esse id"}},
 )
+
 def criar_form(form: FormCreate):
-    form_existente = db.forms.find_one({"_id": form.id})
+    for _ in range(10):
+        if form.id is None:
+            # Identifica o maior ID numerico existente.
+            existentes = db.forms.find(
+                {"_id": {"$regex": r"^form_[0-9]{3,}$"}},
+                {"_id": 1},
+            )
 
-    if form_existente is not None:
-        raise HTTPException(
-            status_code=400, detail="Já existe um formulário com esse id"
-        )
+            maior_id = max(
+                (int(item["_id"][5:]) for item in existentes),
+                default=0,
+            )
 
-    agora = datetime.now(timezone.utc)
+            form_id = f"form_{maior_id + 1:03d}"
+        else:
+            # Preserva a compatibilidade com clientes antigos.
+            form_id = form.id
 
-    novo_form = {
-        "_id": form.id,
-        "name": form.name,
-        "sections": form.sections,
-        "metadata": form.metadata.model_dump(),
-        "createdAt": agora,
-        "updatedAt": agora,
-    }
-    db.forms.insert_one(novo_form)
+        agora = datetime.now(timezone.utc)
 
-    return novo_form
+        novo_form = {
+            "_id": form_id,
+            "name": form.name,
+            "sections": form.sections,
+            "metadata": form.metadata.model_dump(),
+            "createdAt": agora,
+            "updatedAt": agora,
+        }
+
+        try:
+            db.forms.insert_one(novo_form)
+            return novo_form
+
+        except DuplicateKeyError:
+            if form.id is not None:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Ja existe um formulario com esse id",
+                )
+
+    raise HTTPException(
+        status_code=409,
+        detail="Nao foi possivel gerar um ID unico. Tente novamente.",
+    )
 
 
 @router.put(
