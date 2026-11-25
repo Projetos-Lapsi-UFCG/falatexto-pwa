@@ -6,6 +6,8 @@ import httpx
 
 from ..config import VISION_ENGINE_URL
 from ..models.vision import (
+    VisionPreencherFormularioIn,
+    VisionPreencherFormularioOut,
     VisionProcessarClinicaOut,
     VisionSessoesListOut,
     VisionStatusOut,
@@ -165,3 +167,33 @@ async def listar_sessoes(token: str = Depends(validar_token_bearer)):
 )
 async def consultar_status(id_sessao: str, token: str = Depends(validar_token_bearer)):
     return await _proxy_get(f"/api/v1/status/{id_sessao}", token)
+
+
+@router.post(
+    "/preencher-formulario",
+    response_model=VisionPreencherFormularioOut,
+    summary="Extrai respostas estruturadas de um formulário existente a partir de transcrição de voz",
+    responses={503: {"description": VISION_INDISPONIVEL}},
+)
+async def preencher_formulario(
+    payload: VisionPreencherFormularioIn,
+    token: str = Depends(validar_token_bearer),
+):
+    headers = {"Authorization": f"Bearer {token}"}
+
+    async with httpx.AsyncClient(timeout=VISION_ENGINE_TIMEOUT) as client_http:
+        try:
+            response = await client_http.post(
+                f"{VISION_ENGINE_URL}/api/v1/preencher-formulario",
+                json=payload.model_dump(),
+                headers=headers,
+            )
+        except httpx.RequestError as exc:
+            raise HTTPException(
+                status_code=503, detail=f"{VISION_INDISPONIVEL}: {exc}"
+            ) from exc
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+
+    return response.json()

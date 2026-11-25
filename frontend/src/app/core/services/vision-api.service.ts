@@ -2,7 +2,11 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL, VISION_API_TOKEN } from '../config/api.config';
-import { VisionProcessarClinicaResponse } from '../models/vision.model';
+import {
+  VisionPreencherFormularioRequest,
+  VisionPreencherFormularioResponse,
+  VisionProcessarClinicaResponse,
+} from '../models/vision.model';
 
 /** Comunicação com o endpoint /vision do backend (proxy para o Vision Engine). */
 @Injectable({ providedIn: 'root' })
@@ -20,6 +24,17 @@ export class VisionApiService {
     return this.http.post<VisionProcessarClinicaResponse>(
       `${API_BASE_URL}/vision/processar-clinica`,
       formData,
+      { headers: { Authorization: `Bearer ${VISION_API_TOKEN}` } }
+    );
+  }
+
+  /** Mapeia transcrição contínua de voz para os campos do formulário em preenchimento. */
+  preencherFormulario(
+    payload: VisionPreencherFormularioRequest
+  ): Observable<VisionPreencherFormularioResponse> {
+    return this.http.post<VisionPreencherFormularioResponse>(
+      `${API_BASE_URL}/vision/preencher-formulario`,
+      payload,
       { headers: { Authorization: `Bearer ${VISION_API_TOKEN}` } }
     );
   }

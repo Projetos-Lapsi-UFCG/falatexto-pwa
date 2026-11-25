@@ -14,6 +14,7 @@ import {
   lucideCamera,
   lucideFileText,
   lucideTrash2,
+  lucideSparkles,
 } from '@ng-icons/lucide';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
@@ -41,6 +42,7 @@ import { fadeIn, scaleIn } from '../../shared/animations/fade.animation';
       lucideCamera,
       lucideFileText,
       lucideTrash2,
+      lucideSparkles,
     }),
   ],
   templateUrl: './form-detail.component.html',
@@ -104,6 +106,13 @@ export class FormDetailComponent implements OnInit {
   openFillDialog(): void {
     if (!this.form) return;
     this.router.navigate(['/forms', this.form.id, 'fill']);
+  }
+
+  openAiFill(): void {
+    if (!this.form) return;
+    this.router.navigate(['/forms', this.form.id, 'fill'], {
+      queryParams: { mode: 'ai' },
+    });
   }
 
   goToSubmissions(): void {

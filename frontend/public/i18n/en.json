@@ -182,6 +182,7 @@
   },
   "FORM_DETAIL": {
     "BACK": "Dashboard",
+    "AI_FILL_BTN": "Rellenar con IA",
     "SUBMISSIONS_BTN": "Submitted forms",
     "LOADING": "Loading form...",
     "NOT_FOUND_TITLE": "Form not found",
