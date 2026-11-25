@@ -182,6 +182,7 @@
   },
   "FORM_DETAIL": {
     "BACK": "Dashboard",
+    "AI_FILL_BTN": "Preencher com IA",
     "SUBMISSIONS_BTN": "Formulários submetidos",
     "LOADING": "Carregando formulário...",
     "NOT_FOUND_TITLE": "Formulário não encontrado",

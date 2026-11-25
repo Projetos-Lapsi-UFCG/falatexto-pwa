@@ -3,10 +3,19 @@
   <!-- Header -->
   <header [@fadeIn] class="detail-header">
     <div class="header-inner">
-      <button mat-button (click)="goBack()" class="back-btn">
-        <ng-icon name="lucideArrowLeft" size="16" />
-        {{ 'FORM_DETAIL.BACK' | translate }}
-      </button>
+      <div class="header-left">
+        <button mat-button (click)="goBack()" class="back-btn">
+          <ng-icon name="lucideArrowLeft" size="16" />
+          {{ 'FORM_DETAIL.BACK' | translate }}
+        </button>
+
+        @if (form) {
+          <button mat-raised-button (click)="openAiFill()" class="ai-fill-btn">
+            <ng-icon name="lucideSparkles" size="16" />
+            {{ 'FORM_DETAIL.AI_FILL_BTN' | translate }}
+          </button>
+        }
+      </div>
 
       <div class="header-right">
         <app-language-selector />

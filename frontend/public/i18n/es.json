@@ -1,230 +1,231 @@
 {
   "ONBOARDING": {
     "TITLE": "FalaTexto",
-    "SUBTITLE": "Una plataforma mínima e inteligente para crear, gestionar y organizar formularios desde cualquier fuente — imagen, voz o plantilla.",
-    "GET_STARTED": "Comenzar",
-    "SKIP_NEXT_TIME": "Omitir la próxima vez",
-    "EXIT": "Salir",
+    "SUBTITLE": "A minimal, intelligent platform for creating, managing, and organizing forms from any source — image, voice, or template.",
+    "GET_STARTED": "Get Started",
+    "SKIP_NEXT_TIME": "Skip this next time",
+    "EXIT": "Exit",
     "FEATURES": {
       "IMAGE_TO_FORM": {
-        "TITLE": "Imagen a Formulario",
-        "DESCRIPTION": "Captura o sube formularios al instante desde fotos"
+        "TITLE": "Image to Form",
+        "DESCRIPTION": "Capture or upload forms instantly from photos"
       },
       "VOICE_DICTATION": {
-        "TITLE": "Dictado por Voz",
-        "DESCRIPTION": "Crea formularios con las manos libres usando reconocimiento de voz"
+        "TITLE": "Voice Dictation",
+        "DESCRIPTION": "Create forms hands-free with speech-to-text"
       },
       "SMART_ORGANIZATION": {
-        "TITLE": "Organización Inteligente",
-        "DESCRIPTION": "Gestiona múltiples formularios con facilidad"
+        "TITLE": "Smart Organization",
+        "DESCRIPTION": "Manage multiple forms with ease"
       },
       "QUICK_ACCESS": {
-        "TITLE": "Acceso Rápido",
-        "DESCRIPTION": "Creación y recuperación rápida de formularios"
+        "TITLE": "Quick Access",
+        "DESCRIPTION": "Fast form creation and retrieval"
       },
       "SECURE_STORAGE": {
-        "TITLE": "Almacenamiento Seguro",
-        "DESCRIPTION": "Tus datos permanecen privados y protegidos"
+        "TITLE": "Secure Storage",
+        "DESCRIPTION": "Your data stays private and protected"
       },
       "MULTI_FORMAT": {
-        "TITLE": "Soporte Multiformato",
-        "DESCRIPTION": "PDF, CSV, imágenes y más"
+        "TITLE": "Multi-format Support",
+        "DESCRIPTION": "PDF, CSV, images and more"
       }
     }
   },
   "LOGIN": {
     "TITLE": "FalaTexto",
-    "SUBTITLE": "Inicia sesión para continuar",
-    "CHOOSE_ROLE": "¿Cómo deseas entrar?",
-    "USER_TYPE_ADMIN": "Administrador",
-    "USER_TYPE_GUEST": "Invitado",
-    "PIN_LABEL": "Ingresa tu PIN de 4 dígitos",
-    "SIGN_IN": "Iniciar sesión",
+    "SUBTITLE": "Sign in to continue",
+    "CHOOSE_ROLE": "How do you want to sign in?",
+    "USER_TYPE_ADMIN": "Administrator",
+    "USER_TYPE_GUEST": "Guest",
+    "PIN_LABEL": "Enter your 4-digit PIN",
+    "SIGN_IN": "Sign In",
     "ERRORS": {
-      "ENTER_PIN": "Por favor, ingresa un PIN de 4 dígitos",
-      "INVALID_CREDENTIALS": "Credenciales inválidas"
+      "ENTER_PIN": "Please enter a 4-digit PIN",
+      "INVALID_CREDENTIALS": "Invalid credentials"
     },
     "SUCCESS": {
-      "LOGIN": "Sesión iniciada con éxito"
+      "LOGIN": "Login successful"
     }
   },
   "DASHBOARD": {
     "TITLE": "FalaTexto",
-    "NEW_FORM": "Nuevo Formulario",
-    "SEARCH_LABEL": "Buscar formularios...",
-    "SEARCH_PLACEHOLDER": "Buscar por nombre o departamento",
-    "EMPTY_TITLE": "No se encontraron formularios",
-    "EMPTY_SUBTITLE": "Intenta con una búsqueda diferente o crea un nuevo formulario.",
-    "CREATE_FORM": "Crear Formulario",
-    "LOGOUT_TITLE": "Cerrar sesión",
-    "LOADING": "Cargando formularios...",
+    "NEW_FORM": "New Form",
+    "SEARCH_LABEL": "Search forms...",
+    "SEARCH_PLACEHOLDER": "Search by name or department",
+    "EMPTY_TITLE": "No forms found",
+    "EMPTY_SUBTITLE": "Try a different search or create a new form.",
+    "CREATE_FORM": "Create Form",
+    "LOGOUT_TITLE": "Logout",
+    "LOADING": "Loading forms...",
     "ERRORS": {
-      "LOAD_FAILED": "No se pudieron cargar los formularios. Inténtalo de nuevo."
+      "LOAD_FAILED": "Could not load forms. Please try again."
     }
   },
   "SUBMISSIONS": {
-    "TITLE": "Formularios enviados",
-    "TITLE_FOR_FORM": "Envíos — {{name}}",
+    "TITLE": "Submitted forms",
+    "TITLE_FOR_FORM": "Submissions — {{name}}",
     "BACK": "Dashboard",
-    "LOADING": "Cargando envíos...",
-    "EMPTY_TITLE": "No se encontraron envíos",
-    "EMPTY_SUBTITLE": "Todavía no hay formularios enviados.",
-    "COLUMN_FORM": "Formulario",
-    "COLUMN_DATE": "Fecha/Hora",
-    "COLUMN_RESPONSIBLE": "Registrado por",
+    "LOADING": "Loading submissions...",
+    "EMPTY_TITLE": "No submissions found",
+    "EMPTY_SUBTITLE": "No forms have been submitted yet.",
+    "COLUMN_FORM": "Form",
+    "COLUMN_DATE": "Date/Time",
+    "COLUMN_RESPONSIBLE": "Registered by",
     "RESPONSIBLE_FALLBACK": "—",
     "DETAIL": {
-      "EXPAND": "Ver detalles",
-      "COLLAPSE": "Ocultar detalles",
-      "OVERVIEW": "Resumen",
-      "STATUS": "Estado",
-      "STATUS_DRAFT": "Borrador",
-      "STATUS_COMPLETED": "Completado",
-      "ENTITY": "Entidad",
-      "FORM_ID": "ID del Formulario",
-      "PATIENT_DATA": "Datos del Paciente",
-      "ANSWERS": "Respuestas",
-      "CHECKBOX_ANSWERS": "Respuestas de Casillas",
-      "CLOSING_DATA": "Datos de Cierre",
-      "YES": "Sí",
+      "EXPAND": "Expand details",
+      "COLLAPSE": "Collapse details",
+      "OVERVIEW": "Overview",
+      "STATUS": "Status",
+      "STATUS_DRAFT": "Draft",
+      "STATUS_COMPLETED": "Completed",
+      "ENTITY": "Entity",
+      "FORM_ID": "Form ID",
+      "PATIENT_DATA": "Patient Data",
+      "ANSWERS": "Answers",
+      "CHECKBOX_ANSWERS": "Checkbox Answers",
+      "CLOSING_DATA": "Closing Data",
+      "YES": "Yes",
       "NO": "No",
-      "DELETE_BTN": "Eliminar envío",
-      "DELETE_CONFIRM": "¿Estás seguro de que deseas eliminar este envío del formulario \"{{name}}\"? Esta acción no se puede deshacer.",
-      "DELETE_SUCCESS": "Envío eliminado con éxito.",
+      "DELETE_BTN": "Delete submission",
+      "DELETE_CONFIRM": "Are you sure you want to delete this submission of the form \"{{name}}\"? This action cannot be undone.",
+      "DELETE_SUCCESS": "Submission deleted successfully.",
       "FIELDS": {
-        "NAME": "Nombre",
-        "BIRTH_DATE": "Fecha de Nacimiento",
-        "RECORD": "Historia Clínica",
-        "ROOM": "Sala",
-        "DATE": "Fecha",
-        "RESPONSIBLE": "Responsable"
+        "NAME": "Name",
+        "BIRTH_DATE": "Birth Date",
+        "RECORD": "Record",
+        "ROOM": "Room",
+        "DATE": "Date",
+        "RESPONSIBLE": "Responsible"
       }
     },
     "ERRORS": {
-      "LOAD_FAILED": "No se pudieron cargar los envíos. Inténtalo de nuevo.",
-      "DELETE_FAILED": "No se pudo eliminar el envío. Inténtalo de nuevo."
+      "LOAD_FAILED": "Could not load submissions. Please try again.",
+      "DELETE_FAILED": "Could not delete the submission. Please try again."
     }
   },
   "FORM_CARD": {
-    "QUESTIONS_SUFFIX": "preguntas"
+    "QUESTIONS_SUFFIX": "questions"
   },
   "CREATE_FORM": {
-    "BACK_TO_OPTIONS": "Volver",
+    "BACK_TO_OPTIONS": "Back",
     "CHOOSER": {
-      "TITLE": "¿Cómo deseas crear el formulario?",
-      "SUBTITLE": "Elige entre crearlo con el asistente de IA o armarlo manualmente.",
-      "ASSIS_TITLE": "Crear con Assis",
-      "ASSIS_DESCRIPTION": "Envía un texto clínico o un archivo y deja que el asistente de IA haga el trabajo.",
-      "MANUAL_TITLE": "Creación Manual",
-      "MANUAL_DESCRIPTION": "Arma el formulario tú mismo, definiendo secciones y preguntas."
+      "TITLE": "How do you want to create the form?",
+      "SUBTITLE": "Choose between creating it with the AI assistant or building it manually.",
+      "ASSIS_TITLE": "Create with Assis",
+      "ASSIS_DESCRIPTION": "Send a clinical text or a file and let the AI assistant do the work.",
+      "MANUAL_TITLE": "Manual Creation",
+      "MANUAL_DESCRIPTION": "Build the form yourself by defining sections and questions."
     },
-    "BACK": "Volver al Dashboard",
-    "TITLE": "Crear Nuevo Formulario",
-    "SUBTITLE": "Completa los detalles para agregar un nuevo formulario a tu biblioteca.",
-    "NAME_LABEL": "Nombre del formulario",
-    "NAME_PLACEHOLDER": "ej.: Registro de Paciente",
-    "NAME_ERROR": "El nombre es obligatorio (mín. 3 caracteres)",
-    "CANCEL": "Cancelar",
-    "SUBMIT": "Crear Formulario",
+    "BACK": "Back to Dashboard",
+    "TITLE": "Create New Form",
+    "SUBTITLE": "Fill in the details to add a new form to your library.",
+    "NAME_LABEL": "Form name",
+    "NAME_PLACEHOLDER": "e.g. Patient Intake",
+    "NAME_ERROR": "Name is required (min 3 characters)",
+    "CANCEL": "Cancel",
+    "SUBMIT": "Create Form",
     "ERRORS": {
-      "FILL_REQUIRED": "Por favor, completa todos los campos obligatorios",
-      "CREATE_FAILED": "No se pudo crear el formulario. Inténtalo de nuevo."
+      "FILL_REQUIRED": "Please fill in all required fields",
+      "CREATE_FAILED": "Could not create the form. Please try again."
     },
     "SUCCESS": {
-      "CREATED": "Formulario creado con éxito"
+      "CREATED": "Form created successfully"
     },
     "BUILDER": {
-      "TITLE": "Preguntas del formulario",
-      "SUBTITLE": "Arma las secciones y preguntas que aparecerán al completar el formulario.",
-      "ADD_SECTION": "+ Agregar sección",
-      "ADD_QUESTION": "+ Agregar pregunta",
-      "ADD_OPTION": "+ Agregar opción",
-      "REMOVE_SECTION": "Quitar sección",
-      "REMOVE_QUESTION": "Quitar pregunta",
-      "REMOVE_OPTION": "Quitar opción",
-      "SECTION_NAME_LABEL": "Nombre de la sección",
-      "SECTION_NAME_PLACEHOLDER": "ej.: Datos Preoperatorios",
-      "QUESTION_LABEL_LABEL": "Pregunta",
-      "QUESTION_LABEL_PLACEHOLDER": "ej.: ¿El paciente tiene alguna alergia?",
-      "QUESTION_TYPE_LABEL": "Tipo de respuesta",
-      "OPTION_LABEL": "Opción",
+      "TITLE": "Form questions",
+      "SUBTITLE": "Build the sections and questions that will appear when filling out the form.",
+      "ADD_SECTION": "+ Add section",
+      "ADD_QUESTION": "+ Add question",
+      "ADD_OPTION": "+ Add option",
+      "REMOVE_SECTION": "Remove section",
+      "REMOVE_QUESTION": "Remove question",
+      "REMOVE_OPTION": "Remove option",
+      "SECTION_NAME_LABEL": "Section name",
+      "SECTION_NAME_PLACEHOLDER": "e.g. Pre-Operative Data",
+      "QUESTION_LABEL_LABEL": "Question",
+      "QUESTION_LABEL_PLACEHOLDER": "e.g. Does the patient have any allergies?",
+      "QUESTION_TYPE_LABEL": "Answer type",
+      "OPTION_LABEL": "Option",
       "TYPES": {
-        "TEXT": "Texto libre",
-        "DATE": "Fecha",
-        "NUMBER": "Número",
-        "BOOLEAN": "Sí / No",
-        "BOOLEAN_NA": "Sí / No / No aplica",
-        "RADIO_GROUP": "Opción única (opciones)",
-        "CHECKBOX_GROUP": "Casillas de verificación (opción múltiple)"
+        "TEXT": "Free text",
+        "DATE": "Date",
+        "NUMBER": "Number",
+        "BOOLEAN": "Yes / No",
+        "BOOLEAN_NA": "Yes / No / Not applicable",
+        "RADIO_GROUP": "Single choice (options)",
+        "CHECKBOX_GROUP": "Checkboxes (multiple choice)"
       },
       "ERRORS": {
-        "SECTION_NAME_REQUIRED": "Toda sección necesita un nombre (mín. 3 caracteres)",
-        "SECTION_EMPTY": "Agrega al menos una pregunta en cada sección, o quita la sección",
-        "QUESTION_LABEL_REQUIRED": "Toda pregunta necesita un texto (mín. 3 caracteres)",
-        "OPTION_REQUIRED": "Las preguntas de casillas necesitan al menos una opción completada"
+        "SECTION_NAME_REQUIRED": "Every section needs a name (min 3 characters)",
+        "SECTION_EMPTY": "Add at least one question to each section, or remove the section",
+        "QUESTION_LABEL_REQUIRED": "Every question needs a label (min 3 characters)",
+        "OPTION_REQUIRED": "Checkbox questions need at least one filled-in option"
       }
     },
     "VISION": {
-      "TITLE": "Procesar con IA",
-      "SUBTITLE": "Ingresa el nombre del formulario y, opcionalmente, adjunta un archivo (imagen o PDF) para procesamiento automático.",
-      "FILE_LABEL": "Archivo (opcional)",
-      "FILE_ATTACH": "Adjuntar archivo",
-      "FILE_REMOVE": "Quitar archivo",
-      "SUBMIT": "Procesar",
+      "TITLE": "Process with AI",
+      "SUBTITLE": "Enter the form name and, optionally, attach a file (image or PDF) for automatic processing.",
+      "FILE_LABEL": "File (optional)",
+      "FILE_ATTACH": "Attach file",
+      "FILE_REMOVE": "Remove file",
+      "SUBMIT": "Process",
       "ERRORS": {
-        "INVALID_FILE_TYPE": "Archivo inválido. Envía una imagen o un PDF.",
-        "PROCESS_FAILED": "No se pudo procesar. Inténtalo de nuevo."
+        "INVALID_FILE_TYPE": "Invalid file. Please upload an image or a PDF.",
+        "PROCESS_FAILED": "Could not process. Please try again."
       },
       "SUCCESS": {
-        "QUEUED": "Procesamiento enviado (sesión {{id}})"
+        "QUEUED": "Processing submitted (session {{id}})"
       }
     }
   },
   "FORM_DETAIL": {
     "BACK": "Dashboard",
-    "SUBMISSIONS_BTN": "Formularios enviados",
-    "LOADING": "Cargando formulario...",
-    "NOT_FOUND_TITLE": "Formulario no encontrado",
-    "NOT_FOUND_BACK": "Volver al Dashboard",
+    "AI_FILL_BTN": "Fill with AI",
+    "SUBMISSIONS_BTN": "Submitted forms",
+    "LOADING": "Loading form...",
+    "NOT_FOUND_TITLE": "Form not found",
+    "NOT_FOUND_BACK": "Back to Dashboard",
     "ERRORS": {
-      "LOAD_FAILED": "No se pudo cargar este formulario. Inténtalo de nuevo.",
-      "DELETE_FAILED": "No se pudo eliminar el formulario. Inténtalo de nuevo."
+      "LOAD_FAILED": "Could not load this form. Please try again.",
+      "DELETE_FAILED": "Could not delete the form. Please try again."
     },
-    "LABEL_QUESTIONS": "Preguntas",
-    "LABEL_DEPARTMENT": "Departamento",
-    "LABEL_CREATED_AT": "Creado el",
-    "LABEL_INPUT_METHOD": "Método de entrada",
-    "FILL_CTA": "Llenar este formulario",
-    "FILL_CTA_HINT": "Vas a completar las preguntas de este formulario.",
-    "DELETE_BTN": "Eliminar formulario",
-    "DELETE_CONFIRM": "¿Estás seguro de que deseas eliminar el formulario \"{{name}}\"? Esta acción no se puede deshacer.",
-    "DELETE_SUCCESS": "Formulario eliminado con éxito.",
+    "LABEL_QUESTIONS": "Questions",
+    "LABEL_DEPARTMENT": "Department",
+    "LABEL_CREATED_AT": "Created on",
+    "LABEL_INPUT_METHOD": "Input Method",
+    "FILL_CTA": "Fill this form",
+    "FILL_CTA_HINT": "You will fill in this form's questions.",
+    "DELETE_BTN": "Delete form",
+    "DELETE_CONFIRM": "Are you sure you want to delete the form \"{{name}}\"? This action cannot be undone.",
+    "DELETE_SUCCESS": "Form deleted successfully.",
     "INPUT_METHODS": {
-      "DICTATE": "Dictado por voz",
-      "UPLOAD": "Carga de imagen",
-      "CAMERA": "Cámara"
+      "DICTATE": "Voice Dictation",
+      "UPLOAD": "Image Upload",
+      "CAMERA": "Camera"
     }
   },
   "FILL_DIALOG": {
-    "TITLE": "Llenar Formulario",
-    "PATIENT_NAME_LABEL": "Nombre del paciente",
-    "PATIENT_NAME_PLACEHOLDER": "Ej.: Juan García",
-    "PATIENT_NAME_ERROR": "El nombre es obligatorio (mín. 2 caracteres)",
-    "CANCEL": "Cancelar",
-    "CONFIRM": "Confirmar",
+    "TITLE": "Fill Form",
+    "PATIENT_NAME_LABEL": "Patient / Client name",
+    "PATIENT_NAME_PLACEHOLDER": "e.g. John Smith",
+    "PATIENT_NAME_ERROR": "Name is required (min. 2 characters)",
+    "CANCEL": "Cancel",
+    "CONFIRM": "Confirm",
     "SUCCESS": {
-      "STARTED": "Formulario iniciado con éxito"
+      "STARTED": "Form started successfully"
     }
   },
   "DICTATION": {
-    "START": "Dictar",
-    "CONNECTING": "Conectando...",
-    "STOP": "Detener y transcribir",
-    "PROCESSING": "Transcribiendo...",
+    "START": "Dictate",
+    "CONNECTING": "Connecting...",
+    "STOP": "Stop and transcribe",
+    "PROCESSING": "Transcribing...",
     "ERRORS": {
-      "MIC_DENIED": "Permiso de micrófono denegado o no compatible.",
-      "TRANSCRIPTION_FAILED": "No se pudo transcribir el audio. Inténtalo de nuevo.",
-      "NO_SPEECH": "No se detectó voz. Inténtalo de nuevo."
+      "MIC_DENIED": "Microphone permission denied or not supported.",
+      "TRANSCRIPTION_FAILED": "Could not transcribe the audio. Please try again.",
+      "NO_SPEECH": "No speech detected. Please try again."
     }
   }
 }

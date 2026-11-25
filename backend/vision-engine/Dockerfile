@@ -6,8 +6,6 @@ RUN rm -rf /var/lib/apt/lists/* && \
     apt-get install -y --no-install-recommends \
         libgl1 \
         libglib2.0-0 \
-        gcc \
-        g++ \
         ca-certificates \
         ffmpeg && \
     rm -rf /var/lib/apt/lists/*

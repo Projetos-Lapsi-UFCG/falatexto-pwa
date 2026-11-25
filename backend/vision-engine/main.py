@@ -12,6 +12,7 @@ from pypdf import PdfReader
 import ollama
 from json_repair import repair_json
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, BackgroundTasks, Depends, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError, field_validator, ConfigDict
@@ -480,7 +481,7 @@ Respond ONLY with a single valid, raw JSON object matching this structure. Do NO
             options={
                 'temperature': 0.1,        
                 'top_p': 0.9,
-                'repeat_penalty': 1.2,    
+                'repeat_penalty': 1.2,
                 'num_predict': 2048,
                 'num_ctx': 8192           
             }, 
@@ -708,6 +709,222 @@ async def listar_sessoes_disponiveis(
         "total_sessoes": len(historico_sessoes),
         "sessoes": historico_sessoes
     }
+
+
+class PreencherFormularioRequest(BaseModel):
+    transcricao: str = Field(..., description="Texto transcrito pelo Whisper")
+    formulario_nome: str = Field(default="Formulário", description="Nome do formulário")
+    secoes: List[Dict[str, Any]] = Field(default_factory=list, description="Seções e perguntas do formulário")
+    respostas_atuais: Dict[str, Any] = Field(default_factory=dict, description="Respostas já preenchidas")
+    checkbox_atuais: Dict[str, bool] = Field(default_factory=dict, description="Checkboxes já marcados")
+    etapa_atual: int = Field(default=0, description="Índice da seção atual na tela")
+    data_atual: Optional[str] = Field(default=None, description="Data atual YYYY-MM-DD")
+
+
+def _normalizar_texto_chave(texto: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", texto.lower().strip())
+
+
+def _executar_extracao_formulario(req: PreencherFormularioRequest) -> Dict[str, Any]:
+    estrutura_resumida = []
+    valid_question_types: Dict[str, str] = {}
+    valid_radio_options: Dict[str, Dict[str, str]] = {}
+    valid_checkbox_by_id: set[str] = set()
+    valid_checkbox_by_label: Dict[str, str] = {}
+    valid_complement_keys: set[str] = set()
+    valid_subfield_ids: set[str] = set()
+
+    for idx, sec in enumerate(req.secoes):
+        perguntas_prompt = []
+        for q in sec.get("questions", []):
+            q_id = str(q.get("id", ""))
+            q_type = str(q.get("type", "text"))
+            q_label = str(q.get("label", ""))
+            if not q_id or q_type == "divider":
+                continue
+
+            valid_question_types[q_id] = q_type
+            opcoes_prompt = []
+
+            if q_type in ("radio_group", "radio_with_fields"):
+                valid_radio_options[q_id] = {}
+
+            for opt in q.get("options") or []:
+                opt_id = str(opt.get("id", ""))
+                opt_label = str(opt.get("label", ""))
+                has_comp = bool(opt.get("hasComplement", False))
+                comp_label = opt.get("complementLabel")
+
+                if q_type in ("radio_group", "radio_with_fields"):
+                    if has_comp:
+                        valid_subfield_ids.add(opt_id)
+                    else:
+                        valid_radio_options[q_id][opt_id] = opt_id
+                        if opt_label:
+                            valid_radio_options[q_id][_normalizar_texto_chave(opt_label)] = opt_id
+                elif q_type == "checkbox_group":
+                    valid_checkbox_by_id.add(opt_id)
+                    if opt_label:
+                        valid_checkbox_by_label[_normalizar_texto_chave(opt_label)] = opt_id
+                    if has_comp:
+                        valid_complement_keys.add(f"{opt_id}_complement")
+                elif q_type == "text_group":
+                    valid_subfield_ids.add(opt_id)
+
+                opcoes_prompt.append({
+                    "id": opt_id,
+                    "label": opt_label,
+                    "hasComplement": has_comp,
+                    "complementLabel": comp_label,
+                })
+
+            perguntas_prompt.append({
+                "id": q_id,
+                "label": q_label,
+                "type": q_type,
+                "options": opcoes_prompt,
+            })
+
+        estrutura_resumida.append({
+            "secao_index": idx,
+            "secao_nome": sec.get("name", f"Seção {idx + 1}"),
+            "perguntas": perguntas_prompt,
+        })
+
+    prompt_sistema = f"""
+Você é um assistente clínico especialista em preencher formulários estruturados a partir de ditado por voz em tempo real.
+Data de referência hoje: {req.data_atual or datetime.now().strftime("%Y-%m-%d")}.
+
+Analise a transcrição falada pelo usuário e mapeie APENAS as informações explicitamente mencionadas para os campos correspondentes do formulário "{req.formulario_nome}".
+Dê atenção especial à seção atual (secao_index = {req.etapa_atual}), mas também preencha perguntas de outras seções se o usuário já tiver mencionado essas informações.
+
+REGRAS ESTRITAS POR TIPO DE PERGUNTA ("type"):
+1. "boolean": em "answers", use "<question.id>": "sim" ou "nao".
+2. "boolean_na": em "answers", use "<question.id>": "sim", "nao" ou "na" (para não se aplica).
+3. "text": em "answers", use "<question.id>": "<texto extraído>".
+4. "number": em "answers", use "<question.id>": "<número em string, ex: '75' ou '38.5'>".
+5. "date": em "answers", use "<question.id>": "YYYY-MM-DD".
+6. "radio_group": em "answers", use "<question.id>": "<option.id exato da opção escolhida>".
+7. "checkbox_group": em "checkboxAnswers", use "<option.id>": true para cada opção marcada. Se a opção tiver "hasComplement": true e houver detalhe falado, preencha também em "answers": "<option.id>_complement": "<detalhe>".
+8. "radio_with_fields": para opções sem complemento ("hasComplement": false), use em "answers": "<question.id>": "<option.id>". Para opções com complemento ("hasComplement": true), use em "answers": "<option.id>": "<valor>".
+9. "text_group": para cada subcampo em "options", use em "answers": "<option.id>": "<valor>".
+10. Encerramento ("closingData"): se o usuário mencionar data de encerramento/atendimento ou nome do responsável ("responsável ..."), preencha "closingData": {{"date": "YYYY-MM-DD", "responsible": "<nome>"}}.
+
+REGRAS ANTI-ALUCINAÇÃO:
+- NÃO invente respostas para perguntas que ainda não foram ditas na transcrição.
+- Mantenha respostas já preenchidas em "respostas_atuais" a menos que o usuário corrija explicitamente.
+- Responda APENAS com JSON válido no formato exato:
+{{
+  "answers": {{}},
+  "checkboxAnswers": {{}},
+  "closingData": {{}}
+}}
+"""
+
+    payload_usuario = json.dumps(
+        {
+            "etapa_atual": req.etapa_atual,
+            "transcricao": req.transcricao,
+            "respostas_atuais": req.respostas_atuais,
+            "checkbox_atuais": req.checkbox_atuais,
+            "estrutura_formulario": estrutura_resumida,
+        },
+        ensure_ascii=False,
+    )
+
+    response = client.chat(
+        model=MODELO,
+        format="json",
+        options={
+            "temperature": 0.0,
+            "top_p": 0.9,
+            "repeat_penalty": 1.15,
+            "num_predict": 1536,
+            "num_ctx": 8192,
+        },
+        messages=[
+            {"role": "system", "content": prompt_sistema},
+            {"role": "user", "content": payload_usuario},
+        ],
+    )
+
+    resposta_limpa = extrair_bloco_json(response["message"]["content"])
+    try:
+        dados = json.loads(resposta_limpa)
+    except json.JSONDecodeError:
+        dados = json.loads(repair_json(resposta_limpa))
+
+    if not isinstance(dados, dict):
+        return {"answers": {}, "checkboxAnswers": {}, "closingData": {}}
+
+    raw_answers = dados.get("answers") if isinstance(dados.get("answers"), dict) else {}
+    raw_checkboxes = dados.get("checkboxAnswers") if isinstance(dados.get("checkboxAnswers"), dict) else {}
+    raw_closing = dados.get("closingData") if isinstance(dados.get("closingData"), dict) else {}
+
+    clean_answers: Dict[str, str] = {}
+    for k, v in raw_answers.items():
+        if v is None or isinstance(v, (dict, list)):
+            continue
+        val_str = str(v).strip()
+        if not val_str:
+            continue
+
+        if k in valid_question_types:
+            q_type = valid_question_types[k]
+            if q_type in ("boolean", "boolean_na"):
+                norm = _normalizar_texto_chave(val_str)
+                if norm in ("sim", "yes", "true", "positivo", "s"):
+                    clean_answers[k] = "sim"
+                elif norm in ("nao", "no", "false", "negativo", "n"):
+                    clean_answers[k] = "nao"
+                elif q_type == "boolean_na" and norm in ("na", "naoseaplica", "naoaplica"):
+                    clean_answers[k] = "na"
+            elif q_type in ("radio_group", "radio_with_fields"):
+                opts_map = valid_radio_options.get(k, {})
+                if val_str in opts_map:
+                    clean_answers[k] = opts_map[val_str]
+                else:
+                    norm_opt = _normalizar_texto_chave(val_str)
+                    if norm_opt in opts_map:
+                        clean_answers[k] = opts_map[norm_opt]
+            else:
+                clean_answers[k] = val_str
+        elif k in valid_complement_keys or k in valid_subfield_ids:
+            clean_answers[k] = val_str
+
+    clean_checkboxes: Dict[str, bool] = {}
+    for k, v in raw_checkboxes.items():
+        marcado = v is True or (isinstance(v, str) and _normalizar_texto_chave(v) in ("true", "sim", "1"))
+        if not marcado:
+            continue
+        if k in valid_checkbox_by_id:
+            clean_checkboxes[k] = True
+        else:
+            norm_cb = _normalizar_texto_chave(k)
+            if norm_cb in valid_checkbox_by_label:
+                clean_checkboxes[valid_checkbox_by_label[norm_cb]] = True
+
+    clean_closing: Dict[str, str] = {}
+    if isinstance(raw_closing.get("date"), str) and raw_closing["date"].strip():
+        clean_closing["date"] = raw_closing["date"].strip()
+    if isinstance(raw_closing.get("responsible"), str) and raw_closing["responsible"].strip():
+        clean_closing["responsible"] = raw_closing["responsible"].strip()
+
+    return {
+        "answers": clean_answers,
+        "checkboxAnswers": clean_checkboxes,
+        "closingData": clean_closing,
+    }
+
+
+@app.post("/api/v1/preencher-formulario")
+async def preencher_formulario_por_voz(
+    payload: PreencherFormularioRequest,
+    token: str = Depends(validar_token_bearer),
+):
+    if not payload.transcricao or not payload.transcricao.strip():
+        return {"answers": {}, "checkboxAnswers": {}, "closingData": {}}
+    return await run_in_threadpool(_executar_extracao_formulario, payload)
 
 
 if __name__ == "__main__":

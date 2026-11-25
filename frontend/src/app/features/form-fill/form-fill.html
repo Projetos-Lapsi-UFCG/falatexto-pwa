@@ -12,6 +12,66 @@
     }
   </header>
 
+  <!-- Barra de escuta contínua por IA (Whisper + LLM) -->
+  @if (isAiMode && !loading && form) {
+    <div class="ai-dictation-bar" [class.listening]="aiStatus === 'listening'">
+      <div class="ai-bar-top">
+        <div class="ai-status-group">
+          <span class="ai-pulse-dot" [class.active]="aiStatus === 'listening'"></span>
+          <ng-icon name="lucideSparkles" size="16" class="ai-sparkle-icon" />
+          <span class="ai-status-text">
+            @if (aiStatus === 'connecting') {
+              Conectando microfone ao Whisper...
+            } @else if (aiStatus === 'listening') {
+              Ouvindo e preenchendo automaticamente...
+            } @else {
+              Ditado por IA pausado
+            }
+          </span>
+          @if (isExtracting) {
+            <span class="ai-extracting-badge">
+              <ng-icon name="lucideLoaderCircle" size="13" class="spin" />
+              Preenchendo campos...
+            </span>
+          }
+        </div>
+
+        <div class="ai-bar-actions">
+          <button
+            type="button"
+            class="ai-chip-btn"
+            [class.active]="autoAdvance"
+            (click)="toggleAutoAdvance()"
+          >
+            {{ autoAdvance ? 'Avanço automático: ON' : 'Avanço automático: OFF' }}
+          </button>
+
+          @if (aiStatus === 'listening') {
+            <button mat-stroked-button (click)="stopAiDictation()" class="ai-mic-btn stop">
+              <ng-icon name="lucideMicOff" size="15" />
+              Pausar escuta
+            </button>
+          } @else {
+            <button
+              mat-raised-button
+              color="primary"
+              [disabled]="aiStatus === 'connecting'"
+              (click)="startAiDictation()"
+              class="ai-mic-btn"
+            >
+              <ng-icon name="lucideMic" size="15" />
+              Retomar escuta
+            </button>
+          }
+        </div>
+      </div>
+
+      <p class="ai-transcript-preview">
+        {{ liveTranscript || 'Fale naturalmente as respostas do formulário enquanto as etapas avançam...' }}
+      </p>
+    </div>
+  }
+
   @if (loading) {
     <div class="fill-content">
       <p>Carregando formulário...</p>
@@ -34,8 +94,16 @@
 
         <!-- card normal para todos os outros tipos -->
         @if (question.type !== 'divider') {
-          <div class="question-card">
-            <p class="question-label">{{ question.label }}</p>
+          <div class="question-card" [class.ai-filled-card]="aiFilledKeys.has(question.id)">
+            <div class="question-label-row">
+              <p class="question-label">{{ question.label }}</p>
+              @if (aiFilledKeys.has(question.id)) {
+                <span class="ai-field-tag">
+                  <ng-icon name="lucideSparkles" size="12" />
+                  IA
+                </span>
+              }
+            </div>
 
             <!-- checkbox_group -->
             @if (question.type === 'checkbox_group') {
@@ -176,6 +244,7 @@
       }
     </div>
   }
+
   <!-- Etapa final — Data e Responsável -->
   @if (!loading && form && currentStep === totalSteps - 1) {
     <div class="fill-content">

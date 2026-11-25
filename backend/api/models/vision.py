@@ -49,3 +49,22 @@ class VisionTranscricaoOut(BaseModel):
     sucesso: bool
     texto: str
     analise_acustica: Optional[str] = None
+
+class VisionPreencherFormularioIn(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    transcricao: str
+    formulario_nome: str = "Formulário"
+    secoes: List[Dict[str, Any]] = Field(default_factory=list)
+    respostas_atuais: Dict[str, Any] = Field(default_factory=dict)
+    checkbox_atuais: Dict[str, bool] = Field(default_factory=dict)
+    etapa_atual: int = 0
+    data_atual: Optional[str] = None
+
+
+class VisionPreencherFormularioOut(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    answers: Dict[str, str] = Field(default_factory=dict)
+    checkboxAnswers: Dict[str, bool] = Field(default_factory=dict)
+    closingData: Dict[str, str] = Field(default_factory=dict)
